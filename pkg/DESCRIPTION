@@ -1,0 +1,13 @@
+Package: abc.n
+Version: 1.0-0
+Date: 2013/02/15
+Title: abc.n
+Author: {Oliver Ratmann, Anton Camacho}
+Maintainer: Oliver Ratmann <o.ratmann@imperial.ac.uk>
+Depends:
+    R (>= 2.10)
+Description: tools for ABC based on n summary values
+License: GPL (>=2)
+LazyLoad: yes
+Collate:
+    'nabc_functions.R'

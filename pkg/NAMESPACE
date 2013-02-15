@@ -1,0 +1,3 @@
+import(locfit)
+import(nortest)
+useDynLib(nabc)
