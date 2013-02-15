@@ -24,6 +24,40 @@ nabc.get.pfam.pval<- function(x,normal.test)
 			0)
 }
 #------------------------------------------------------------------------------------------------------------------------
+#' Perform a generic two one sided test. This is an internal function.
+#' @param tost.args vector of arguments for generic TOST
+#' @param tau.l		lower tolerance of equivalence region
+#' @param tau.u		upper tolerance of equivalence region
+#' @param alpha		level of equivalence test
+#' @param tost.distr	name of distribution of tost
+#' @return vector of length 7
+nabc.generic.tost<- function(tost.args, tau.l, tau.u, alpha, tost.distr="t")
+{
+	ans<- numeric(7)
+	names(ans)<- c("error","p.error","lkl","cl","cu","ass.alpha","ass.pval")
+	if(!tost.distr%in%c("t"))	stop("unexpected tost.distr")
+	
+	which.not.reject<- which( c(pt( tost.args[1], tost.args[4] )<1-alpha, pt( tost.args[2], tost.args[4] )>alpha))
+	if(length(which.not.reject)%in%c(0,2))		#both upper and lower test statistics indicate mean difference < -tau and mean difference > tau  	OR 		mean difference >= -tau and mean difference <= tau
+	{
+		#figure out which one is closer to boundary, and schedule that this one is reported
+		which.not.reject<- which.min(abs(c(1-alpha-pt( tost.args[1], tost.args[4] ), pt( tost.args[2], tost.args[4] )-alpha )))
+	}
+	
+	ans["error"]	<- tost.args[3]
+	ans["p.error"]	<- ifelse(	which.not.reject==1, 		
+			1-pt( tost.args[which.not.reject], tost.args[4] ),		
+			pt( tost.args[which.not.reject], tost.args[4] )		)
+	ans["lkl"]		<- dt( tost.args[3], tost.args[4])		
+	ans["cl"]		<- min(tau.l/tost.args[5]+qt( 1-alpha, tost.args[4] ),0)
+	ans["cu"]		<- max(0, tau.u/tost.args[5]+qt( alpha, tost.args[4] ))
+	ans["ass.alpha"]<- 1-diff(pt( ans[c("cl","cu")], tost.args[4]))											#the corresponding alpha quantile of the traditional t-test with acceptance region [c-,c+] and above s, df
+	ans["ass.pval"]	<- ( pt( tost.args[3], tost.args[4] ) - ans["ass.alpha"]/2 ) / ( 1 - ans["ass.alpha"] )						#rescaled p-value that is expected to follow U(0,1) under the point null hypothesis
+	
+	#POWER[[length(POWER)+1]]<<- c(tau.l, tau.u, tmp[6], sum(moments[,1]), tmp[4], tmp[5] )	#PowerTOST:::.power.TOST(alpha=alpha, tau.l, tau.u, seq(tau.l, tau.u, length.out= 1e3), tmp[6], sum(moments[,1]), tmp[4], bk = 4)	
+	ans	
+}
+#------------------------------------------------------------------------------------------------------------------------
 #' Compute power of the asymptotic equivalence test for autocorrelations at lag 1 
 #' @param rho 	true difference in simulated and observed autocorrelation at lag 1
 #' @param tau.u	upper tolerance of the equivalence region
@@ -937,6 +971,17 @@ get.dist.mwu.equivalence<- function(sim, obs, args= NA, verbose= FALSE, alpha= 0
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
+#' Compute power of the equivalence test for population means of normal summary values 
+#' @param rho 		true difference in simulated and observed population means
+#' @param df		degrees of freedom of the simulated summary values
+#' @param tau.u		upper tolerance of the equivalence region
+#' @param s.of.T	standard deviation of the test statistic
+#' @param alpha		level of the equivalence test
+#' @param rtn.fun 	indicator if a function to compute the power should be returned. Defaults to 0.
+#' @return approximate power of the exact test. this is approximate because the standard deviation of the normal model for the simulated summary values is not known.
+#' @examples	prior.u<- 5; prior.l<- -prior.u; tau.u	<- 0.75; yn<- 60; ysigma2<- 1; alpha<- 0.01
+#' rho	<- seq(prior.l,prior.u,length.out=1e3)
+#' nabc.mutost.pow(rho, yn-1, tau.u, sqrt(ysigma2/yn), alpha)
 nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE)
 { 
 	x<-	rho
@@ -962,8 +1007,22 @@ nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE)
 		return( pw.fun(rho) )
 }
 #------------------------------------------------------------------------------------------------------------------------
-#determine both tau.low and tau.up sth max power at rho.star is as given
-#this may not work here because the tost is not unbiased
+#' Calibrate the equivalence region for the test of location equivalence for given maximum power
+#' @param mx.pw		maximum power at the point of reference (rho.star).
+#' @param df		degrees of freedom
+#' @param s.of.T	standard deviation of the test statistic
+#' @param tau.up.ub	guess on an upper bound on the upper tolerance of the equivalence region
+#' @param alpha		level of the equivalence test
+#' @param rho.star	point of reference. Defaults to the point of equality rho.star=0.
+#' @param tol		this algorithm stops when the actual maximum power is less than 'tol' from 'mx.pw'
+#' @param max.it	this algorithm stops prematurely when the number of iterations to find the equivalence region exceeds 'max.it'
+#' @return	vector of length 4
+#' 	\item{1}{lower tolerance of the equivalence region}		
+#' 	\item{2}{upper tolerance of the equivalence region}
+#' 	\item{3}{actual maximum power associated with the equivalence region}
+#' 	\item{4}{error ie abs(actual power - mx.pw)}
+#' @examples yn<- 60; ysigma2<- 1; alpha<- 0.01
+#'	nabc.mutost.onesample.tau.lowup(0.9, yn-1, sqrt(ysigma2/yn), 2, alpha )
 nabc.mutost.onesample.tau.lowup<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star=0, tol= 1e-5, max.it=100)
 {
 	curr.mx.pw	<- 0
@@ -996,6 +1055,40 @@ nabc.mutost.onesample.tau.lowup<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, 
 	c(-tau.up,tau.up,curr.mx.pw,abs(error))
 }
 #------------------------------------------------------------------------------------------------------------------------
+#' Calibrate the number of simulated summary values and the equivalence region for the test of location equivalence
+#' @param n.of.x	number of observed summary values
+#' @param s.of.Sx	standard deviation in the observed summary likelihood
+#' @param mx.pw		maximum power at the point of reference (rho.star).
+#' @param s.of.y	standard deviation in the simulated summary values
+#' @param alpha		level of the equivalence test
+#' @param tau.up.ub	guess on an upper bound on the upper tolerance of the equivalence region
+#' @param tol		this algorithm stops when the actual variation in the ABC approximation to the summary likelihood is less than 'tol' from 's.of.Sx*s.of.Sx'
+#' @param max.it	this algorithm stops prematurely when the number of iterations to calibrate the number of simulated data points exceeds 'max.it'
+#' @return	vector of length 6
+#' 	\item{1}{number of simulated summary values}
+#' 	\item{2}{lower tolerance of the equivalence region}		
+#' 	\item{3}{upper tolerance of the equivalence region}
+#' 	\item{4}{actual variation of the power}
+#' 	\item{5}{actual maximum power associated with the equivalence region}
+#' 	\item{6}{error ie abs(actual variation - variation in the observed summary likelihood)}
+#' @examples prior.u<- 2; prior.l<- -prior.u; tau.u<- 0.75; xn<- yn<- 60; xmu<- 0.5; xsigma2<- ysigma2<- 2; alpha<- 0.01
+#'	rho<- seq(prior.l,prior.u,length.out=1e3)
+#' 	#summary likelihood 		
+#'	y<-	dnorm(rho,0,sqrt(xsigma2/xn))
+#'	y<- y / diff(pnorm(c(prior.l,prior.u),0,sqrt(xsigma2/xn)))
+#' 	#abc approximation to summary likelihood based on equivalence test 
+#'	tmp	<- nabc.mutost.onesample.n.of.y(xn, sqrt(xsigma2/xn), 0.9, sqrt(ysigma2), alpha, tau.u.ub=2*tau.u )
+#'	yn	<- tmp[1]
+#'	tau.u	<- tmp[3]						
+#'	y2<- nabc.mutost.pow(rho, yn-1, tau.u, sqrt(ysigma2/yn), alpha)
+#'	rho2<- rho[which(y2!=0)]
+#'	y2<- y2[which(y2!=0)]
+#'	y2<- y2/sum(diff(rho2)*y2[-1])	
+#'	#plot summary likelihood and abc approximation thereof
+#'	plot(1,1,type='n',xlim=range(rho),ylim=range(c(y,y2)),xlab=expression(rho))
+#'	lines(rho,y,col="red")
+#'	lines(rho2,y2,col="blue")			
+#'	abline(v=0,col="red")			
 nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, tau.u.ub=2, tol= 1e-5, max.it=100)
 {
 	
@@ -1044,34 +1137,30 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 	c(yn,-tau.u,tau.u,pw.cvar,pw.cmx,abs(error))
 }
 #------------------------------------------------------------------------------------------------------------------------
-nabc.generic.tost<- function(tost.args, tau.l, tau.u, alpha, tost.distr="t")
-{
-	ans<- numeric(7)
-	names(ans)<- c("error","p.error","lkl","cl","cu","ass.alpha","ass.pval")
-	if(!tost.distr%in%c("t"))	stop("unexpected tost.distr")
-	
-	which.not.reject<- which( c(pt( tost.args[1], tost.args[4] )<1-alpha, pt( tost.args[2], tost.args[4] )>alpha))
-	if(length(which.not.reject)%in%c(0,2))		#both upper and lower test statistics indicate mean difference < -tau and mean difference > tau  	OR 		mean difference >= -tau and mean difference <= tau
-	{
-		#figure out which one is closer to boundary, and schedule that this one is reported
-		which.not.reject<- which.min(abs(c(1-alpha-pt( tost.args[1], tost.args[4] ), pt( tost.args[2], tost.args[4] )-alpha )))
-	}
-	
-	ans["error"]	<- tost.args[3]
-	ans["p.error"]	<- ifelse(	which.not.reject==1, 		
-								1-pt( tost.args[which.not.reject], tost.args[4] ),		
-								pt( tost.args[which.not.reject], tost.args[4] )		)
-	ans["lkl"]		<- dt( tost.args[3], tost.args[4])		
-	ans["cl"]		<- min(tau.l/tost.args[5]+qt( 1-alpha, tost.args[4] ),0)
-	ans["cu"]		<- max(0, tau.u/tost.args[5]+qt( alpha, tost.args[4] ))
-	ans["ass.alpha"]<- 1-diff(pt( ans[c("cl","cu")], tost.args[4]))											#the corresponding alpha quantile of the traditional t-test with acceptance region [c-,c+] and above s, df
-	ans["ass.pval"]	<- ( pt( tost.args[3], tost.args[4] ) - ans["ass.alpha"]/2 ) / ( 1 - ans["ass.alpha"] )						#rescaled p-value that is expected to follow U(0,1) under the point null hypothesis
-	
-	#POWER[[length(POWER)+1]]<<- c(tau.l, tau.u, tmp[6], sum(moments[,1]), tmp[4], tmp[5] )	#PowerTOST:::.power.TOST(alpha=alpha, tau.l, tau.u, seq(tau.l, tau.u, length.out= 1e3), tmp[6], sum(moments[,1]), tmp[4], bk = 4)	
-	ans	
-}
-#------------------------------------------------------------------------------------------------------------------------
-nabc.mutost.onesample<- function(sim, obs.mean, std.sd=NA, args= NA, verbose= FALSE, alpha= 0, tau.u= 0, tau.l= -tau.u, mx.pw=0.9, annealing=1, plot= FALSE, xlab= NA, nbreaks= 40, normal.test= "sf.test")
+#' Perform the exact TOST for location equivalence when the summary values are normally distributed
+#' @param sim			simulated summary values
+#' @param obs.mean		sample mean of the observed summary values
+#' @param args			argument that contains the equivalence region and the level of the test (see Examples). This is the preferred method for specifying arguments and overwrites the dummy default values
+#' @param verbose		flag if detailed information on the computations should be printed to standard out
+#' @param s.of.x		standard deviation of the observed summary values
+#' @param tau.u			upper tolerance of the equivalence region
+#' @param tau.l			lower tolerance of the equivalence region
+#' @param alpha			level of the equivalence test
+#' @param mx.pw			maximum power at the point of equality
+#' @param annealing		inflation factor of tolerances of the equivalence region
+#' @param normal.test	name of function with which normality of the summary values is tested
+#' @return	vector containing
+#' \item{error}{test statistic, here p-value of TOST}
+#' \item{cil}{lower ABC tolerance, here 0}
+#' \item{cir}{upper ABC tolerance, here alpha}
+#' \item{mx.pw}{Maximum power at the point of equality}
+#' \item{rho.mc}{mean(sim) - obs.mean}
+#' @examples tau.u<- 0.5; tau.l<- -tau.u; alpha<- 0.01; xn<- yn<- 60; xmu<- ymu<- 0.5; xsigma2<- ysigma2<- 2
+#'	args<- paste("mutost",1,tau.l,tau.u,alpha,sep='/')
+#'	x<- rnorm(xn,xmu,sd=sqrt(xsigma2))
+#'	y<- rnorm(yn,ymu,sd=sqrt(ysigma2))
+#'	nabc.mutost.onesample(y, mean(x), std.sd=sd(x), args= args, verbose= 0)
+nabc.mutost.onesample<- function(sim, obs.mean, args= NA, verbose= FALSE, s.of.x=NA, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test")
 {
 	#verbose<- 1
 	ans<- NABC.DEFAULT.ANS
@@ -1108,7 +1197,7 @@ nabc.mutost.onesample<- function(sim, obs.mean, std.sd=NA, args= NA, verbose= FA
 		args<- args[1]
 	}
 	if(!standardize%in%c(0,1,2))	stop("incorrect standardize")
-	if(standardize==1 && is.na(std.sd)) stop("std.sd not specified but required")	
+	if(standardize==1 && is.na(s.of.x)) stop("s.of.x not specified but required")	
 	if(alpha<0 || alpha>1)		stop("incorrect alpha")
 	if(tau.u<0 || tau.l>0)		stop("incorrect tau.u or tau.l")
 	if(annealing<1)				stop("incorrect annealing parameter")
@@ -1118,7 +1207,7 @@ nabc.mutost.onesample<- function(sim, obs.mean, std.sd=NA, args= NA, verbose= FA
 	if(!any(diff(sim)>0))	return(ans)
 	sim.mean	<- mean(sim)
 	if(standardize==1)
-		sim		<- (sim-sim.mean)/sd(sim)*std.sd+sim.mean
+		sim		<- (sim-sim.mean)/sd(sim)*s.of.x+sim.mean
 	sim.n		<- length(sim)	
 	sim.sd		<- sd(sim)	
 	if(standardize==2)

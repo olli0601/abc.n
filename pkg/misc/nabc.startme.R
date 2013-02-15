@@ -8,7 +8,7 @@
 # file: phdes.startme.R
 #
 # usage from R:
-#> setwd("/Users/Oliver/git/abc-n/pkg")
+#> setwd("/Users/Oliver/git/abc.n/pkg")
 #> source("misc/nabc.startme.R")
 # usage from bash:
 #> misc/abc-n.startme.R --help
@@ -28,11 +28,15 @@ if(!any(args=='--args'))
 if(any(args=='--args'))
 	args<- args[-(1:match("--args", args)) ]
 
-CODE.HOME<<- "/Users/Oliver/git/abc-n/pkg"
+CODE.HOME<<- "/Users/Oliver/git/abc.n/pkg"
 HOME<<- "/Users/Oliver/workspace_sandbox/phylody"
 DATA<<- paste(HOME,"data",sep='/')
 NABC.DEBUG<<- 0
-default.fun	<- "my.make.documentation"
+EPS<<- 1e-12
+default.fun<- "my.make.documentation"
+default.fun<- "project.nABC.TOST"
+default.fun<- "project.nABC.StretchedChi2"
+default.fun<- "project.nABC.movingavg"
 ###############################################################################
 #if(length(args) && !is.loaded("tipc_tabulate_after_sample"))
 #{
@@ -42,9 +46,8 @@ default.fun	<- "my.make.documentation"
 #}
 #cat(paste("is.loaded('tipcr')->",is.loaded("tipc_tabulate_after_sample"),'\n'))
 ###############################################################################
-function.list<-list.files(path= paste(CODE.HOME,"R",sep='/'), pattern = ".R$", all.files = FALSE,
-		full.names = TRUE, recursive = FALSE)
-#function.list<- function.list[-which(sapply(function.list,function(n){identical(n, paste(CODE.HOME,"/misc/phdes.startme.R",sep='') )}))]
+function.list<-c(list.files(path= paste(CODE.HOME,"R",sep='/'), pattern = ".R$", all.files = FALSE,
+		full.names = TRUE, recursive = FALSE),paste(getwd(),"misc","nabc.prjcts.R",sep='/'))
 sapply(function.list,function(x) source(x,echo=FALSE,print.eval=FALSE, verbose=FALSE))
 ###############################################################################
 my.mkdir<-function(root,data.name)
@@ -75,7 +78,10 @@ if(length(args))
 	{
 		if(length(tmp)>1) stop("abc-n.startme.R: duplicate -exe")
 		else default.fun<- switch(tmp[1],
-					MAKE.DOCUMENTATION		 = "my.make.documentation"
+					MAKE.DOCUMENTATION		 = "my.make.documentation",
+					MUTOST					 = "project.nABC.TOST",
+					CHISQU					 = "project.nABC.StretchedChi2",
+					ACFTOST					 = "project.nABC.movingavg"
 					)
 	}
 	tmp<- na.omit(sapply(args,function(arg)
@@ -88,6 +94,7 @@ if(length(args))
 }
 ###############################################################################
 if(NABC.DEBUG)	options(error= my.dumpframes)	
+require(abc.n)
 cat(paste("\nabc-n.startme.R: ",ifelse(NABC.DEBUG,"debug",""),"call",default.fun))
 do.call(default.fun,argv) 	
 cat("\nabc-n: ",ifelse(NABC.DEBUG,"debug","")," end\n")
