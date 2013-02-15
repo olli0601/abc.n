@@ -6,6 +6,7 @@ NABC.DEFAULT.ANS<- {tmp<- c(0,50, 1, NA, NA, NA, 0, 0,0,1,1,1,NA); names(tmp)<- 
 
 #------------------------------------------------------------------------------------------------------------------------
 #' Test if summary values are normally distributed
+#' @export
 #' @param x 			summary values
 #' @param norma.test 	name of function with which normality of the summary values is tested
 #' @return p value of the test
@@ -25,6 +26,7 @@ nabc.get.pfam.pval<- function(x,normal.test)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Perform a generic two one sided test. This is an internal function.
+#' @export
 #' @param tost.args vector of arguments for generic TOST
 #' @param tau.l		lower tolerance of equivalence region
 #' @param tau.u		upper tolerance of equivalence region
@@ -58,7 +60,8 @@ nabc.generic.tost<- function(tost.args, tau.l, tau.u, alpha, tost.distr="t")
 	ans	
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Compute power of the asymptotic equivalence test for autocorrelations at lag 1 
+#' Compute power of the asymptotic equivalence test for autocorrelations at lag 1
+#' @export 
 #' @param rho 	true difference in simulated and observed autocorrelation at lag 1
 #' @param tau.u	upper tolerance of the equivalence region
 #' @param alpha	level of the equivalence test
@@ -77,6 +80,7 @@ nabc.acf.equivalence.pow<- function(rho, tau.u, alpha, s)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Compute the autocorrelation in a time series along with some other info
+#' @export
 #' @param x 		time series (simply vector)
 #' @param leave.out thinning, how many values in the pair sequence (x_i,x_i-1) should be left out. Defaults to zero.
 #' @return	\item{cor}{autocorrelation in the thinned sequence}
@@ -94,6 +98,7 @@ nabc.acf.equivalence.cor<- function(x, leave.out=0)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Compute the ABC tolerances of the asymptotic equivalence test for autocorrelations at lag 1
+#' @export
 #' @param tau.l	lower tolerance of the equivalence region
 #' @param tau.u	upper tolerance of the equivalence region
 #' @param n		number of pairs (x_i,x_i-1) after thinning of the time series x_1, x_2, ...
@@ -111,6 +116,7 @@ nabc.acf.equivalence.abctol<- function(tau.l, tau.u, n, alpha)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the equivalence region of the asymptotic equivalence test for autocorrelations at lag 1 for given maximum power
+#' @export
 #' @param mx.pw		maximum power at the point of reference (rho.star).
 #' @param tau.up.ub	guess on an upper bound on the upper tolerance of the equivalence region
 #' @param n			number of pairs (x_i,x_i-1) after thinning of the time series x_1, x_2, ...
@@ -161,6 +167,7 @@ nabc.acf.equivalence.tau.lowup<- function(mx.pw, tau.up.ub, n, alpha, rho.star=0
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Perform the asymptotic equivalence test for autocorrelations at lag 1
+#' @export
 #' @param sim			simulated summary values
 #' @param obs			observed summary values
 #' @param args			argument that contains the equivalence region and the level of the test (see Examples). This is the preferred method for specifying arguments and overwrites the dummy default values
@@ -253,7 +260,8 @@ nabc.acf.equivalence<- function(sim, obs, args=NA, verbose= FALSE, alpha=0, leav
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Compute power of the exact equivalence test for dispersion 
+#' Compute power of the exact equivalence test for dispersion
+#' @export 
 #' @param rho 	true ratio in simulated variance / observed variance
 #' @param df	degrees of freedom
 #' @param cl	lower ABC tolerance
@@ -272,6 +280,7 @@ nabc.chisqstretch.pow<- function(rho, df, cl, cu)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the lower tolerance interval of the equivalence region for the test of dispersion equivalence
+#' @export
 #' @param tau.up	upper tolerance of the equivalence region
 #' @param df		degrees of freedom
 #' @param alpha		level of the equivalence test
@@ -307,6 +316,7 @@ nabc.chisqstretch.tau.low<- function(tau.up, df, alpha, rho.star=1, tol= 1e-5, m
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the equivalence region for the test of dispersion equivalence for given maximum power
+#' @export
 #' @param mx.pw		maximum power at the point of reference (rho.star).
 #' @param tau.up.ub	guess on an upper bound on the upper tolerance of the equivalence region
 #' @param df		degrees of freedom
@@ -358,6 +368,7 @@ nabc.chisqstretch.tau.lowup<- function(mx.pw, tau.up.ub, df, alpha, rho.star=1, 
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the number of simulated summary values and the equivalence region for the test of dispersion equivalence
+#' @export
 #' @param n.of.x	number of observed summary values
 #' @param s.of.Sx	standard deviation in the observed summary likelihood
 #' @param mx.pw		maximum power at the point of reference (rho.star).
@@ -448,6 +459,7 @@ nabc.chisqstretch.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, alpha, tau.u.ub=2, t
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Perform the exact test for dispersion equivalence when the summary values are normally distributed
+#' @export
 #' @param sim			simulated summary values
 #' @param obs.mc		variance of the observed summary values
 #' @param args			argument that contains the equivalence region and the level of the test (see Examples). This is the preferred method for specifying arguments and overwrites the dummy default values
@@ -971,7 +983,8 @@ get.dist.mwu.equivalence<- function(sim, obs, args= NA, verbose= FALSE, alpha= 0
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Compute power of the equivalence test for population means of normal summary values 
+#' Compute power of the equivalence test for population means of normal summary values
+#' @export 
 #' @param rho 		true difference in simulated and observed population means
 #' @param df		degrees of freedom of the simulated summary values
 #' @param tau.u		upper tolerance of the equivalence region
@@ -1008,6 +1021,7 @@ nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the equivalence region for the test of location equivalence for given maximum power
+#' @export
 #' @param mx.pw		maximum power at the point of reference (rho.star).
 #' @param df		degrees of freedom
 #' @param s.of.T	standard deviation of the test statistic
@@ -1056,6 +1070,7 @@ nabc.mutost.onesample.tau.lowup<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, 
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the number of simulated summary values and the equivalence region for the test of location equivalence
+#' @export
 #' @param n.of.x	number of observed summary values
 #' @param s.of.Sx	standard deviation in the observed summary likelihood
 #' @param mx.pw		maximum power at the point of reference (rho.star).
@@ -1138,6 +1153,7 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Perform the exact TOST for location equivalence when the summary values are normally distributed
+#' @export
 #' @param sim			simulated summary values
 #' @param obs.mean		sample mean of the observed summary values
 #' @param args			argument that contains the equivalence region and the level of the test (see Examples). This is the preferred method for specifying arguments and overwrites the dummy default values
