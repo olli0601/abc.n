@@ -1,5 +1,5 @@
 #' this file contains all R functions of the abc-n package
-#' @import nortest locfit
+#' @import nortest
 #' @useDynLib nabc
 
 NABC.DEFAULT.ANS<- {tmp<- c(0,50, 1, NA, NA, NA, 0, 0,0,1,1,1,NA); names(tmp)<- c("lkl", "error", "pval","link.mc.obs","link.mc.sim", "rho.mc", "cil", "cir","al","ar","pfam.pval","ts.pval","mx.pow"); tmp}

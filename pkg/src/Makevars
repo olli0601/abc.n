@@ -1,1 +1,1 @@
-PKG_LIBS= -o nabc.so
+CXX= g++
