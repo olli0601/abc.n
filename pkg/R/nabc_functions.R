@@ -133,7 +133,7 @@ nabc.acf.equivalence.abctol<- function(tau.l, tau.u, n, alpha)
 #' 	tau.l<- -tau.u
 #' 	sim.n<-	5e3
 #' 	leave.out<- 2
-#' 	nabc.chisqstretch.tau.lowup(0.9, 2, floor(sim.n / (1+leave.out)), 0.01)
+#' 	nabc.acf.equivalence.tau.lowup(0.9, 2, floor(sim.n / (1+leave.out)), 0.01)
 nabc.acf.equivalence.tau.lowup<- function(mx.pw, tau.up.ub, n, alpha, rho.star=0, tol= 1e-5, max.it=100)
 {
 	curr.mx.pw<- 0
@@ -263,6 +263,7 @@ nabc.acf.equivalence<- function(sim, obs, args=NA, verbose= FALSE, alpha=0, leav
 #' Compute power of the exact equivalence test for dispersion
 #' @export 
 #' @param rho 	true ratio in simulated variance / observed variance
+#' @param scale	scaling of T apart from rho, either n-1 for unbiased ABC or n for exact MAP
 #' @param df	degrees of freedom
 #' @param cl	lower ABC tolerance
 #' @param cu	upper ABC tolerance 
@@ -271,12 +272,12 @@ nabc.acf.equivalence<- function(sim, obs, args=NA, verbose= FALSE, alpha=0, leav
 #'	tau.up<- 1.09
 #'	yn<- 5e3
 #'	tau.low<- nabc.chisqstretch.tau.low(tau.up, yn-1, alpha)
-#'	rej<- .Call("abcScaledChiSq",	c(yn-1,tau.low,tau.up,alpha,1e-10,100,0.05)	)
+#'	rej<- .Call("abcScaledChiSq",	c(yn-1,yn-1,tau.low,tau.up,alpha,1e-10,100,0.05)	)
 #'	rho<- seq(tau.low,tau.up,by=0.001)
-#'	nabc.chisqstretch.pow(rho,yn-1,rej[1],rej[2])		
-nabc.chisqstretch.pow<- function(rho, df, cl, cu)
+#'	nabc.chisqstretch.pow(rho,yn-1,yn-1,rej[1],rej[2])		
+nabc.chisqstretch.pow<- function(rho, scale, df, cl, cu)
 {
-	pchisq( cu/rho*df, df ) - pchisq( cl/rho*df, df)
+	pchisq( cu/rho*scale, df ) - pchisq( cl/rho*scale, df)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the lower tolerance interval of the equivalence region for the test of dispersion equivalence
@@ -287,22 +288,24 @@ nabc.chisqstretch.pow<- function(rho, df, cl, cu)
 #' @param rho.star	point of reference. Defaults to the point of equality rho.star=1
 #' @param tol		this algorithm stops when the actual point of reference is less than 'tol' from 'rho.star'
 #' @param max.it	this algorithm stops prematurely when the number of iterations to find the equivalence region exceeds 'max.it'
+#' @param for.mle	calibrate so that the mode of the power is at the MLE
 #' @return tau.low, lower tolerance of the equivalence region
 #' @examples	tau.u<- 2.2
 #'  yn<- 60
 #'	tau.l<- nabc.chisqstretch.tau.low(tau.u, yn-1, 0.01)
-nabc.chisqstretch.tau.low<- function(tau.up, df, alpha, rho.star=1, tol= 1e-5, max.it=100) 
+nabc.chisqstretch.tau.low<- function(tau.up, df, alpha, rho.star=1, tol= 1e-5, max.it=100, for.mle=0) 
 {
-	tau.low.lb<-	1/tau.up		#1/tau.up gives rho.max<1 so we know we only need to go up
-	tau.low.ub<- 	1				#tau.low must be between [tau.low.lb, tau.low.ub]
-	error<- 1
+	tau.low.lb	<-	1/tau.up		#1/tau.up gives rho.max<1 so we know we only need to go up
+	tau.low.ub	<- 	1				#tau.low must be between [tau.low.lb, tau.low.ub]
+	error		<- 1
+	scale		<- ifelse(for.mle,df+1,df)
 	while(abs(error)>tol && round(tau.low.lb,d=10)!=round(tau.low.ub,d=10) && max.it>0)
 	{
 		max.it<- max.it-1
 		tau.low<- (tau.low.lb + tau.low.ub)/2
-		rej<- .Call("abcScaledChiSq",	c(df,tau.low,tau.up,alpha,1e-10,100,0.05)	)
+		rej<- .Call("abcScaledChiSq",	c(scale,df,tau.low,tau.up,alpha,1e-10,100,0.05)	)
 		rho<- seq(tau.low,tau.up,by=0.001)
-		pw<- nabc.chisqstretch.pow(rho,df,rej[1],rej[2])
+		pw<- nabc.chisqstretch.pow(rho,scale,df,rej[1],rej[2])
 #print( c(rho[ which.max(pw) ],pw[ which.max(pw) ], tau.low.lb, tau.low.ub,round(tau.low.lb,d=10)==round(tau.low.ub,d=10) ))	
 		error<- rho[ which.max(pw) ] - rho.star
 #print( error )			
@@ -324,25 +327,29 @@ nabc.chisqstretch.tau.low<- function(tau.up, df, alpha, rho.star=1, tol= 1e-5, m
 #' @param rho.star	point of reference. Defaults to the point of equality rho.star=1.
 #' @param tol		this algorithm stops when the actual maximum power is less than 'tol' from 'mx.pw'
 #' @param max.it	this algorithm stops prematurely when the number of iterations to find the equivalence region exceeds 'max.it'
-#' @return	vector of length 4
+#' @param for.mle	calibrate so that the mode of the power is at the MLE
+#' @return	vector of length 6
 #' 	\item{1}{lower tolerance of the equivalence region}		
 #' 	\item{2}{upper tolerance of the equivalence region}
 #' 	\item{3}{actual maximum power associated with the equivalence region}
 #' 	\item{4}{error ie abs(actual power - mx.pw)}
+#' 	\item{5}{lower point of critical region}
+#' 	\item{6}{upper point of critical region}
 #' @examples yn<- 60
 #' 	nabc.chisqstretch.tau.lowup(0.9, 2.5, yn-1, 0.01)
-nabc.chisqstretch.tau.lowup<- function(mx.pw, tau.up.ub, df, alpha, rho.star=1, tol= 1e-5, max.it=100)
+nabc.chisqstretch.tau.lowup<- function(mx.pw, tau.up.ub, df, alpha, rho.star=1, tol= 1e-5, max.it=100, for.mle=0)
 {
 	curr.mx.pw	<- 0
 	tau.up.ub	<- tau.up.ub/2
 	tmp			<- max.it
+	scale		<- ifelse(for.mle,df+1,df)
 	while(curr.mx.pw<mx.pw && tmp>0)
 	{
 		tmp			<- tmp-1
 		tau.up.ub	<- 2*tau.up.ub
-		tau.low		<- nabc.chisqstretch.tau.low(tau.up.ub, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
-		rej			<- .Call("abcScaledChiSq",	c(df,tau.low,tau.up.ub,alpha,1e-10,100,0.05)	)
-		curr.mx.pw	<- nabc.chisqstretch.pow(rho.star, df, rej[1], rej[2])		
+		tau.low		<- nabc.chisqstretch.tau.low(tau.up.ub, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it, for.mle=for.mle)
+		rej			<- .Call("abcScaledChiSq",	c(scale,df,tau.low,tau.up.ub,alpha,1e-10,100,0.05)	)
+		curr.mx.pw	<- nabc.chisqstretch.pow(rho.star, scale, df, rej[1], rej[2])		
 	}
 	if(tmp==0)	stop("nabc.chisqstretch.tau.lowup: could not find tau.up.ub")	
 	#print(tau.up.ub)
@@ -352,9 +359,9 @@ nabc.chisqstretch.tau.lowup<- function(mx.pw, tau.up.ub, df, alpha, rho.star=1, 
 	{
 		max.it	<- max.it-1
 		tau.up	<- (tau.up.lb + tau.up.ub)/2
-		tau.low	<- nabc.chisqstretch.tau.low(tau.up, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
-		rej		<- .Call("abcScaledChiSq",	c(df,tau.low,tau.up,alpha,1e-10,100,0.05)	)
-		curr.mx.pw<- nabc.chisqstretch.pow(rho.star, df, rej[1], rej[2])
+		tau.low	<- nabc.chisqstretch.tau.low(tau.up, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it, for.mle=for.mle)
+		rej		<- .Call("abcScaledChiSq",	c(scale,df,tau.low,tau.up,alpha,1e-10,100,0.05)	)
+		curr.mx.pw<- nabc.chisqstretch.pow(rho.star, scale, df, rej[1], rej[2])
 		error	<- curr.mx.pw - mx.pw
 #print(c(curr.mx.pw, tau.low, tau.up, tau.up.lb, tau.up.ub, max.it))
 		if(error<0)
@@ -364,7 +371,7 @@ nabc.chisqstretch.tau.lowup<- function(mx.pw, tau.up.ub, df, alpha, rho.star=1, 
 #print(c(abs(error), round(tau.up.lb,d=10)!=round(tau.up.ub,d=10)) )	
 	}
 	if(max.it==0)	warning("nabc.chisqstretch.tau.lowup: reached max.it")
-	c(tau.low,tau.up,curr.mx.pw,abs(error))
+	c(tau.low,tau.up,curr.mx.pw,abs(error), rej[1], rej[2])
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the number of simulated summary values and the equivalence region for the test of dispersion equivalence
@@ -376,6 +383,7 @@ nabc.chisqstretch.tau.lowup<- function(mx.pw, tau.up.ub, df, alpha, rho.star=1, 
 #' @param tau.up.ub	guess on an upper bound on the upper tolerance of the equivalence region
 #' @param tol		this algorithm stops when the actual variation in the ABC approximation to the summary likelihood is less than 'tol' from 's.of.Sx*s.of.Sx'
 #' @param max.it	this algorithm stops prematurely when the number of iterations to calibrate the number of simulated data points exceeds 'max.it'
+#' @param for.mle	calibrate so that the mode of the power is at the MLE
 #' @return	vector of length 8
 #' 	\item{1}{number of simulated summary values}
 #' 	\item{2}{lower tolerance of the equivalence region}		
@@ -399,11 +407,11 @@ nabc.chisqstretch.tau.lowup<- function(mx.pw, tau.up.ub, df, alpha, rho.star=1, 
 #' 	tau.u	<- tmp[3]
 #' 	c.l		<- tmp[4]
 #' 	c.u		<- tmp[5]
-#' 	y2		<- nabc.chisqstretch.pow(th, yn-1, c.l, c.u)
+#' 	y2		<- nabc.chisqstretch.pow(th, yn-1, yn-1, c.l, c.u)
 #' #plot the summary likelihood and the abc approximation
 #' plot(th,y/mean(y),ylim=range(c(y/mean(y),y2/mean(y2))),type='l')
 #' lines(th,y2/mean(y2),col="blue")
-nabc.chisqstretch.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, alpha, tau.u.ub=2, tol= 1e-5, max.it=100)
+nabc.chisqstretch.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, alpha, tau.u.ub=2, tol= 1e-5, max.it=100, for.mle=0)
 {
 	s2.of.Sx	<- s.of.Sx*s.of.Sx
 	pw.cvar		<- 2*s2.of.Sx
@@ -416,14 +424,16 @@ nabc.chisqstretch.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, alpha, tau.u.ub=2, t
 		curr.it	<- curr.it-1
 		yn.ub	<- 2*yn.ub
 #print(c(mx.pw,yn.ub))	
-		tmp		<- nabc.chisqstretch.tau.lowup(mx.pw, 2*tau.u, yn.ub-1, alpha )
+		tmp		<- nabc.chisqstretch.tau.lowup(mx.pw, 2*tau.u, yn.ub-1, alpha, for.mle=for.mle )
 #print(c("OK ",tmp))		
 		tau.l	<- tmp[1]
 		tau.u	<- tmp[2]
 		pw.cmx	<- tmp[3]
+		c.l		<- tmp[5]
+		c.u		<- tmp[6]
 		rho		<- seq(tau.l/2,2*tau.u,length.out=1e3)
-		tmp		<- .Call("abcScaledChiSq",	c(yn.ub-1,tau.l,tau.u,alpha,1e-10,100,0.05)	)
-		pw		<- nabc.chisqstretch.pow(rho, yn.ub-1, tmp[1], tmp[2])
+		scale	<- ifelse(for.mle,yn.ub,yn.ub-1)		
+		pw		<- nabc.chisqstretch.pow(rho, scale, yn.ub-1, c.l, c.u)
 		pw.cme	<- sum(rho*pw) / sum(pw)
 		pw.cvar	<- sum((rho-pw.cme)*(rho-pw.cme)*pw) / sum(pw)			
 #print(c(yn.ub, tau.l, tau.u, pw.cvar, s2.of.Sx, pw.cmx ))		
@@ -436,15 +446,15 @@ nabc.chisqstretch.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, alpha, tau.u.ub=2, t
 	{
 		max.it	<- max.it-1
 		yn		<- round( (yn.lb + yn.ub)/2 )
-		tmp		<- nabc.chisqstretch.tau.lowup(mx.pw, 2*tau.u, yn-1, alpha )
+		tmp		<- nabc.chisqstretch.tau.lowup(mx.pw, 2*tau.u, yn-1, alpha, for.mle=for.mle )
 		tau.l	<- tmp[1]
 		tau.u	<- tmp[2]
 		pw.cmx	<- tmp[3]
+		c.l		<- tmp[5]
+		c.u		<- tmp[6]		
 		rho		<- seq(tau.l/2,2*tau.u,length.out=1e3)
-		tmp		<- .Call("abcScaledChiSq",	c(yn-1,tau.l,tau.u,alpha,1e-10,100,0.05)	)
-		c.l		<- tmp[1]
-		c.u		<- tmp[2]
-		pw		<- nabc.chisqstretch.pow(rho, yn-1, c.l, c.u)
+		scale	<- ifelse(for.mle,yn,yn-1)
+		pw		<- nabc.chisqstretch.pow(rho, scale, yn-1, c.l, c.u)
 		pw.cme	<- sum(rho*pw) / sum(pw)
 		pw.cvar	<- sum((rho-pw.cme)*(rho-pw.cme)*pw) / sum(pw)
 		error	<- pw.cvar - s2.of.Sx
@@ -470,6 +480,7 @@ nabc.chisqstretch.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, alpha, tau.u.ub=2, t
 #' @param alpha			level of the equivalence test
 #' @param leave.out		thinning, how many values in the pair sequence (x_i,x_i-1) should be left out. Defaults to zero.
 #' @param normal.test	name of function with which normality of the summary values is tested
+#' @param for.mle		calibrate so that the mode of the power is at the MLE
 #' @return	vector containing
 #' \item{error}{test statistic, here var(sim)/obs.mc}
 #' \item{cil}{lower ABC tolerance c^-}
@@ -482,7 +493,7 @@ nabc.chisqstretch.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, alpha, tau.u.ub=2, t
 #'	x<- rnorm(xn,0,sd=sqrt(xsigma2))
 #'	y<- rnorm(yn,0,sd=sqrt(xsigma2))
 #'	nabc.chisqstretch(y, var(x), args=args, verbose= 0)
-nabc.chisqstretch<- function(sim, obs.mc, args=NA, verbose= FALSE, tau.l=1, tau.u=1, guess.tau.l=0, alpha=0, normal.test= "sf.test")
+nabc.chisqstretch<- function(sim, obs.mc, args=NA, verbose= FALSE, tau.l=1, tau.u=1, guess.tau.l=0, alpha=0, normal.test= "sf.test", for.mle=0)
 {
 	#verbose<- 1
 	#sim<- rnorm(100, 8.1, 1.1)
@@ -493,38 +504,41 @@ nabc.chisqstretch<- function(sim, obs.mc, args=NA, verbose= FALSE, tau.l=1, tau.
 	if(!is.na(args))
 	{
 		args<- strsplit(args,'/')[[1]]
-		if(length(args)==3)
+		if(length(args)==4)
 		{
-			guess.tau.l<- as.numeric( args[2] )
-			tau.u<- tau.l<- NA
-			alpha<- as.numeric( args[3] )
+			for.mle		<- as.numeric( args[2] )
+			guess.tau.l	<- as.numeric( args[3] )
+			tau.u		<- tau.l	<- NA
+			alpha		<- as.numeric( args[4] )
 		}		
-		if(length(args)==4)	
+		if(length(args)==5)	
 		{
-			guess.tau.l<- as.numeric( args[2] )
-			tau.u<- as.numeric( args[3] )
-			tau.l<- NA
-			alpha<- as.numeric( args[4] )
+			for.mle		<- as.numeric( args[2] )
+			guess.tau.l	<- as.numeric( args[3] )
+			tau.u		<- as.numeric( args[4] )
+			tau.l		<- NA
+			alpha		<- as.numeric( args[5] )
 		}
-		else if(length(args)==5)
+		else if(length(args)==6)
 		{
-			guess.tau.l<- as.numeric( args[2] )
-			tau.l<- as.numeric( args[3] )
-			tau.u<- as.numeric( args[4] )
-			alpha<- as.numeric( args[5] )
+			for.mle		<- as.numeric( args[2] )
+			guess.tau.l	<- as.numeric( args[3] )
+			tau.l		<- as.numeric( args[4] )
+			tau.u		<- as.numeric( args[5] )
+			alpha		<- as.numeric( args[6] )
 		}
 		else 
 			stop("get.dist.chisqstretch: error at 1A")
 		if(is.na(tau.u))
 		{
-			tmp<- nabc.chisqstretch.tau.lowup(0.9, 2, df.sim, alpha)
+			tmp<- nabc.chisqstretch.tau.lowup(0.9, 2, df.sim, alpha, for.mle=for.mle)
 			tau.l<- tmp[1]
 			tau.u<- tmp[2]						
 		}
 		else if(is.na(tau.l) && guess.tau.l && tau.u>200)		#if tau.u too large, then "nabc.chisqstretch.tau.low" may take a while 
 			tau.l<- 1/tau.u
 		else if(is.na(tau.l))
-			tau.l<- nabc.chisqstretch.tau.low(tau.u, df.sim, alpha)
+			tau.l<- nabc.chisqstretch.tau.low(tau.u, df.sim, alpha, for.mle=for.mle)
 		#print(c(df.sim,tau.l,tau.u,alpha))			
 		args<- args[1]
 	}
@@ -532,23 +546,24 @@ nabc.chisqstretch<- function(sim, obs.mc, args=NA, verbose= FALSE, tau.l=1, tau.
 	if(tau.u<1 )		stop("get.dist.chisqstretch: error at 1f")
 	if(tau.l>1 )		stop("get.dist.chisqstretch: error at 1g")
 		 
-	ans<- NABC.DEFAULT.ANS	
-	ans["pfam.pval"]<-	nabc.get.pfam.pval(sim,normal.test) 
+	ans					<- NABC.DEFAULT.ANS	
+	ans["pfam.pval"]	<- nabc.get.pfam.pval(sim,normal.test) 
 			
-	#get confidence intervals by numerical approximation	
-	tmp<- .Call("abcScaledChiSq",	c(df.sim,tau.l,tau.u,alpha,1e-10,100,0.05)	)
+	#get confidence intervals by numerical approximation
+	scale				<- ifelse(for.mle,df.sim+1,df.sim)
+	tmp					<- .Call("abcScaledChiSq",	c(scale,df.sim,tau.l,tau.u,alpha,1e-10,100,0.05)	)
 	if(tmp[4]>1e-10)	stop("get.dist.chisqstretch: error at 3a")
 	ans[c("cil","cir","mx.pow")]<- tmp[1:3]
 	
 	
-	ans["error"]<- 			var(sim) / obs.mc
-	ans["lkl"]<- 			dchisq(ans["error"]*df.sim,df.sim)	
-	ans["pval"]<- 			pchisq(ans["error"]*df.sim,df.sim)
-	ans[c("al","ar")]<- 	c(0, 1 - diff( pchisq(ans[c("cil","cir")]*df.sim,df.sim) ) )
-	ans["pval"]<-			( ans["pval"] - ans["ar"]/2 ) / ( 1 - ans["ar"] )
-	ans["link.mc.sim"]<- 	var(sim)
-	ans["link.mc.obs"]<- 	obs.mc
-	ans["rho.mc"]<- log(var(sim) / obs.mc)
+	ans["error"]		<- var(sim) / obs.mc
+	ans["lkl"]			<- dchisq(ans["error"]*scale,df.sim)	
+	ans["pval"]			<- pchisq(ans["error"]*scale,df.sim)
+	ans[c("al","ar")]	<- c(0, 1 - diff( pchisq(ans[c("cil","cir")]*scale,df.sim) ) )
+	ans["pval"]			<- ( ans["pval"] - ans["ar"]/2 ) / ( 1 - ans["ar"] )
+	ans["link.mc.sim"]	<- var(sim)
+	ans["link.mc.obs"]	<- obs.mc
+	ans["rho.mc"]		<- log(var(sim) / obs.mc)
 	if(verbose)	cat(paste(paste("\n{",args,"<-list(sim.var=",var(sim) ," , obs.var=",obs.mc," , alpha=",alpha," , tau.l=",tau.l," , tau.u=",tau.u,", log.ciu=",log(ans["cir"]),", ",sep=''),paste(names(ans), ans, collapse=', ', sep='='),")}",sep=''))
 	ans
 }	

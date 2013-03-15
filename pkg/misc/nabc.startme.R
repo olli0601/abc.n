@@ -28,15 +28,17 @@ if(!any(args=='--args'))
 if(any(args=='--args'))
 	args<- args[-(1:match("--args", args)) ]
 
-CODE.HOME<<- "/Users/Oliver/git/abc.n/pkg"
-HOME<<- "/Users/Oliver/workspace_sandbox/phylody"
-DATA<<- paste(HOME,"data",sep='/')
-NABC.DEBUG<<- 0
-EPS<<- 1e-12
-default.fun<- "my.make.documentation"
-default.fun<- "project.nABC.TOST"
-default.fun<- "project.nABC.StretchedChi2"
-default.fun<- "project.nABC.movingavg"
+CODE.HOME	<<- "/Users/Oliver/git/abc.n/pkg"
+HOME		<<- "/Users/Oliver/workspace_sandbox/phylody"
+DATA		<<- paste(HOME,"data",sep='/')
+NABC.DEBUG	<<- 0
+LIB.LOC		<<- NULL
+#LIB.LOC		<<- paste(CODE.HOME,"../",sep='')
+EPS			<<- 1e-12
+default.fun	<- "my.make.documentation"
+default.fun	<- "project.nABC.TOST"
+default.fun	<- "project.nABC.StretchedChi2"
+#default.fun<- "project.nABC.movingavg"
 ###############################################################################
 #if(length(args) && !is.loaded("tipc_tabulate_after_sample"))
 #{

@@ -689,7 +689,7 @@ project.nABC.movingavg<- function()
 		names(ans)<- c("xv","xa","v.cil","v.cir","a.cil","a.cir","data")		
 		ans[["xv"]]<- 	var(x[seq.int(1,length(x),by=1+xsig2.leave.out)])
 		ans[["xa"]]<-	nabc.acf.equivalence.cor(x, leave.out=xmapa.leave.out)["z"]
-		tmp<- .Call("abcScaledChiSq",	c(	floor(length(x) / (1+xsig2.leave.out)) - 1,	xsig2.tau.l,	xsig2.tau.u,	alpha,1e-10,100,0.05)	)			
+		tmp<- .Call("abcScaledChiSq",	c(	floor(length(x) / (1+xsig2.leave.out)) - 1, floor(length(x) / (1+xsig2.leave.out)) - 1,	xsig2.tau.l,	xsig2.tau.u,	alpha,1e-10,100,0.05)	)			
 		ans[["v.cil"]]<- tmp[1]
 		ans[["v.cir"]]<- tmp[2]
 		tmp<- nabc.acf.equivalence(x, x, args=paste("acfequiv",xmapa.leave.out,xmapa.tau.l,xmapa.tau.u,alpha,sep='/')	)
@@ -816,7 +816,7 @@ project.nABC.movingavg<- function()
 			#xsig2.tau.l<- nabc.chisqstretch.tau.low(xsig2.tau.u, floor(5e3 / 2) - 1, alpha)
 			#print(xsig2.tau.l)
 			#xsig2.tau.l<- 1/xsig2.tau.u																
-			#v.rej<- .Call("abcScaledChiSq",	c(	floor(xn / 2) - 1,	xsig2.tau.l,	xsig2.tau.u,	alpha,1e-10,100,0.05)	)			
+			#v.rej<- .Call("abcScaledChiSq",	c(	floor(xn / 2) - 1,	floor(xn / 2) - 1, xsig2.tau.l,	xsig2.tau.u,	alpha,1e-10,100,0.05)	)			
 			#a.rej<- nabc.acf.equivalence(rnorm(xn), rnorm(xn), args=paste("acfequiv",3,tau.l,tau.u,alpha,sep='/')	)
 			
 			if(!resume || inherits(readAttempt, "try-error"))
@@ -1003,7 +1003,7 @@ project.nABC.movingavg<- function()
 			fixed.tau["a",1:2]<- 	nabc.acf.equivalence.tau.lowup(mx.pw, 0.35, floor(xn / (1+xmapa.leave.out)), alpha)[1:2]		
 			fixed.tau["a",3:4]<-	nabc.acf.equivalence.abctol(fixed.tau["a","tau.l"], fixed.tau["a","tau.u"], floor(xn / (1+xmapa.leave.out)), alpha)			
 			fixed.tau["v",1:2]<-	nabc.chisqstretch.tau.lowup(mx.pw, 2, floor(xn / (1+xsig2.leave.out))-1, alpha)[1:2]
-			fixed.tau["v",3:4]<-	.Call("abcScaledChiSq",	c(	floor(xn / (1+xsig2.leave.out))-1,	fixed.tau["v","tau.l"], fixed.tau["v","tau.u"],	alpha,1e-10,100,0.05)	)[1:2]
+			fixed.tau["v",3:4]<-	.Call("abcScaledChiSq",	c(	floor(xn / (1+xsig2.leave.out))-1, floor(xn / (1+xsig2.leave.out))-1,	fixed.tau["v","tau.l"], fixed.tau["v","tau.u"],	alpha,1e-10,100,0.05)	)[1:2]
 			if(!resume || inherits(readAttempt, "try-error"))
 			{
 				#accept if both SD and ACF ok
@@ -1023,7 +1023,7 @@ project.nABC.movingavg<- function()
 							out[2,c("xa","xv")]<- out[1,c("xa","xv")]<- c(project.nABC.movingavg.rho2a( ans[["xa"]] ),	ans[["xv"]])
 							#consider fixed tau							
 							out[1,c("acf.cl","acf.cu")]		<- nabc.acf.equivalence.abctol(fixed.tau["a","tau.l"],fixed.tau["a","tau.u"], floor(xn / (1+xmapa.leave.out)), alpha)
-							out[1,c("sd.cl","sd.cu")]		<- .Call("abcScaledChiSq",	c(	floor(xn / (1+xsig2.leave.out))-1,	fixed.tau["v","tau.l"], fixed.tau["v","tau.u"],	alpha,1e-10,100,0.05)	)[1:2]
+							out[1,c("sd.cl","sd.cu")]		<- .Call("abcScaledChiSq",	c(	floor(xn / (1+xsig2.leave.out))-1, floor(xn / (1+xsig2.leave.out))-1,	fixed.tau["v","tau.l"], fixed.tau["v","tau.u"],	alpha,1e-10,100,0.05)	)[1:2]
 							acc<- which( 	ans[["data"]]["a.error",]<=out[1,"acf.cu"]  &  ans[["data"]]["a.error",]>=out[1,"acf.cl"]	& 
 											ans[["data"]]["v.error",]<=out[1,"sd.cu"]  &  ans[["data"]]["v.error",]>=out[1,"sd.cl"] )																									
 							out[1,c("acf.tau.l","acf.tau.u","sd.tau.l","sd.tau.u","acc")]<-	c(fixed.tau["a",c("tau.l","tau.u")],fixed.tau["v",c("tau.l","tau.u")],length(acc)/ncol(ans[["data"]]))
@@ -1037,7 +1037,7 @@ project.nABC.movingavg<- function()
 							out[2,c("acf.tau.l","acf.tau.u")]<-	nabc.acf.equivalence.tau.lowup(mx.pw, 0.35, floor(xn / (1+xmapa.leave.out)), alpha)[1:2]
 							out[2,c("acf.cl","acf.cu")]<-	nabc.acf.equivalence.abctol(out[2,"acf.tau.l"],out[2,"acf.tau.u"], floor(xn / (1+xmapa.leave.out)), alpha)							
 							out[2,c("sd.tau.l","sd.tau.u")]<-	nabc.chisqstretch.tau.lowup(mx.pw, 2, floor(xn / (1+xsig2.leave.out))-1, alpha)[1:2]
-							out[2,c("sd.cl","sd.cu")]<-	.Call("abcScaledChiSq",	c(	floor(xn / (1+xsig2.leave.out))-1,	out[2,"sd.tau.l"],out[2,"sd.tau.u"],	alpha,1e-10,100,0.05)	)[1:2]			
+							out[2,c("sd.cl","sd.cu")]<-	.Call("abcScaledChiSq",	c(	floor(xn / (1+xsig2.leave.out))-1, floor(xn / (1+xsig2.leave.out))-1,	out[2,"sd.tau.l"],out[2,"sd.tau.u"],	alpha,1e-10,100,0.05)	)[1:2]			
 							acc<- which( 	ans[["data"]]["a.error",]<=out[2,"acf.cu"]  &  ans[["data"]]["a.error",]>=out[2,"acf.cl"]	& 
 											ans[["data"]]["v.error",]<=out[2,"sd.cu"]  &  ans[["data"]]["v.error",]>=out[2,"sd.cl"] )							
 							out[2,"acc"]<-	length(acc)/ncol(ans[["data"]])														
@@ -2272,7 +2272,7 @@ project.nABC.StretchedChi2<- function()
 {	
 	my.mkdir(DATA,"nABC.StretchedChisq")
 	dir.name<- paste(DATA,"nABC.StretchedChisq",sep='/')
-	subprog<- 6
+	subprog<- 7
 	pdf.width<- 4
 	pdf.height<-5
 	
@@ -2285,7 +2285,7 @@ project.nABC.StretchedChi2<- function()
 	}
 	
 	#simulate N times from same ytau.u, simulate from same xsigma
-	project.nABC.StretchedChi2.fix.x.uprior.ysig2<- function(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu, with.c=TRUE)		
+	project.nABC.StretchedChi2.fix.x.uprior.ysig2<- function(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu, with.c=TRUE, for.mle=0)		
 	{		
 		if(tau.u<1)	stop("project.nABC.StretchedChi2.fix.x.uprior.ysig2: error at 1a")
 		if(tau.l>1)	stop("project.nABC.StretchedChi2.fix.x.uprior.ysig2: error at 1b")
@@ -2293,43 +2293,45 @@ project.nABC.StretchedChi2<- function()
 		if(prior.l>1)	stop("project.nABC.StretchedChi2.fix.x.uprior.ysig2: error at 1d")
 		
 
-		args<- paste("chisqstretch",tau.l,tau.u,alpha,sep='/')
+		args<- paste("chisqstretch",for.mle,tau.l,tau.u,alpha,sep='/')
 		#perform one ABC - rejection run
-		ans<- vector("list",4)
-		names(ans)<- c("xsigma2","cil","cir","data")		
-		ans[["xsigma2"]]<- var(x)
+		ans			<- vector("list",4)
+		names(ans)	<- c("xsigma2","cil","cir","data")		
+		ans[["xsigma2"]]	<- ifelse( for.mle, (length(x)-1)*var(x)/length(x), var(x) )		#either MLE or unbiased estimate of sig2
 		if(with.c)
 		{		
-			tmp<- nabc.chisqstretch(rnorm(yn,ymu,sd=sd(x)), var(x), args=args, verbose= 0)
-			ans[["cil"]]<- tmp["cil"]
-			ans[["cir"]]<- tmp["cir"]
+			tmp				<- nabc.chisqstretch(rnorm(yn,ymu,sd=sqrt(ans[["xsigma2"]])), ans[["xsigma2"]], args=args, verbose= 0)
+			ans[["cil"]]	<- tmp["cil"]
+			ans[["cir"]]	<- tmp["cir"]
 		}
 		else
 		{
-			ans[["cil"]]<- ans[["cir"]]<- NA
+			ans[["cil"]]	<- ans[["cir"]]<- NA
 		}
-		ans[["data"]]<- sapply(1:N,function(i)
-				{					
-					ysigma2<- runif(1,prior.l,prior.u)
-					y<- rnorm(yn,ymu,sd=sqrt(ysigma2))
-					if(with.c)
-					{
-						tmp<- nabc.chisqstretch(y, var(x), args=args, verbose= 0)					
-						tmp<- c(ysigma2,tmp[c("error","rho.mc")],var(y)-var(x))							
-					}
-					else
-						tmp<- c(ysigma2, var(y)/var(x), log( var(y)/var(x) ), var(y)-var(x))
-					names(tmp)<- c("ysigma2","error","rho.mc","sy2-sx2")
-					tmp					
-				})		
+		ans[["data"]]		<- sapply(1:N,function(i)
+								{					
+									ysigma2	<- runif(1,prior.l,prior.u)
+									y		<- rnorm(yn,ymu,sd=sqrt(ysigma2))
+									if(with.c)
+									{
+										tmp	<- nabc.chisqstretch(y, ans[["xsigma2"]], args=args, verbose= 0)						
+										tmp	<- c(  ysigma2,tmp[c("error","rho.mc")],var(y)-ans[["xsigma2"]]   )							
+									}
+									else 
+									{					
+										tmp	<- c(ysigma2, var(y)/ans[["xsigma2"]], log( var(y)/ans[["xsigma2"]] ), var(y)-ans[["xsigma2"]])
+									}
+									names(tmp)<- c("ysigma2","error","rho.mc","sy2-sx2")
+									tmp					
+								})		
 		ans
 	}
 	project.nABC.StretchedChi2.fix.x.stdprior.ysig2<- function(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu)		
 	{		
-		if(tau.u<1)	stop("project.nABC.StretchedChi2.fix.x.uprior.ysig2: error at 1a")
-		if(tau.l>1)	stop("project.nABC.StretchedChi2.fix.x.uprior.ysig2: error at 1b")
-		if(prior.u<1)	stop("project.nABC.StretchedChi2.fix.x.uprior.ysig2: error at 1c")
-		if(prior.l>1)	stop("project.nABC.StretchedChi2.fix.x.uprior.ysig2: error at 1d")
+		if(tau.u<1)	stop("project.nABC.StretchedChi2.fix.x.stdprior.ysig2: error at 1a")
+		if(tau.l>1)	stop("project.nABC.StretchedChi2.fix.x.stdprior.ysig2: error at 1b")
+		if(prior.u<1)	stop("project.nABC.StretchedChi2.fix.x.stdprior.ysig2: error at 1c")
+		if(prior.l>1)	stop("project.nABC.StretchedChi2.fix.x.stdprior.ysig2: error at 1d")
 		
 		
 		args<- paste("chisqstretch",tau.l,tau.u,alpha,sep='/')
@@ -2362,57 +2364,63 @@ project.nABC.StretchedChi2<- function()
 		prior.u	<- 3
 		prior.l	<- 1/3
 		xsig2	<- 1
-		
+		xsig2.mle<- yn / (yn-1) * xsig2
 		#summary likelihood of sigma2 given sample mean and sum of squares
-		th		<- seq(prior.l,prior.u,length.out=1e3)
+		rho		<- seq(prior.l,prior.u,length.out=1e3)
 		shape	<- (xn-2)/2	 
 		scale	<- xsig2*xn*xn/(xn-1)/2
-		y		<- densigamma(th, shape, scale)
-		#mean	<- sum(th*y)/sum(y)
-		#print(c( sum((th-mean)*(th-mean)*y)/sum(y), beta*beta/((alpha-1)*(alpha-1)*(alpha-2))))
+		y		<- densigamma(rho, shape, scale)
+		#mean	<- sum(rho*y)/sum(y)
+		#print(c( sum((rho-mean)*(rho-mean)*y)/sum(y), beta*beta/((alpha-1)*(alpha-1)*(alpha-2))))
 		var.Sx	<- scale*scale/((shape-1)*(shape-1)*(shape-2))
 		mo.Sx	<- scale/(shape+1)
-		print(c(mo.Sx,var.Sx))
+		print(c(mo.Sx,xsig2.mle,var.Sx))
 		
 		#abc summary likelihood of sigma2 that peaks at rho.star and tau.u sth max.pw is 0.9
-		tmp		<- nabc.chisqstretch.tau.lowup(0.9, 2.5, dfy, alpha)
+		tmp		<- nabc.chisqstretch.tau.lowup(0.9, 2.5, dfy, alpha, for.mle=1)
 		tau.l	<- tmp[1]
 		tau.u	<- tmp[2]
+		c.l		<- tmp[5]
+		c.u		<- tmp[6]
 		print(tmp)
-		tmp		<- .Call("abcScaledChiSq",	c(dfy,tau.l,tau.u,alpha,1e-10,100,0.05)	)
-		y2		<- nabc.chisqstretch.pow(th, dfy, tmp[1], tmp[2])
+		y2		<- nabc.chisqstretch.pow(rho, yn, dfy, c.l, c.u)
 		
-		#abc summary likelihood of sigma2 that peaks at rho.star and tau.u sth max.pw is 0.4
-		tmp		<- nabc.chisqstretch.tau.lowup(0.05, 2.5, dfy, alpha)
+		#abc summary likelihood of sigma2 that peaks at rho.star and tau.u sth max.pw is 0.05
+		tmp		<- nabc.chisqstretch.tau.lowup(0.05, 2.5, dfy, alpha, for.mle=1)
 		tau.l	<- tmp[1]
 		tau.u	<- tmp[2]
+		c.l		<- tmp[5]
+		c.u		<- tmp[6]
 		print(tmp)
-		tmp		<- .Call("abcScaledChiSq",	c(dfy,tau.l,tau.u,alpha,1e-10,100,0.05)	)
-		y3		<- nabc.chisqstretch.pow(th, dfy, tmp[1], tmp[2])
+		y3		<- nabc.chisqstretch.pow(rho, yn, dfy, c.l, c.u)
 		
 		
 		#abc summary likelihood of sigma2 that peaks at rho.star and tau.u sth max.pw is 0.9 and with matching variance
-		tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.Sx), 0.9, alpha, tau.u.ub=tau.u)
+		tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.Sx), 0.9, alpha, tau.u.ub=tau.u, for.mle=1)
 		print(tmp)
 		yn		<- tmp[1]
 		tau.l	<- tmp[2]
 		tau.u	<- tmp[3]
 		c.l		<- tmp[4]
 		c.u		<- tmp[5]
-		y4		<- nabc.chisqstretch.pow(th, yn-1, c.l, c.u)
+		y4		<- nabc.chisqstretch.pow(rho, yn, yn-1, c.l, c.u)
 		#print(y3); print(sum(y3))
 	
-	
-		plot(th,y/mean(y),ylim=range(c(y/mean(y),y2/mean(y2),y3/mean(y3),y4/mean(y4))),type='l')
+		f.name<- paste(dir.name,"/nABC.Chisq_summarylkl.pdf",sep='')	
+		cat(paste("\nwrite to",f.name))
+		#pdf(f.name,version="1.4",width=4,height=6)				
+		par(mar=c(4,4.25,.5,.5))
+		th		<- rho*xsig2.mle
+		plot(rho,y/mean(y),ylim=range(c(y/mean(y),y2/mean(y2),y3/mean(y3),y4/mean(y4))),type='l',xlab=expression(sigma^2),ylab="density")
 		lines(th,y2/mean(y2),col="blue")
-		lines(th,y3/mean(y3),col="blue",lty=2)
+		#lines(th,y3/mean(y3),col="blue",lty=2)
 		lines(th,y4/mean(y4),col="red")
-		abline(v=scale/(shape+1),lty=3)
+		abline(v=mo.Sx,lty=3)
 		abline(v=1,lty=3,col="red")
 		#x2<- x[which(y2!=0)]
 		#y2<- y2[which(y2!=0)]
 		#y2<- y2/sum(diff(x2)*y2[-1])
-		
+		#dev.off()
 	}
 	if(!is.na(subprog) && subprog==2)		#check large n
 	{
@@ -2477,7 +2485,7 @@ project.nABC.StretchedChi2<- function()
 							#determine tolerances for tau.u=2.2
 							yn<- f.name.yn$x[j]							
 							tau.l<- nabc.chisqstretch.tau.low(tau.u, yn-1, alpha)
-							rej<- .Call("abcScaledChiSq",	c(yn-1,tau.l,tau.u,alpha,1e-10,100,0.05)	)
+							rej<- .Call("abcScaledChiSq",	c(yn-1,yn-1,tau.l,tau.u,alpha,1e-10,100,0.05)	)
 							ans.ok[["cil"]]<- rej[1]
 							ans.ok[["cir"]]<- rej[2]
 							acc.ok<- which( ans.ok[["data"]]["error",]<=ans.ok[["cir"]]  &  ans.ok[["data"]]["error",]>=ans.ok[["cil"]] )
@@ -2486,7 +2494,7 @@ project.nABC.StretchedChi2<- function()
 							#determine tolerances sth TOST power is 0.95
 							tmp<- nabc.chisqstretch.tau.lowup(mx.pw, 2.5, yn-1, alpha)
 							#print(tmp)
-							rej<- .Call("abcScaledChiSq",	c(yn-1,tmp[1],tmp[2],alpha,1e-10,100,0.05)	)
+							rej<- .Call("abcScaledChiSq",	c(yn-1,yn-1,tmp[1],tmp[2],alpha,1e-10,100,0.05)	)
 							ans.pw<- ans.ok
 							ans.pw[["cil"]]<- rej[1]
 							ans.pw[["cir"]]<- rej[2]
@@ -2746,6 +2754,63 @@ project.nABC.StretchedChi2<- function()
 			stop()
 		}
 	}
+	if(!is.na(subprog) && subprog==7)		#check MLE
+	{
+		m<- 1
+		
+		if(exists("argv"))
+		{
+			tmp<- na.omit(sapply(argv,function(arg)
+							{	switch(substr(arg,2,2),
+										m= return(as.numeric(substr(arg,3,nchar(arg)))),NA)	}))
+			if(length(tmp)>0) m<- tmp[1]
+		}
+		 
+		for.mle	<- 1
+		xn		<- yn<- 60
+		df		<- yn-1
+		alpha	<- 0.01		
+		tau.u	<- 2.2 		
+		tau.l	<- nabc.chisqstretch.tau.low(tau.u, df, alpha, for.mle=for.mle)
+		tau.h	<- 0.65
+
+		ymu<- xmu<- 0
+		xsigma2<- 1
+		prior.u<- 4
+		prior.l<- 0.2
+		N<- 1e6
+		
+		resume<- 1
+		if(!is.na(m))
+		{		
+			f.name<- paste(dir.name,"/nABC.Chisq_mle_naive_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+			cat(paste("\nnABC.Chisq: compute ",f.name))
+			options(show.error.messages = FALSE, warn=1)		
+			readAttempt<-try(suppressWarnings(load(f.name)))						
+			options(show.error.messages = TRUE)						
+			if(!resume || inherits(readAttempt, "try-error"))
+			{
+				x<- rnorm(xn,xmu,sd=sqrt(xsigma2))							
+				f.name<- paste(dir.name,"/nABC.Chisq_mle_ok_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+				ans.ok<- project.nABC.StretchedChi2.fix.x.uprior.ysig2(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu, for.mle=for.mle)
+				cat(paste("\nnABC.Chisq: save ",f.name))
+				save(ans.ok,file=f.name)
+				ans.ok<- NULL				
+				ans.naive<- project.nABC.StretchedChi2.fix.x.uprior.ysig2(N,xsigma2-tau.h,xsigma2+tau.h,prior.l,prior.u,alpha,x,yn,ymu, for.mle=for.mle)
+				f.name<- paste(dir.name,"/nABC.Chisq_mle_naive_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+				cat(paste("\nnABC.Chisq: save ",f.name))
+				save(ans.naive,file=f.name)
+				#ans.wprior<- project.nABC.StretchedChi2.fix.x.stdprior.ysig2(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu)
+				#f.name<- paste(dir.name,"/nABC.Chisq_wprior_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+				#cat(paste("\nnABC.Chisq: save ",f.name))
+				#save(ans.wprior,file=f.name)
+#bookmark7
+			}
+			else
+				cat(paste("\nnABC.MA: resumed ",f.name))
+		}	
+		stop()
+	}	
 	if(!is.na(subprog) && subprog==1)		#check unbiasedness
 	{
 		m<- NA
@@ -2923,9 +2988,7 @@ project.nABC.StretchedChi2<- function()
 					})
 			legend("topright",bty='n',border=NA,fill=c("transparent","transparent",cols[1],"transparent",cols[2],"transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,ltys[2],NA,NA,ltys[3]),legend=expression("n=60","","calibrated","tolerances","naive","tolerances","",hat(nu)[x]))
 			dev.off()						
-		}
-			
-		
+		}	
 	}
 	if(!is.na(subprog) && subprog==3)		#illustrate power of scaled ChiSquare
 	{
@@ -2938,8 +3001,8 @@ project.nABC.StretchedChi2<- function()
 		tau.up<- 1.09
 		yn<- 5e3
 		tau.low<- nabc.chisqstretch.tau.low(tau.up, yn-1, alpha)
-		rej<- .Call("abcScaledChiSq",	c(yn-1,tau.low,tau.up,alpha,1e-10,100,0.05)	)
-		plot(seq(tau.low,tau.up,by=0.001),nabc.chisqstretch.pow(seq(tau.low,tau.up,by=0.001),yn-1,rej[1],rej[2]),type='l')
+		rej<- .Call("abcScaledChiSq",	c(yn-1,yn-1,tau.low,tau.up,alpha,1e-10,100,0.05)	)
+		plot(seq(tau.low,tau.up,by=0.001),nabc.chisqstretch.pow(seq(tau.low,tau.up,by=0.001),yn-1,yn-1,rej[1],rej[2]),type='l')
 		stop()
 		
 		#plot height of power
@@ -2947,16 +3010,16 @@ project.nABC.StretchedChi2<- function()
 		tau.low<- sapply(yns, function(x)	nabc.chisqstretch.tau.low(tau.up, x-1, alpha)	)
 		pw<- lapply(seq_along(yns),function(i)
 				{
-					rej<- .Call("abcScaledChiSq",	c(yns[i]-1,tau.low[i],tau.up,alpha,1e-10,100,0.05)	)
-					nabc.chisqstretch.pow(seq(tau.low[i],tau.up,by=0.001),yns[i]-1,rej[1],rej[2])					
+					rej<- .Call("abcScaledChiSq",	c(yns[i]-1,yns[i]-1,tau.low[i],tau.up,alpha,1e-10,100,0.05)	)
+					nabc.chisqstretch.pow(seq(tau.low[i],tau.up,by=0.001),yns[i]-1,yns[i]-1,rej[1],rej[2])					
 				})	
 		yn<- 60
 		tau.ups<- c(1.5,1.7,2,3)
 		tau.low2<- sapply(tau.ups, function(x)	nabc.chisqstretch.tau.low(x, yn-1, alpha)	)
 		pw2<- lapply(seq_along(tau.ups),function(i)
 				{
-					rej<- .Call("abcScaledChiSq",	c(yn-1,tau.low2[i],tau.ups[i],alpha,1e-10,100,0.05)	)
-					nabc.chisqstretch.pow(seq(tau.low2[i],tau.ups[i],by=0.001),yn-1,rej[1],rej[2])					
+					rej<- .Call("abcScaledChiSq",	c(yn-1,yn-1,tau.low2[i],tau.ups[i],alpha,1e-10,100,0.05)	)
+					nabc.chisqstretch.pow(seq(tau.low2[i],tau.ups[i],by=0.001),yn-1,yn-1,rej[1],rej[2])					
 				})	
 				
 		#xlim<- range(c(tau.low,tau.up,tau.ups))
@@ -2990,24 +3053,24 @@ project.nABC.StretchedChi2<- function()
 		df<- yn-1
 		tau.low<- nabc.chisqstretch.tau.low(tau.up, df, alpha)
 		#plot location of power
-		rej<- .Call("abcScaledChiSq",	c(df,tau.low,tau.up,alpha,1e-10,100,0.05)	)						
+		rej<- .Call("abcScaledChiSq",	c(df,df,tau.low,tau.up,alpha,1e-10,100,0.05)	)						
 		rho<- seq(tau.low,tau.up,by=0.001)
-		pw<- nabc.chisqstretch.pow(rho,df,rej[1],rej[2])
+		pw<- nabc.chisqstretch.pow(rho,df,df,rej[1],rej[2])
 		if(verbose)	cat(paste("\ncase: rho.max at 1\ntau.low is",tau.low,"\ttau.up is",tau.up,"\tcl is",rej[1],"\tcu is",rej[2]))
 		if(verbose)	cat(paste("\nrho.max is",rho[ which.max(pw) ],"\tpow.max is",pw[ which.max(pw) ]))
 				
 		pw.f<- project.nABC.StretchedF.pow.sym(rho, df, rej[2], cl= rej[1])
 		
-		rej<- .Call("abcScaledChiSq",	c(df,1/tau.up,tau.up,alpha,1e-10,100,0.05)	)
+		rej<- .Call("abcScaledChiSq",	c(df,df,1/tau.up,tau.up,alpha,1e-10,100,0.05)	)
 		rho.sym<- seq(1/tau.up,tau.up,by=0.001)		
-		pw.sym<- nabc.chisqstretch.pow(rho.sym,df,rej[1],rej[2])
+		pw.sym<- nabc.chisqstretch.pow(rho.sym,df,df,rej[1],rej[2])
 		if(verbose)	cat(paste("\n\n\ncase: tau.low=1/tau.up\ntau.low is",1/tau.up,"\ttau.up is",tau.up,"\tcl is",rej[1],"\tcu is",rej[2]))
 		if(verbose)	cat(paste("\nrho.max is",rho.sym[ which.max(pw.sym) ],"\tpow.max is",pw.sym[ which.max(pw.sym) ]))
 		
 		h<- 0.65	#diff(c(tau.low,tau.up))/2
-		rej<- .Call("abcScaledChiSq",	c(df,1-h,1+h,alpha,1e-10,100,0.05)	)
+		rej<- .Call("abcScaledChiSq",	c(df,df,1-h,1+h,alpha,1e-10,100,0.05)	)
 		rho.diff<- seq(1-h,1+h,by=0.001)		
-		pw.diff<- nabc.chisqstretch.pow(rho.diff,df,rej[1],rej[2])
+		pw.diff<- nabc.chisqstretch.pow(rho.diff,df,df,rej[1],rej[2])
 		if(verbose)	cat(paste("\n\n\ncase: +-h\ntau.low is",1-h,"\ttau.up is",1+h,"\tcl is",rej[1],"\tcu is",rej[2]))
 		if(verbose)	cat(paste("\nrho.max is",rho.diff[ which.max(pw.diff) ],"\tpow.max is",pw.diff[ which.max(pw.diff) ]))
 		
@@ -3048,7 +3111,7 @@ project.nABC.StretchedChi2<- function()
 		tau.low<- nabc.chisqstretch.tau.low(tau.up, df, alpha) 		
 		verbose<- 1
 		
-		rej<- .Call("abcScaledChiSq",	c(df,tau.low,tau.up,alpha,1e-10,100,0.05)	)
+		rej<- .Call("abcScaledChiSq",	c(df,df,tau.low,tau.up,alpha,1e-10,100,0.05)	)
 		#print(rej)
 		
 		cols<- c("gray60","gray80","black","black","black")
@@ -4469,7 +4532,7 @@ stop()
 							#determine tolerances sth TOST power is 0.95
 							tmp<- nabc.chisqstretch.tau.lowup(mx.pw, 2.5, yn-1, alpha)
 							#print(tmp)
-							rej<- .Call("abcScaledChiSq",	c(yn-1,tmp[1],tmp[2],alpha,1e-10,100,0.05)	)
+							rej<- .Call("abcScaledChiSq",	c(yn-1,yn-1,tmp[1],tmp[2],alpha,1e-10,100,0.05)	)
 							ans.pw<- ans.ok
 							ans.pw[["cil"]]<- rej[1]
 							ans.pw[["cir"]]<- rej[2]
