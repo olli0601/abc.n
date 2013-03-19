@@ -29,7 +29,9 @@ if(any(args=='--args'))
 	args<- args[-(1:match("--args", args)) ]
 
 CODE.HOME	<<- "/Users/Oliver/git/abc.n/pkg"
+#CODE.HOME	<<- "/work/or105/libs/abc.n/pkg"
 HOME		<<- "/Users/Oliver/workspace_sandbox/phylody"
+#HOME		<<- "/work/or105/phylody"
 DATA		<<- paste(HOME,"data",sep='/')
 NABC.DEBUG	<<- 0
 LIB.LOC		<<- NULL
@@ -49,7 +51,7 @@ default.fun	<- "project.nABC.StretchedChi2"
 #cat(paste("is.loaded('tipcr')->",is.loaded("tipc_tabulate_after_sample"),'\n'))
 ###############################################################################
 function.list<-c(list.files(path= paste(CODE.HOME,"R",sep='/'), pattern = ".R$", all.files = FALSE,
-		full.names = TRUE, recursive = FALSE),paste(getwd(),"misc","nabc.prjcts.R",sep='/'))
+		full.names = TRUE, recursive = FALSE),paste(CODE.HOME,"misc","nabc.prjcts.R",sep='/'))
 sapply(function.list,function(x) source(x,echo=FALSE,print.eval=FALSE, verbose=FALSE))
 ###############################################################################
 my.mkdir<-function(root,data.name)
@@ -57,11 +59,16 @@ my.mkdir<-function(root,data.name)
 	if(length(dir(root,pattern=paste('^',data.name,'$',sep='')))==0)
 		system(paste("mkdir ",paste(root,data.name,sep='/'),sep=''))
 }
-###############################################################################
+
 my.make.documentation<- function()
 {
 	require(roxygen2)		
 	roxygenize(CODE.HOME)
+}
+
+my.fade.col<-function(col,alpha=0.5)
+{
+	return(rgb(col2rgb(col)[1]/255,col2rgb(col)[2]/255,col2rgb(col)[3]/255,alpha))
 }
 ###############################################################################
 my.mkdir(HOME,"data")
@@ -92,11 +99,12 @@ if(length(args))
 								debug= 1,
 								NA)
 					}))		
-	if(length(tmp)!=0)	NABC.DEBUG<<- tmp[1]										
+	if(length(tmp)!=0)	NABC.DEBUG<<- tmp[1]	
+	argv<<- args
 }
 ###############################################################################
 if(NABC.DEBUG)	options(error= my.dumpframes)	
 require(abc.n)
 cat(paste("\nabc-n.startme.R: ",ifelse(NABC.DEBUG,"debug",""),"call",default.fun))
-do.call(default.fun,argv) 	
+do.call(default.fun,list()) 	
 cat("\nabc-n: ",ifelse(NABC.DEBUG,"debug","")," end\n")

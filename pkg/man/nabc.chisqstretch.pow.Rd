@@ -2,11 +2,14 @@
 \alias{nabc.chisqstretch.pow}
 \title{Compute power of the exact equivalence test for dispersion}
 \usage{
-  nabc.chisqstretch.pow(rho, df, cl, cu)
+  nabc.chisqstretch.pow(rho, scale, df, cl, cu)
 }
 \arguments{
   \item{rho}{true ratio in simulated variance / observed
   variance}
+
+  \item{scale}{scaling of T apart from rho, either n-1 for
+  unbiased ABC or n for exact MAP}
 
   \item{df}{degrees of freedom}
 
@@ -26,8 +29,8 @@ alpha<- 0.01
 	tau.up<- 1.09
 	yn<- 5e3
 	tau.low<- nabc.chisqstretch.tau.low(tau.up, yn-1, alpha)
-	rej<- .Call("abcScaledChiSq",	c(yn-1,tau.low,tau.up,alpha,1e-10,100,0.05)	)
+	rej<- .Call("abcScaledChiSq",	c(yn-1,yn-1,tau.low,tau.up,alpha,1e-10,100,0.05)	)
 	rho<- seq(tau.low,tau.up,by=0.001)
-	nabc.chisqstretch.pow(rho,yn-1,rej[1],rej[2])
+	nabc.chisqstretch.pow(rho,yn-1,yn-1,rej[1],rej[2])
 }
 

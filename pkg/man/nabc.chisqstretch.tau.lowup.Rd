@@ -3,7 +3,7 @@
 \title{Calibrate the equivalence region for the test of dispersion equivalence for given maximum power}
 \usage{
   nabc.chisqstretch.tau.lowup(mx.pw, tau.up.ub, df, alpha,
-    rho.star = 1, tol = 1e-05, max.it = 100)
+    rho.star = 1, tol = 1e-05, max.it = 100, for.mle = 0)
 }
 \arguments{
   \item{mx.pw}{maximum power at the point of reference
@@ -25,13 +25,17 @@
   \item{max.it}{this algorithm stops prematurely when the
   number of iterations to find the equivalence region
   exceeds 'max.it'}
+
+  \item{for.mle}{calibrate so that the mode of the power is
+  at the MLE}
 }
 \value{
-  vector of length 4 \item{1}{lower tolerance of the
+  vector of length 6 \item{1}{lower tolerance of the
   equivalence region} \item{2}{upper tolerance of the
   equivalence region} \item{3}{actual maximum power
   associated with the equivalence region} \item{4}{error ie
-  abs(actual power - mx.pw)}
+  abs(actual power - mx.pw)} \item{5}{lower point of
+  critical region} \item{6}{upper point of critical region}
 }
 \description{
   Calibrate the equivalence region for the test of

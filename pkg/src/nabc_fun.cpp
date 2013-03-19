@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cmath>
 #include <Rmath.h>
 #include "nabc_error_handling.h"
@@ -26,7 +27,7 @@ SEXP abcScaledChiSq(SEXP args)
 	tuisc= tu/scale;
 	scitu= scale/tu;
 	scitl= scale/tl;
-//std::cout<<"abcScaledChiSq input:\ndf\t"<<df<<"\ntl\t"<<tl<<"\ntu\t"<<tu<<"\nalpha\t"<<alpha<<"\ntol\t"<<tol<<"\nmaxit\t"<<maxit<<"\nincit\t"<<incit<<std::endl;
+//std::cout<<"abcScaledChiSq input:\nscale\t"<<scale<<"\ndf\t"<<df<<"\ntl\t"<<tl<<"\ntu\t"<<tu<<"\nalpha\t"<<alpha<<"\ntol\t"<<tol<<"\nmaxit\t"<<maxit<<"\nincit\t"<<incit<<std::endl;
 
 	//determine [c1l,c2] such that p(R|tl)>alpha --> then, [c1l,c1l+incit] contains the true c1.
 	//start with [c1,c2] sth p(R|tl)<alpha:		c1l= std::sqrt( tl*tu )		and substract first increment
@@ -50,8 +51,9 @@ SEXP abcScaledChiSq(SEXP args)
 			c1r= c1;	//if interval too much on the right, then update C1R
 		else
 			c1l= c1;	//if interval too much on the left, then update C1L
-	}
 //std::cout<<c1<<'\t'<<c2<<'\t'<<c1r<<'\t'<<c1l<<'\t'<<ABSDIFF(level,alpha)<<'\t'<<tol<<std::endl;	std::cout<<"OK2"<<std::endl;
+	}
+
 	//output
 	PROTECT(ans=  allocVector(REALSXP,5));
 	xans= REAL(ans);

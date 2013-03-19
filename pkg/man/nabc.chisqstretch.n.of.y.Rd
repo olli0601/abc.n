@@ -3,7 +3,7 @@
 \title{Calibrate the number of simulated summary values and the equivalence region for the test of dispersion equivalence}
 \usage{
   nabc.chisqstretch.n.of.y(n.of.x, s.of.Sx, mx.pw, alpha,
-    tau.u.ub = 2, tol = 1e-05, max.it = 100)
+    tau.u.ub = 2, tol = 1e-05, max.it = 100, for.mle = 0)
 }
 \arguments{
   \item{n.of.x}{number of observed summary values}
@@ -26,6 +26,9 @@
   \item{max.it}{this algorithm stops prematurely when the
   number of iterations to calibrate the number of simulated
   data points exceeds 'max.it'}
+
+  \item{for.mle}{calibrate so that the mode of the power is
+  at the MLE}
 }
 \value{
   vector of length 8 \item{1}{number of simulated summary
@@ -57,7 +60,7 @@ xn<- 60; alpha	<- 0.01; prior.u	<- 3; prior.l	<- 1/3; tau.u<- 2.5; xsig2	<- 1
 	tau.u	<- tmp[3]
 	c.l		<- tmp[4]
 	c.u		<- tmp[5]
-	y2		<- nabc.chisqstretch.pow(th, yn-1, c.l, c.u)
+	y2		<- nabc.chisqstretch.pow(th, yn-1, yn-1, c.l, c.u)
 #plot the summary likelihood and the abc approximation
 plot(th,y/mean(y),ylim=range(c(y/mean(y),y2/mean(y2))),type='l')
 lines(th,y2/mean(y2),col="blue")

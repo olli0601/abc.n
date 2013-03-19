@@ -44,6 +44,6 @@ tau.u<- 0.09
 	tau.l<- -tau.u
 	sim.n<-	5e3
 	leave.out<- 2
-	nabc.chisqstretch.tau.lowup(0.9, 2, floor(sim.n / (1+leave.out)), 0.01)
+	nabc.acf.equivalence.tau.lowup(0.9, 2, floor(sim.n / (1+leave.out)), 0.01)
 }
 

@@ -3,7 +3,7 @@
 \title{Calibrate the lower tolerance interval of the equivalence region for the test of dispersion equivalence}
 \usage{
   nabc.chisqstretch.tau.low(tau.up, df, alpha,
-    rho.star = 1, tol = 1e-05, max.it = 100)
+    rho.star = 1, tol = 1e-05, max.it = 100, for.mle = 0)
 }
 \arguments{
   \item{tau.up}{upper tolerance of the equivalence region}
@@ -21,6 +21,9 @@
   \item{max.it}{this algorithm stops prematurely when the
   number of iterations to find the equivalence region
   exceeds 'max.it'}
+
+  \item{for.mle}{calibrate so that the mode of the power is
+  at the MLE}
 }
 \value{
   tau.low, lower tolerance of the equivalence region

@@ -80,17 +80,17 @@ project.nABC.pval<- function()
 			print(length(acc) / ncol(ans))
 			#'al' prints the point null t statistic of accepted samples against the t density. clearly, these T are more broadly distributed, which explains the U shape
 			#hist( ans["al",acc], freq=0 ); t<- seq(-6,6,0.01); lines(t, dt(t,103))
-			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), ifelse(i==1,0,1), col=myFadeCol("red", fade))
+			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), ifelse(i==1,0,1), col=my.fade.col("red", fade))
 
 			ans<- project.nABC.pval.simtostu(N,x.n,x.mu,x.sigma,shift[2],tau[2],tau[2],alpha=alpha,resample=1)
 			acc<- which(ans["error",]<=ans["cir",])
 			print(length(acc) / ncol(ans))
-			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=myFadeCol("green", fade))
+			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=my.fade.col("green", fade))
 
 			ans<- project.nABC.pval.simtostu(N,x.n,x.mu,x.sigma,shift[3],tau[3],tau[3],alpha=alpha,resample=1)
 			acc<- which(ans["error",]<=ans["cir",])
 			print(length(acc) / ncol(ans))
-			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=myFadeCol("blue", fade))
+			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=my.fade.col("blue", fade))
 
 			if(i==40)
 			{
@@ -117,17 +117,17 @@ project.nABC.pval<- function()
 			print(length(acc) / ncol(ans))
 			#'al' prints the point null t statistic of accepted samples against the t density. clearly, these T are more broadly distributed, which explains the U shape
 			#hist( ans["al",acc], freq=0 ); t<- seq(-6,6,0.01); lines(t, dt(t,103))
-			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), ifelse(i==1,0,1), col=myFadeCol("red", fade))
+			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), ifelse(i==1,0,1), col=my.fade.col("red", fade))
 
 			ans<- project.nABC.pval.simtostu(N,x.n,x.mu,x.sigma,0,tau[2],tau[2],alpha=alpha,resample=1)
 			acc<- which(ans["error",]<=ans["cir",])
 			print(length(acc) / ncol(ans))
-			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=myFadeCol("green", fade))
+			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=my.fade.col("green", fade))
 
 			ans<- project.nABC.pval.simtostu(N,x.n,x.mu,x.sigma,0,tau[3],tau[3],alpha=alpha,resample=1)
 			acc<- which(ans["error",]<=ans["cir",])
 			print(length(acc) / ncol(ans))
-			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=myFadeCol("blue", fade))
+			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=my.fade.col("blue", fade))
 
 			if(i==40)
 			{
@@ -148,20 +148,20 @@ project.nABC.pval<- function()
 			ans<- project.nABC.pval.simtost(N,x.n,x.mu,x.sigma,shift,shift+0.6,resample=1)
 			acc<- which(ans["error",]<=ans["cir",])
 			print(length(acc))
-			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), ifelse(i==1,0,1), col=myFadeCol("red", fade))
+			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), ifelse(i==1,0,1), col=my.fade.col("red", fade))
 
 			shift<- 0.5
 			ans<- project.nABC.pval.simtost(N,x.n,x.mu,x.sigma,shift,shift+0.6,resample=1)
 			acc<- which(ans["error",]<=ans["cir",])
 			print(length(acc))
-			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=myFadeCol("green", fade))
+			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=my.fade.col("green", fade))
 
 
 			shift<- 1
 			ans<- project.nABC.pval.simtost(N,x.n,x.mu,x.sigma,shift,shift+0.6,resample=1)
 			acc<- which(ans["error",]<=ans["cir",])
 			print(length(acc))
-			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=myFadeCol("blue", fade))
+			project.nABC.pval.qq((ans["pval",acc]-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=my.fade.col("blue", fade))
 
 			if(i==40)
 			{
@@ -184,8 +184,8 @@ project.nABC.pval<- function()
 			#qq plot on all and accepted
 			#project.nABC.pval.qq(ans["pval",], ifelse(i==1,0,1))
 			y<- ans["pval",acc]
-			project.nABC.pval.qq(y, ifelse(i==1,0,1), col=myFadeCol("blue", fade))
-			project.nABC.pval.qq((y-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=myFadeCol("red", fade))
+			project.nABC.pval.qq(y, ifelse(i==1,0,1), col=my.fade.col("blue", fade))
+			project.nABC.pval.qq((y-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=my.fade.col("red", fade))
 			if(i==40)
 			{
 				abline(a=0,b=1, lty= 2)
@@ -211,8 +211,8 @@ project.nABC.pval<- function()
 			#qq plot on all and accepted
 			#project.nABC.pval.qq(ans["pval",], ifelse(i==1,0,1))
 			y<- ans["pval",acc]
-			project.nABC.pval.qq(y, ifelse(i==1,0,1), col=myFadeCol("blue", fade))
-			project.nABC.pval.qq((y-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=myFadeCol("red", fade))
+			project.nABC.pval.qq(y, ifelse(i==1,0,1), col=my.fade.col("blue", fade))
+			project.nABC.pval.qq((y-ans["ar",acc]/2) / (1-ans["ar",acc]), 1, col=my.fade.col("red", fade))
 			if(i==40)
 			{
 				abline(a=0,b=1, lty= 2)
@@ -236,18 +236,18 @@ project.nABC.pval<- function()
 						z<- rnorm(x.n, x.mu, x.sigma)
 						t.test(z,y)$p.value
 					})
-			project.nABC.pval.qq(p,  ifelse(i==1,0,1), col=myFadeCol("red", fade))
+			project.nABC.pval.qq(p,  ifelse(i==1,0,1), col=my.fade.col("red", fade))
 			p<- sapply(seq_len(N),function(i){
 						y<- rnorm(x.n, x.mu+shift, x.sigma)
 						t.test(x,y)$p.value
 					})
-			project.nABC.pval.qq(p,  1, col=myFadeCol("blue", fade))
+			project.nABC.pval.qq(p,  1, col=my.fade.col("blue", fade))
 			p<- sapply(seq_len(N),function(i){
 						y<- rnorm(x.n, x.mu+shift, x.sigma)
 						z<- sample(x,x.n,replace=1)
 						t.test(z,y)$p.value
 					})
-			project.nABC.pval.qq(p,  1, col=myFadeCol("green", fade))
+			project.nABC.pval.qq(p,  1, col=my.fade.col("green", fade))
 
 			if(i==40)
 			{
@@ -593,7 +593,7 @@ project.nABC.changeofvariables<- function()
 				#estimate mode of 'a' for power centering on rho0
 				a<- project.nABC.movingavg.rho2a( rho )
 				a.h<- project.nABC.movingavg.gethist(a, a0, nbreaks= 100)
-				if(verbose) plot(a.h, col=myFadeCol("black",0.3),border=NA)
+				if(verbose) plot(a.h, col=my.fade.col("black",0.3),border=NA)
 				if(verbose) abline(v=a0,lty=2)
 				if(verbose) cat(paste("\ndmode of a",a.h[["dmode"]]))				
 				
@@ -888,7 +888,7 @@ project.nABC.movingavg<- function()
 			cat(paste("\n mean mode of a",mean(modes["ya.dmode.sdacf",])))
 			cat(paste("\n mean mode of sig2",mean(modes["yv.dmode.sdacf",])))					
 			cat(paste("\n mean mode-(ax,sig2x)",mean(err)))
-			
+#bookmark_tableMA			
 			stop()
 			require(ash)
 			xlim<- c(-0.1,0.2)
@@ -905,7 +905,7 @@ project.nABC.movingavg<- function()
 			#cat(paste("\nnABC.MA: write pdf to",f.name))
 			pdf(f.name,version="1.4",width=pdf.width,height=pdf.height)			
 			par(mar=c(4.25,4.25,1,1))
-			cols<- c(myFadeCol("black",1),myFadeCol("black",0.2),myFadeCol("black",0.6))
+			cols<- c(my.fade.col("black",1),my.fade.col("black",0.2),my.fade.col("black",0.6))
 			ltys<- c(2,3,4)
 			#plot(1,1,type='n',bty='n',xlim=xlim,ylim=ylim,xlab=expression("estimated mode of "*a),ylab=expression("estimated mode of "*sigma^2))
 			#points(modes["xa",],modes["xv",],col=cols[1],pch=22)
@@ -1155,7 +1155,7 @@ stop()
 		detjac.fxpow.p	<- detjac.fxpow["pow",]
 		detjac.fxpow.l	<- detjac.fxpow["lhatpow",]
 		
-		cols		<- c(myFadeCol("black",0.6),myFadeCol("black",0.2))
+		cols		<- c(my.fade.col("black",0.6),my.fade.col("black",0.2))
 		ltys		<- c(1,1,4)
 		
 		if(0)
@@ -1340,8 +1340,8 @@ stop()
 			par(mar=c(4,4.25,.5,.5))
 			plot(1,1,type='n',xlim=range(c(r.ftau.h[["breaks"]],r.facc.h[["breaks"]])),ylim=range(c(r.ftau.h[["density"]],r.facc.h[["density"]])),xlab=expression(rho[2]),ylab="density")
 			cols<- c("gray60","gray30")
-			plot(r.ftau.h,freq=0,add=1,col=myFadeCol(cols[1],0.8),border=myFadeCol(cols[1],0.8))
-			plot(r.facc.h,freq=0,add=1,col=myFadeCol(cols[2],0.8),border=myFadeCol(cols[2],0.8))
+			plot(r.ftau.h,freq=0,add=1,col=my.fade.col(cols[1],0.8),border=my.fade.col(cols[1],0.8))
+			plot(r.facc.h,freq=0,add=1,col=my.fade.col(cols[2],0.8),border=my.fade.col(cols[2],0.8))
 			abline(v=r.ftau.m,lty=2,col=cols[1])
 			abline(v=r.facc.m,lty=2)
 			legend("topright",bty='n',legend=c(expression("decreasing "*tau),expression("constant "*tau)),fill=c(cols[2],cols[1]),border=NA)
@@ -1352,8 +1352,8 @@ stop()
 			par(mar=c(4,3.85,0.2,0.2))
 			plot(1,1,type='n',xlim=range(c(a.ftau.h[["breaks"]],a.facc.h[["breaks"]])),ylim=range(c(a.ftau.h[["density"]],a.facc.h[["density"]])),xlab="a",ylab="density")
 			cols<- c("gray60","gray30")
-			plot(a.ftau.h,freq=0,add=1,col=myFadeCol(cols[1],0.8),border=myFadeCol(cols[1],0.8))
-			plot(a.facc.h,freq=0,add=1,col=myFadeCol(cols[2],0.8),border=myFadeCol(cols[2],0.8))
+			plot(a.ftau.h,freq=0,add=1,col=my.fade.col(cols[1],0.8),border=my.fade.col(cols[1],0.8))
+			plot(a.facc.h,freq=0,add=1,col=my.fade.col(cols[2],0.8),border=my.fade.col(cols[2],0.8))
 			abline(v=a.ftau.m,lty=2,col=cols[1])
 			abline(v=a.facc.m,lty=2)
 			legend("topright",bty='n',legend=c(expression("decreasing "*tau),expression("constant "*tau)),fill=c(cols[2],cols[1]),border=NA)
@@ -1493,7 +1493,7 @@ stop()
 		plot(ans.ylink, main=N)
 		abline(v=(1+xma.pa*xma.pa)*xsig2, col="red")	
 		#stop()
-		
+#bookmark_linkMA		
 
 		#reconstruct the link function with local linear regression
 		f.name<- paste(dir.name,"/nABC.MA.test_SDACF_",N,"_",round(xma.tau.u,d=6),"_",xsig2.tau.u,"_",ma.n,"_locfit.pdf",sep='')
@@ -1613,8 +1613,8 @@ stop()
 			#ylim<- range(c(h.ts.lag20$density,h.ts.lag21$density))
 			ylim<- range(c(h.ts.lag20$density,h.ts.lag21$density)); ylim[1]<- 0; ylim[2]<- ylim[2]
 			plot(1,1,type='n',xlim=c(0,1),ylim=ylim,xlab="p-value",ylab="density",main='')		
-			plot(h.ts.lag21,col=myFadeCol(cols[1],0.8),border=myFadeCol(cols[1],0.8),add=TRUE,freq=FALSE)
-			plot(h.ts.lag20,col=myFadeCol(cols[2],0.8),border=myFadeCol(cols[2],0.8),add=TRUE,freq=FALSE)
+			plot(h.ts.lag21,col=my.fade.col(cols[1],0.8),border=my.fade.col(cols[1],0.8),add=TRUE,freq=FALSE)
+			plot(h.ts.lag20,col=my.fade.col(cols[2],0.8),border=my.fade.col(cols[2],0.8),add=TRUE,freq=FALSE)
 			legend(x=0.1,y=ylim[2]*1,fill=c(cols[1],cols[2]),legend=c("thinned time series","unthinned time series"),bty='n',border=NA)
 			dev.off()
 			
@@ -1624,8 +1624,8 @@ stop()
 			ylim<- range(c(h.pf.lag20$density,h.pf.lag21$density)); ylim[1]<- 0; ylim[2]<- ylim[2]*1.3
 			#ylim<- range(c(h.pf.lag20$counts,h.pf.lag21$counts))
 			plot(1,1,type='n',xlim=c(0,1),ylim=ylim,xlab="p-value",ylab="density",main='')		
-			plot(h.pf.lag21,col=myFadeCol(cols[1],0.8),border=myFadeCol(cols[1],0.8),add=TRUE,freq=0)
-			plot(h.pf.lag20,col=myFadeCol(cols[2],0.8),border=myFadeCol(cols[2],0.8),add=TRUE,freq=0)
+			plot(h.pf.lag21,col=my.fade.col(cols[1],0.8),border=my.fade.col(cols[1],0.8),add=TRUE,freq=0)
+			plot(h.pf.lag20,col=my.fade.col(cols[2],0.8),border=my.fade.col(cols[2],0.8),add=TRUE,freq=0)
 			legend(x=0.1,y=ylim[2]*1,fill=c(cols[1],cols[2]),legend=c("thinned time series","unthinned time series"),bty='n',border=NA)
 			dev.off()
 			stop()
@@ -1643,7 +1643,7 @@ stop()
 		tmp<- seq(min(ans["a.ytheta",]),max(ans["a.ytheta",]),0.001)
 		lines(tmp,(1+xma.pa*xma.pa)*xsig2/(1+tmp*tmp),type='l',col="red", lwd=1.5, lty=1)
 		dev.off()
-
+#bookmark_linkMA
 		#plot histogram on rho-space. should have max at z.xma.pa
 		ans.ylink<- project.nABC.movingavg.gethist(ans["v.ylink",acc], (1+xma.pa*xma.pa)*xsig2, nbreaks= nbreaks)		
 		print(ans.ylink)
@@ -1663,7 +1663,7 @@ stop()
 		tmp<- seq(min(out$x),sqrt((1+xma.pa*xma.pa)*xsig2 / min(out$y) - 1)*0.95,0.001)
 		lines(trans3d(x=tmp, y=(1+xma.pa*xma.pa)*xsig2/(1+tmp*tmp), z= (1+xma.pa*xma.pa)*xsig2, pmat = out$pmat), col = "red", lwd=1.5, lty=1)
 		dev.off()
-		#points( trans3d(lnk.df[["mapa"]],lnk.df[["sig2"]],lnk.df[["rhomc"]],pmat=out$pmat), col=myFadeCol("red",0.5), pch=16)		
+		#points( trans3d(lnk.df[["mapa"]],lnk.df[["sig2"]],lnk.df[["rhomc"]],pmat=out$pmat), col=my.fade.col("red",0.5), pch=16)		
 		stop()																	
 	}
 	if(0)	#check mode estimation & link function for tau=0.025 and various ma.n
@@ -1749,7 +1749,7 @@ stop()
 stop()
 		
 		#reconstruct the link function with local linear regression
-		plot(ans["ytheta",acc], ans["link.mc",acc], pch=19, col=myFadeCol("gray80",0.25))
+		plot(ans["ytheta",acc], ans["link.mc",acc], pch=19, col=my.fade.col("gray80",0.25))
 		abline(v=xma.pa,lty=3)
 		abline(h=z.xma.pa,lty=3)		
 		tmp<- seq(min(ans["ytheta",acc]),max(ans["ytheta",acc]),0.001)
@@ -1767,7 +1767,7 @@ stop()
 		xv<- (1+xa*xa)*xsig2 
 		
 		ltys<- c(1,2,4)
-		cols<- c(myFadeCol("black",1),myFadeCol("black",1),myFadeCol("black",0.3))
+		cols<- c(my.fade.col("black",1),my.fade.col("black",1),my.fade.col("black",0.3))
 		a<- seq(-0.5,0.5,0.001)
 		nu2<- project.nABC.movingavg.a2nu(a)
 		rho2<- project.nABC.movingavg.a2rho(a)
@@ -1794,7 +1794,7 @@ stop()
 		lines(a,nu2, lty=ltys[1], col=cols[1])
 		lines(a,rho2, lty=ltys[2], col=cols[2])
 		lines(a,jac, lty=ltys[3], col=cols[3])
-		abline(v=0, col=myFadeCol("black",0.2))
+		abline(v=0, col=my.fade.col("black",0.2))
 		legend("bottomright",bty='n',border=NA,lty=c(ltys[1],ltys[2],ltys[3]),fill=c(cols[1],cols[2],cols[3]),legend= expression(nu[2],rho[2],"|"*partialdiff*"L|"))
 		dev.off()
 	}
@@ -1881,7 +1881,7 @@ project.nABC.compareSEIRS<- function()
 		print(names(simuobs[["data"]][[1]]))
 		#print(simuobs[["data"]][[1]][["TOTAL.ILI"]])
 		
-		COLS<- c(myFadeCol("black",0.5),myFadeCol("black",0.8))
+		COLS<- c(my.fade.col("black",0.5),my.fade.col("black",0.8))
 		
 		
 		#plot H3N2 ILI
@@ -2153,8 +2153,8 @@ project.nABC.compareSEIRS<- function()
 		plot(1,1,type='n',xlim=range(sapply(xs,range)),ylim=range(sapply(seq_along(hxs),function(i) hxs[[i]][["density"]] )),ylab="density",xlab=expression(R[0]))	
 		sapply(seq_along(post),function(i)
 				{			
-					plot(hxs[[i]],add=1,freq=0, border=NA, col=myFadeCol(cols[i],0.5))
-					abline(v=hxs[[i]][["dmode"]],lty=2,col=myFadeCol(cols[i],0.75))				
+					plot(hxs[[i]],add=1,freq=0, border=NA, col=my.fade.col(cols[i],0.5))
+					abline(v=hxs[[i]][["dmode"]],lty=2,col=my.fade.col(cols[i],0.75))				
 				})
 		legend("topright",bty='n',border=NA,fill=c("gray30","gray50","gray70"),legend=c(expression(tau^'+'==0.01),expression(tau^'+'==0.02),expression(tau^'+'==0.05)))
 		#dev.off()
@@ -2225,9 +2225,9 @@ project.nABC.compareSEIRS<- function()
 							abline(v=xtrue[j],lty=1,col="red")	
 							sapply(seq_along(post),function(i)
 									{			
-										plot(hxs[[i]],add=1,freq=0, border=NA, col=myFadeCol(cols[i],0.5))
-										abline(v=hxs[[i]][["dmode"]],lty=2,col=myFadeCol(cols[i],0.75))
-										abline(v=hxs[[i]][["mean"]],lty=3,col=myFadeCol(cols[i],0.75))
+										plot(hxs[[i]],add=1,freq=0, border=NA, col=my.fade.col(cols[i],0.5))
+										abline(v=hxs[[i]][["dmode"]],lty=2,col=my.fade.col(cols[i],0.75))
+										abline(v=hxs[[i]][["mean"]],lty=3,col=my.fade.col(cols[i],0.75))
 									})
 							legend("topright",bty='n',border=NA,fill=c("gray30","gray50","gray70"),legend=c(expression(tau^'+'==0.01),expression(tau^'+'==0.02),expression(tau^'+'==0.05)))		
 							dev.off()														
@@ -2257,9 +2257,9 @@ project.nABC.compareSEIRS<- function()
 							abline(v=xtrue[j],lty=1,col="red")	
 							sapply(seq_along(post),function(i)
 									{			
-										plot(hxs[[i]],add=1,freq=0, border=NA, col=myFadeCol(cols[i],0.5))
-										abline(v=hxs[[i]][["dmode"]],lty=2,col=myFadeCol(cols[i],0.75))
-										abline(v=hxs[[i]][["mean"]],lty=3,col=myFadeCol(cols[i],0.75))
+										plot(hxs[[i]],add=1,freq=0, border=NA, col=my.fade.col(cols[i],0.5))
+										abline(v=hxs[[i]][["dmode"]],lty=2,col=my.fade.col(cols[i],0.75))
+										abline(v=hxs[[i]][["mean"]],lty=3,col=my.fade.col(cols[i],0.75))
 									})
 							legend("topright",bty='n',border=NA,fill=c("gray30","gray50","gray70"),legend=c(expression(tau^'+'==0.01),expression(tau^'+'==0.02),expression(tau^'+'==0.05)))		
 							dev.off()														
@@ -2293,7 +2293,8 @@ project.nABC.StretchedChi2<- function()
 		if(prior.l>1)	stop("project.nABC.StretchedChi2.fix.x.uprior.ysig2: error at 1d")
 		
 
-		args<- paste("chisqstretch",for.mle,tau.l,tau.u,alpha,sep='/')
+		args<- paste("chisqstretch",for.mle,tau.l,tau.l,tau.u,alpha,sep='/')
+		print(args)
 		#perform one ABC - rejection run
 		ans			<- vector("list",4)
 		names(ans)	<- c("xsigma2","cil","cir","data")		
@@ -2303,6 +2304,8 @@ project.nABC.StretchedChi2<- function()
 			tmp				<- nabc.chisqstretch(rnorm(yn,ymu,sd=sqrt(ans[["xsigma2"]])), ans[["xsigma2"]], args=args, verbose= 0)
 			ans[["cil"]]	<- tmp["cil"]
 			ans[["cir"]]	<- tmp["cir"]
+			print(ans)
+			stop()
 		}
 		else
 		{
@@ -2504,7 +2507,7 @@ project.nABC.StretchedChi2<- function()
 														
 							if(0 && j==1)
 							{
-								cols<- c(myFadeCol("black",0.2),myFadeCol("black",0.6),"black")
+								cols<- c(my.fade.col("black",0.2),my.fade.col("black",0.6),"black")
 								ltys<- c(1,1,4)								
 								#plot rho for fx.tau.u
 								rho.h.ok<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok]/ans.ok[["xsigma2"]], 1, nbreaks= 70, width= 0.5, plot=0)
@@ -2531,7 +2534,7 @@ project.nABC.StretchedChi2<- function()
 			}
 			
 			sample.size<- as.numeric(names(ans))
-			cols<- c(myFadeCol("black",0.6),myFadeCol("black",0.2),"black")
+			cols<- c(my.fade.col("black",0.6),my.fade.col("black",0.2),"black")
 			#cols<- c("black","gray50","black")
 			ltys<- c(1,1,4)
 			pdf.width<- 4
@@ -2638,7 +2641,7 @@ project.nABC.StretchedChi2<- function()
 			if(!resume || inherits(readAttempt, "try-error"))
 			{
 				cat(paste("\nnABC.sig2_stdabc generate",paste(dir.name,paste("nABC.sig2_stdabc_",N,".R",sep=''),sep='/')))
-				f.name<- list.files(dir.name, pattern=paste("^nABC.sig2_stdabc",'',sep=''), full.names = TRUE)
+				f.name<- list.files(dir.name, pattern=paste("^nABC.sig2_stdabc",'',sep=''), full.names = TRUE)				
 				ans<- lapply(seq_along(f.name),function(i)
 						{
 							out<- matrix(NA,2,11,dimnames=list(c("mean","mode"),c("o0.8","o0.4","o0.2","o0.1","o0.05","l0.8","l0.4","l0.2","l0.1","l0.05","xsigma2")))
@@ -2677,7 +2680,7 @@ project.nABC.StretchedChi2<- function()
 			else
 				cat(paste("\nnABC.sig2_stdabc loaded",paste(dir.name,paste("nABC.sig2_stdabc_",N,".R",sep=''),sep='/')))
 			
-			cols<- c(myFadeCol("black",0.2),myFadeCol("black",0.6),myFadeCol("black",0.8),myFadeCol("black",1))
+			cols<- c(my.fade.col("black",0.2),my.fade.col("black",0.6),my.fade.col("black",0.8),my.fade.col("black",1))
 			ltys<- c(1,1,1,4)
 			
 			ok.idx	<- which(sapply(seq_along(ans),function(i) !any(is.na(ans[[i]]))	))
@@ -2687,18 +2690,20 @@ project.nABC.StretchedChi2<- function()
 			cat(paste("\nmean xsig2",mean(xsig2)))
 			
 			#extract modes for S2y-S2x and log.S2y-log.S2x for cus
+			#mean of densigamma is S^2(x) / (n-4)
+			#mode of densigamma is S^2(x) / (n)			and we have S^2(x)/(n-1)
 			cuidx	<- c(1,2,3,4)
-			print(ans[[1]])
-			print(ans[[1]][,cuidx])
-			print(ans[[1]][,cuidx+5])
-			mo.s2	<- sapply(seq_along(ans),function(i) ans[[i]]["mode",cuidx])
-			mo.ls2	<- sapply(seq_along(ans),function(i) ans[[i]]["mode",cuidx+5])
-			me.s2	<- sapply(seq_along(ans),function(i) ans[[i]]["mean",cuidx])
-			me.ls2	<- sapply(seq_along(ans),function(i) ans[[i]]["mean",cuidx+5])
-			d.mo.s2	<- sapply(seq_along(ans),function(i) ans[[i]]["mode",cuidx]-ans[[i]][1,"xsigma2"])
-			d.mo.ls2<- sapply(seq_along(ans),function(i) ans[[i]]["mode",cuidx+5]-ans[[i]][1,"xsigma2"])
-			d.me.s2	<- sapply(seq_along(ans),function(i) ans[[i]]["mean",cuidx]-ans[[i]][1,"xsigma2"])
-			d.me.ls2<- sapply(seq_along(ans),function(i) ans[[i]]["mean",cuidx+5]-ans[[i]][1,"xsigma2"])
+			#print(ans[[1]])
+			#print(ans[[1]][,cuidx])
+			#print(ans[[1]][,cuidx+5])
+			mo.s2	<- sapply(seq_along(ans),function(i) (xn-1)/(xn)*ans[[i]]["mode",cuidx])
+			mo.ls2	<- sapply(seq_along(ans),function(i) (xn-1)/(xn)*ans[[i]]["mode",cuidx+5])
+			me.s2	<- sapply(seq_along(ans),function(i) (xn-1)/(xn)*ans[[i]]["mean",cuidx])
+			me.ls2	<- sapply(seq_along(ans),function(i) (xn-1)/(xn)*ans[[i]]["mean",cuidx+5])
+			d.mo.s2	<- sapply(seq_along(ans),function(i) (xn-1)/(xn)*ans[[i]]["mode",cuidx]-(xn-1)/(xn)*ans[[i]][1,"xsigma2"])
+			d.mo.ls2<- sapply(seq_along(ans),function(i) (xn-1)/(xn)*ans[[i]]["mode",cuidx+5]-(xn-1)/(xn)*ans[[i]][1,"xsigma2"])
+			d.me.s2	<- sapply(seq_along(ans),function(i) (xn-1)/(xn)*ans[[i]]["mean",cuidx]-(xn-1)/(xn-4)*ans[[i]][1,"xsigma2"])
+			d.me.ls2<- sapply(seq_along(ans),function(i) (xn-1)/(xn)*ans[[i]]["mean",cuidx+5]-(xn-1)/(xn-4)*ans[[i]][1,"xsigma2"])
 						
 			
 			table	<- sapply(seq_along(cuidx),function(i)
@@ -2708,8 +2713,9 @@ project.nABC.StretchedChi2<- function()
 					names(means)<- c("mo.s2","mo.ls2","me.s2","me.ls2","d.mo.s2","d.mo.ls2","d.me.s2","d.me.ls2")
 					print(colnames(ans[[1]])[i])
 					print(means)
-					round(means[c(1,5,3,7,2,6,4,8)],d=3)
+					round(means[c(1,5,3,7,2,6,4,8)],d=6)
 				})
+			print(table)
 			require(xtable)
 			print(xtable(table,digits=3))
 			
@@ -2756,7 +2762,7 @@ project.nABC.StretchedChi2<- function()
 	}
 	if(!is.na(subprog) && subprog==7)		#check MLE
 	{
-		m<- 1
+		m<- NA
 		
 		if(exists("argv"))
 		{
@@ -2765,7 +2771,6 @@ project.nABC.StretchedChi2<- function()
 										m= return(as.numeric(substr(arg,3,nchar(arg)))),NA)	}))
 			if(length(tmp)>0) m<- tmp[1]
 		}
-		 
 		for.mle	<- 1
 		xn		<- yn<- 60
 		df		<- yn-1
@@ -2791,11 +2796,11 @@ project.nABC.StretchedChi2<- function()
 			if(!resume || inherits(readAttempt, "try-error"))
 			{
 				x<- rnorm(xn,xmu,sd=sqrt(xsigma2))							
-				f.name<- paste(dir.name,"/nABC.Chisq_mle_ok_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
-				ans.ok<- project.nABC.StretchedChi2.fix.x.uprior.ysig2(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu, for.mle=for.mle)
-				cat(paste("\nnABC.Chisq: save ",f.name))
-				save(ans.ok,file=f.name)
-				ans.ok<- NULL				
+				#f.name<- paste(dir.name,"/nABC.Chisq_mle_ok_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+				#ans.ok<- project.nABC.StretchedChi2.fix.x.uprior.ysig2(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu, for.mle=for.mle)
+				#cat(paste("\nnABC.Chisq: save ",f.name))
+				#save(ans.ok,file=f.name)
+				#ans.ok<- NULL				
 				ans.naive<- project.nABC.StretchedChi2.fix.x.uprior.ysig2(N,xsigma2-tau.h,xsigma2+tau.h,prior.l,prior.u,alpha,x,yn,ymu, for.mle=for.mle)
 				f.name<- paste(dir.name,"/nABC.Chisq_mle_naive_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
 				cat(paste("\nnABC.Chisq: save ",f.name))
@@ -2809,6 +2814,95 @@ project.nABC.StretchedChi2<- function()
 			else
 				cat(paste("\nnABC.MA: resumed ",f.name))
 		}	
+		else
+		{
+			#load data
+			cat(paste("\nnABC.Chisq",dir.name))
+			f.name<- paste(dir.name,"/nABC.Chisq_mle_modemean_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,".R",sep='')
+			options(show.error.messages = FALSE, warn=1)		
+			readAttempt<-try(suppressWarnings(load(f.name)))						
+			options(show.error.messages = TRUE)		
+			if(!resume || inherits(readAttempt, "try-error"))
+			{				
+				f.name<- list.files(dir.name, pattern=paste("^nABC.Chisq_mle_ok_",sep=''), full.names = TRUE)
+				tmp<- sort(sapply(strsplit(f.name,'_',fixed=1),function(x)	as.numeric(substr(x[length(x)],2,nchar(x[length(x)])-2))		), index.return=1)
+				f.name<- f.name[tmp$ix]				
+				f.name2<- list.files(dir.name, pattern=paste("^nABC.Chisq_mle_naive_",sep=''), full.names = TRUE)
+				tmp2<- sort(sapply(strsplit(f.name2,'_',fixed=1),function(x)	as.numeric(substr(x[length(x)],2,nchar(x[length(x)])-2))		), index.return=1)
+				f.name2<- f.name2[tmp2$ix]
+				#f.name3<- list.files(dir.name, pattern=paste("^nABC.Chisq_wprior_",sep=''), full.names = TRUE)
+				#tmp3<- sort(sapply(strsplit(f.name3,'_',fixed=1),function(x)	as.numeric(substr(x[length(x)],2,nchar(x[length(x)])-2))		), index.return=1)
+				#f.name3<- f.name3[tmp3$ix]											
+				f.name<- rbind( 	f.name[tmp$x%in%intersect(tmp$x,tmp2$x)], f.name2[tmp2$x%in%intersect(tmp$x,tmp2$x)]	)	
+				#f.name<- rbind( 	f.name[tmp$x%in%intersect(intersect(tmp$x,tmp2$x),tmp3$x)], 
+				#		f.name2[tmp2$x%in%intersect(intersect(tmp$x,tmp2$x),tmp3$x)],
+				#		f.name3[tmp3$x%in%intersect(intersect(tmp$x,tmp2$x),tmp3$x)]	)	
+				cat(paste("\nnABC.Chisq load data: ", ncol(f.name)))
+				ans<- lapply(seq_len(ncol(f.name)),function(j)
+						{
+							out<- matrix(NA,2,4,dimnames=list(c("ok","naive"),c("mean","hmode","dmode","xsigma2")))
+							
+							cat(paste("\nload",f.name[1,j]))
+							readAttempt<-try(suppressWarnings(load( f.name[1,j] )))
+							if(inherits(readAttempt, "try-error"))	stop("error at ok")																					
+							#accept if T in boundaries
+print(c(ans.ok[["cil"]],ans.ok[["cir"]]))					
+							acc.ok<- which( ans.ok[["data"]]["error",]<=ans.ok[["cir"]]  &  ans.ok[["data"]]["error",]>=ans.ok[["cil"]] )
+							acc.h.ok<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok], ans.ok[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0)
+							out["ok",]<- c(acc.h.ok[["mean"]],acc.h.ok[["hmode"]],acc.h.ok[["dmode"]],ans.ok[["xsigma2"]])
+							
+							cat(paste("\nload",f.name[2,j]))							
+							readAttempt<-try(suppressWarnings(load( f.name[2,j] )))
+							if(inherits(readAttempt, "try-error"))	stop("error at naive")	
+							#tmp fix bug (now resolved)
+				ans.naive[["cil"]]<- 0.5084666
+				ans.naive[["cir"]]<- 1.009202
+				
+							acc.naive<- which( ans.naive[["data"]]["error",]<=ans.naive[["cir"]]  &  ans.naive[["data"]]["error",]>=ans.naive[["cil"]] )
+							acc.h.naive<- project.nABC.movingavg.gethist(ans.naive[["data"]]["ysigma2",acc.naive], ans.naive[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0)
+							out["naive",]<- c(acc.h.naive[["mean"]],acc.h.naive[["hmode"]],acc.h.naive[["dmode"]],ans.naive[["xsigma2"]])
+				print(length(acc.naive) / ncol(ans.naive[["data"]]))			
+print(out)										
+							if(1 && j==5)
+							{
+								cols<- c(my.fade.col("black",0.2),my.fade.col("black",0.6),"black")
+								ltys<- c(1,1,4)
+								
+								#plot rho
+								rho.h.ok	<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok]/ans.ok[["xsigma2"]], 1, nbreaks= 50, width= 0.5, plot=0)
+								rho.h.naive	<- project.nABC.movingavg.gethist(ans.naive[["data"]]["ysigma2",acc.naive]/ans.naive[["xsigma2"]], 1, nbreaks= 50, width= 0.5, plot=0)								
+								f.name<- paste(dir.name,"/nABC.Chisq_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",j,"_rho.pdf",sep='')
+								#pdf(f.name,version="1.4",width=4,height=5)
+								par(mar=c(5,5,0.5,0.5))
+								plot(1,1,type='n',bty='n',ylab=expression("n-ABC estimate of "*pi[tau]*'('*rho*'|'*x*')'),xlab=expression(rho),xlim=c(0,3),ylim=range(c(rho.h.ok$density,rho.h.naive$density)))
+								plot(rho.h.ok, col=cols[1],border=NA,main='',add=1,freq=0)
+								plot(rho.h.naive, col=cols[2],border=NA,main='',add=1,freq=0)
+								abline(v=1,col=cols[3],lty=ltys[3])
+								legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,ltys[2],NA,NA,NA,NA,ltys[3]),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.477", tau^'+'*"=2.2","naive","tolerances",tau^'-'*"=0.35",tau^'+'*"=1.65","",rho^symbol("\x2a")))
+								#dev.off()
+								#plot sigma2
+								f.name<- paste(dir.name,"/nABC.Chisq_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",j,".pdf",sep='')
+								#pdf(f.name,version="1.4",width=4,height=5)
+								par(mar=c(5,5,0.5,0.5))
+								plot(acc.h.ok, col=cols[1],border=NA,main='',freq=0,ylab=expression("n-ABC estimate of "*pi[tau]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,1.8))
+								plot(acc.h.naive, col=cols[2],border=NA,main='',add=1,freq=0)
+								abline(v=ans.ok[["xsigma2"]],col=cols[3],lty=ltys[3])								
+								legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,ltys[2],NA,NA,NA,NA,ltys[3]),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.477", tau^'+'*"=2.2","naive","tolerances",tau^'-'*"=0.35",tau^'+'*"=1.65","",hat(nu)[x]^{MLE}))								
+								#dev.off()
+								stop()
+							}							
+							out			
+						})
+				
+				f.name<- paste(dir.name,"/nABC.Chisq_modemean_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,".R",sep='')
+				cat(paste("\nnABC.Chisq save 'ans' to ",f.name))				
+				save(ans,file=f.name)
+				print(ans[,1:5])
+				stop()
+			}			
+			#
+			#compute means 
+		}
 		stop()
 	}	
 	if(!is.na(subprog) && subprog==1)		#check unbiasedness
@@ -2916,7 +3010,7 @@ project.nABC.StretchedChi2<- function()
 							
 							if(0 && j==10)
 							{
-								cols<- c(myFadeCol("black",0.2),myFadeCol("black",0.6),"black")
+								cols<- c(my.fade.col("black",0.2),my.fade.col("black",0.6),"black")
 								ltys<- c(1,1,4)
 								
 								#plot rho
@@ -2973,7 +3067,7 @@ project.nABC.StretchedChi2<- function()
 			f.name<- paste(dir.name,"/nABC.Chisq_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_modes.pdf",sep='')
 			pdf(f.name,version="1.4",width=4,height=5)			
 			par(mar=c(5,4,0.5,0.5))
-			cols<- c(myFadeCol("black",0.2),myFadeCol("black",0.6),myFadeCol("black",1))
+			cols<- c(my.fade.col("black",0.2),my.fade.col("black",0.6),my.fade.col("black",1))
 			ltys<- c(1,1,4)
 			plot(1,1,bty='n',type='n',xlim=xlim,ylim=ylim,xlab=expression("mode of "*pi[tau]*'('*sigma^2*'|'*x*')'),ylab="n-ABC repetitions")
 			plot(ok.mo.h, add=1, col=cols[1], border=NA)			
@@ -2998,11 +3092,17 @@ project.nABC.StretchedChi2<- function()
 		plot.pdf<- 1 
 		verbose<- 1
 		
-		tau.up<- 1.09
-		yn<- 5e3
-		tau.low<- nabc.chisqstretch.tau.low(tau.up, yn-1, alpha)
-		rej<- .Call("abcScaledChiSq",	c(yn-1,yn-1,tau.low,tau.up,alpha,1e-10,100,0.05)	)
-		plot(seq(tau.low,tau.up,by=0.001),nabc.chisqstretch.pow(seq(tau.low,tau.up,by=0.001),yn-1,yn-1,rej[1],rej[2]),type='l')
+		tau.up<- 1.65 #2.2 #1.09
+		yn<- 60 #5e3
+		scale<- yn
+		df<- yn-1
+		#tau.low<- nabc.chisqstretch.tau.low(tau.up, df, alpha, for.mle=1)
+		tau.low<- 0.35
+		rej<- .Call("abcScaledChiSq",	c(scale,df,tau.low,tau.up,alpha,1e-10,100,0.05)	)
+		pw<- nabc.chisqstretch.pow(seq(tau.low,tau.up,by=0.001),scale,df,rej[1],rej[2])
+		print( seq(tau.low,tau.up,by=0.001)[ which.max(pw) ] )
+		plot(seq(tau.low,tau.up,by=0.001),pw,type='l')
+		print(c(tau.low,rej))
 		stop()
 		
 		#plot height of power
@@ -3074,7 +3174,7 @@ project.nABC.StretchedChi2<- function()
 		if(verbose)	cat(paste("\n\n\ncase: +-h\ntau.low is",1-h,"\ttau.up is",1+h,"\tcl is",rej[1],"\tcu is",rej[2]))
 		if(verbose)	cat(paste("\nrho.max is",rho.diff[ which.max(pw.diff) ],"\tpow.max is",pw.diff[ which.max(pw.diff) ]))
 		
-		cols<- c(myFadeCol("black",0.2),myFadeCol("black",0.6),"black")		
+		cols<- c(my.fade.col("black",0.2),my.fade.col("black",0.6),"black")		
 		ltys<- c(1,1,4)
 		xlim<- range(c(rho.diff,rho.sym,rho))
 		ylim<- range(c(pw,pw.sym,pw.diff))
@@ -3581,7 +3681,7 @@ project.nABC.StretchedF<- function()
 			par(mar=c(4,4,1,1))		
 			plot(1,1,type='n',xlim=xlim,ylim=ylim,xlab=expression("estimated mode of "*sigma^2),ylab="n-ABC repetitions")
 			cols<- c("red","cyan","blue")
-			sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=myFadeCol(cols[i],0.4),border=myFadeCol(cols[i],0.7),add=TRUE, lty=1+i)		})		
+			sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=my.fade.col(cols[i],0.4),border=my.fade.col(cols[i],0.7),add=TRUE, lty=1+i)		})		
 			abline(v=1,lty=3)
 			legend("topright",fill= c("transparent","transparent","red","transparent","cyan","transparent","blue"),legend=c(expression(S^2*'('*y*')'*-S^2*'('*x*')'),"",expression("["*c^'-'*","*c^'+'*"]=[-0.5,0.5]"),"",expression("["*c^'-'*","*c^'+'*"]=[-0.3,0.3]"),"",expression("["*c^'-'*","*c^'+'*"]=[-0.1,0.1]")),bty='n', border=NA)		
 			dev.off()
@@ -3601,7 +3701,7 @@ project.nABC.StretchedF<- function()
 			par(mar=c(4,4,1,1))		
 			plot(1,1,type='n',xlim=xlim,ylim=ylim,xlab=expression("estimated mode of "*sigma^2),ylab="n-ABC repetitions")
 			cols<- c("red","cyan","blue")
-			sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=myFadeCol(cols[i],0.4),border=myFadeCol(cols[i],0.7),add=TRUE, lty=1+i)		})		
+			sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=my.fade.col(cols[i],0.4),border=my.fade.col(cols[i],0.7),add=TRUE, lty=1+i)		})		
 			abline(v=1,lty=3)
 			legend("topright",fill= c("transparent","transparent","red","transparent","cyan","transparent","blue"),legend=c(expression('log'*S^2*'('*y*')'*-'log'*S^2*'('*x*')'),"",expression("["*c^'-'*","*c^'+'*"]=[-0.5,0.5]"),"",expression("["*c^'-'*","*c^'+'*"]=[-0.3,0.3]"),"",expression("["*c^'-'*","*c^'+'*"]=[-0.1,0.1]")),bty='n', border=NA)		
 			dev.off()
@@ -3621,7 +3721,7 @@ project.nABC.StretchedF<- function()
 			par(mar=c(4,4,1,1))		
 			plot(1,1,type='n',xlim=xlim,ylim=ylim,xlab=expression("estimated mean of "*sigma^2),ylab="n-ABC repetitions")
 			cols<- c("red","cyan","blue")
-			sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=myFadeCol(cols[i],0.4),border=myFadeCol(cols[i],0.7),add=TRUE, lty=1+i)		})		
+			sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=my.fade.col(cols[i],0.4),border=my.fade.col(cols[i],0.7),add=TRUE, lty=1+i)		})		
 			abline(v=1,lty=3)
 			legend("topleft",fill= c("transparent","transparent","red","transparent","cyan","transparent","blue"),legend=c(expression('log'*S^2*'('*y*')'*-'log'*S^2*'('*x*')'),"",expression("["*c^'-'*","*c^'+'*"]=[-0.5,0.5]"),"",expression("["*c^'-'*","*c^'+'*"]=[-0.3,0.3]"),"",expression("["*c^'-'*","*c^'+'*"]=[-0.1,0.1]")),bty='n', border=NA)		
 			dev.off()
@@ -3641,7 +3741,7 @@ project.nABC.StretchedF<- function()
 			par(mar=c(4,4,1,1))		
 			plot(1,1,type='n',xlim=xlim,ylim=ylim,xlab=expression("estimated mean of "*sigma^2),ylab="n-ABC repetitions")
 			cols<- c("red","cyan","blue")
-			sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=myFadeCol(cols[i],0.4),border=myFadeCol(cols[i],0.7),add=TRUE, lty=1+i)		})		
+			sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=my.fade.col(cols[i],0.4),border=my.fade.col(cols[i],0.7),add=TRUE, lty=1+i)		})		
 			abline(v=1,lty=3)
 			legend("topright",fill= c("transparent","transparent","red","transparent","cyan","transparent","blue"),legend=c(expression(S^2*'('*y*')'*-S^2*'('*x*')'),"",expression("["*c^'-'*","*c^'+'*"]=[-0.5,0.5]"),"",expression("["*c^'-'*","*c^'+'*"]=[-0.3,0.3]"),"",expression("["*c^'-'*","*c^'+'*"]=[-0.1,0.1]")),bty='n', border=NA)		
 			dev.off()
@@ -3661,7 +3761,7 @@ project.nABC.StretchedF<- function()
 			par(mar=c(4,4,1,1))		
 			plot(1,1,type='n',xlim=xlim,ylim=ylim,xlab=expression("estimated mode of "*sigma^2),ylab="n-ABC repetitions")
 			cols<- c("red","blue")
-			sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=myFadeCol(cols[i],0.2),border=myFadeCol(cols[i],0.7),add=TRUE, lty=1+i)		})		
+			sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=my.fade.col(cols[i],0.2),border=my.fade.col(cols[i],0.7),add=TRUE, lty=1+i)		})		
 			abline(v=1,lty=3)
 			legend("topright",fill= c("red","transparent","transparent","transparent","blue","transparent","transparent"),legend=c("symmetrized","tolerances",expression("["*tau^'-'*","*tau^'+'*"]=[1/2.77,2.77]"),"","rejection","region",expression("["*c^'-'*","*c^'+'*"]=[0.5,1.5]")),bty='n', border=NA)		
 			dev.off()
@@ -3783,7 +3883,7 @@ project.nABC.StretchedF<- function()
 		par(mar=c(4,4,1,1))		
 		plot(1,1,type='n',xlim=xlim,ylim=ylim,xlab=expression("estimated mode of "*sigma^2),ylab="n-ABC repetitions")
 		cols<- c("black","gray60")
-		sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=myFadeCol(cols[i],0.5),border=NA,add=TRUE)		})		
+		sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=my.fade.col(cols[i],0.5),border=NA,add=TRUE)		})		
 		abline(v=1,lty=2)
 		legend("topright",fill= c("gray40","transparent","transparent","transparent","gray70","transparent","transparent"),legend=c("symmetrized","tolerances",expression("["*tau^'-'*","*tau^'+'*"]=[1/2.77,2.77]"),"","rejection","region",expression("["*c^'-'*","*c^'+'*"]=[0.5,1.5]")),bty='n', border=NA)		
 		dev.off()
@@ -3801,7 +3901,7 @@ project.nABC.StretchedF<- function()
 		pdf(paste(dir.name,"/nABC.StretchedF_modepriors_",xn,".pdf",sep=''),version="1.4",width=5,height=6)
 		par(mar=c(4,4,1,1))		
 		plot(1,1,type='n',xlim=xlim,ylim=ylim,xlab=expression("estimated mode of "*sigma^2),ylab="n-ABC repetitions")
-		sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=myFadeCol(cols[i],0.5), add=TRUE, border=NA)		})		
+		sapply(seq_along(m.h),function(i){		plot(m.h[[i]],col=my.fade.col(cols[i],0.5), add=TRUE, border=NA)		})		
 		abline(v=1,lty=2)			
 		legend("topright",	fill= c("transparent","transparent","transparent","gray40","transparent","gray70"),
 							c("symmetrized","tolerances and",'',expression(sigma^2*" ~ Unif[0.2,4]"),"",expression(1/sigma^2*" ~ Unif[0.2,4]")),
@@ -3921,9 +4021,9 @@ print(c(ncol(ans),length(acc)/ncol(ans),ans["cil",1],ans["cir",1]))
 		pdf(paste(dir.name,"/nABC.StretchedF_meanslog_",xn,".pdf",sep=''),version="1.4",width=5,height=6)
 		par(mar=c(4,4,1,1))		
 		plot(1,1,type='n',xlim=xlim,ylim=ylim,xlab=expression("estimated mean of log "*sigma^2),ylab="n-ABC repitions")
-		plot(m.h[[1]],col=myFadeCol("blue",0.3),border=NA,add=TRUE)
-		plot(m.h[[2]],col=myFadeCol("red",0.3),border=NA,add=TRUE)
-		plot(m.h[[3]],col=myFadeCol("green",0.3),border=NA,add=TRUE)
+		plot(m.h[[1]],col=my.fade.col("blue",0.3),border=NA,add=TRUE)
+		plot(m.h[[2]],col=my.fade.col("red",0.3),border=NA,add=TRUE)
+		plot(m.h[[3]],col=my.fade.col("green",0.3),border=NA,add=TRUE)
 		#legend("topleft",fill= c("blue","transparent","transparent","transparent","red","transparent","transparent"),legend=c("symmetrized","tolerances",expression("["*tau^'-'*","*tau^'+'*"]=[1/2.77,2.77]"),"","rejection","region",expression("["*c^'-'*","*c^'+'*"]=[0.5,1.5]")),bty='n', border=NA)
 		legend("topleft",fill= c("blue","red","green"),legend=c(expression(rho*" ~ Unif"),expression("log "*rho*" ~ Unif"),expression("log "*rho*" ~ Norm")),bty='n')
 		dev.off()
@@ -4049,8 +4149,8 @@ print(c(ncol(ans),length(acc)/ncol(ans),ans["cil",1],ans["cir",1]))
 		par(mar=c(4,4,1,1))
 		plot(1,1,type='n',xlim=xlim,ylim=ylim,xlab=expression("estimated mode of "*sigma^2),ylab="n-ABC repitions")
 		abline(v=1,lty=3)
-		plot(m.h[[1]],col=myFadeCol("blue",0.3),border=NA,add=TRUE)
-		plot(m.h[[2]],col=myFadeCol("red",0.3),border=NA,add=TRUE)		
+		plot(m.h[[1]],col=my.fade.col("blue",0.3),border=NA,add=TRUE)
+		plot(m.h[[2]],col=my.fade.col("red",0.3),border=NA,add=TRUE)		
 		legend("topright",fill= c("blue","transparent","transparent","transparent","red","transparent","transparent"),legend=c("symmetrized","tolerances",expression("["*tau^'-'*","*tau^'+'*"]=[1/2.77,2.77]"),"","rejection","region",expression("["*c^'-'*","*c^'+'*"]=[0.5,1.5]")),bty='n', border=NA)
 		dev.off()
 		
@@ -4155,9 +4255,9 @@ print(c(ncol(ans),length(acc)/ncol(ans),ans["cil",1],ans["cir",1]))
 		
 		pdf(paste(dir.name,"/nABC.StretchedF_modes_",xn,".pdf",sep=''),version="1.4",width=5,height=7)		
 		plot(1,1,type='n',xlim=xlim,ylim=ylim,xlab="mode",ylab="counts")
-		plot(m.h[[1]],col=myFadeCol("blue",0.3),border=NA,add=TRUE)
-		plot(m.h[[2]],col=myFadeCol("red",0.3),border=NA,add=TRUE)
-		plot(m.h[[3]],col=myFadeCol("green",0.3),border=NA,add=TRUE)
+		plot(m.h[[1]],col=my.fade.col("blue",0.3),border=NA,add=TRUE)
+		plot(m.h[[2]],col=my.fade.col("red",0.3),border=NA,add=TRUE)
+		plot(m.h[[3]],col=my.fade.col("green",0.3),border=NA,add=TRUE)
 		legend("topleft",fill= c("blue","red","green"),legend=c("fixed obs","resimulated obs","resampled obs"),bty='n')
 		dev.off()
 	}
@@ -4177,18 +4277,18 @@ print(c(ncol(ans),length(acc)/ncol(ans),ans["cil",1],ans["cir",1]))
 			ans<- project.nABC.StretchedF.fix.x.fix.ysigma(N,args,xn,xmu,xsigma,yn,ymu,ysigma)
 			acc<- which( ans["error",]<=ans["cir",]  &  ans["error",]>=ans["cil",] )
 			print(length(acc)/ncol(ans))		
-			project.nABC.StretchedF.pval.qq(ans["pval",acc], ifelse(i==1,0,1), pch= 19, col=myFadeCol("blue", fade)) 
+			project.nABC.StretchedF.pval.qq(ans["pval",acc], ifelse(i==1,0,1), pch= 19, col=my.fade.col("blue", fade)) 
 			
 			ans<- project.nABC.StretchedF.resample.x.fix.ysigma(N,args,xn,xmu,xsigma,yn,ymu,ysigma)
 			acc<- which( ans["error",]<=ans["cir",]  &  ans["error",]>=ans["cil",] )
 			print(length(acc)/ncol(ans))		
-			project.nABC.StretchedF.pval.qq(ans["pval",acc], 1, pch= 19, col=myFadeCol("green", fade)) 
+			project.nABC.StretchedF.pval.qq(ans["pval",acc], 1, pch= 19, col=my.fade.col("green", fade)) 
 			
 			
 			ans<- project.nABC.StretchedF.fix.xsigma.fix.ysigma(N,args,xn,xmu,xsigma,yn,ymu,ysigma)
 			acc<- which( ans["error",]<=ans["cir",]  &  ans["error",]>=ans["cil",] )
 			print(length(acc)/ncol(ans))		
-			project.nABC.StretchedF.pval.qq(ans["pval",acc], 1, pch= 19, col=myFadeCol("red", fade))
+			project.nABC.StretchedF.pval.qq(ans["pval",acc], 1, pch= 19, col=my.fade.col("red", fade))
 			if(i==50)
 			{
 				abline(a=0, b=1, lty= 2)
@@ -4262,7 +4362,7 @@ print(c(ncol(ans),length(acc)/ncol(ans),ans["cil",1],ans["cir",1]))
 		legend(x=1.55,y=0.4,fill=c("red","blue","gray30","gray80","transparent"),legend=legend, bty= 'n', border=NA)
 		dev.off()
 		stop()
-		#myFadeCol("green", fade)
+		#my.fade.col("green", fade)
 	}
 	if(0)	#plot mean for different choices of CL, CU, assuming rho~ U(rho.l,rho.u) 	(which does not make much sense)
 	{
@@ -4542,7 +4642,7 @@ stop()
 							
 							if(0 && j==1)
 							{
-								cols<- c(myFadeCol("black",0.2),myFadeCol("black",0.6),"black")
+								cols<- c(my.fade.col("black",0.2),my.fade.col("black",0.6),"black")
 								ltys<- c(1,1,4)								
 								#plot rho for fx.tau.u
 								rho.h.ok<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok]/ans.ok[["xsigma2"]], 1, nbreaks= 70, width= 0.5, plot=0)
@@ -4719,7 +4819,7 @@ stop()
 		tau.us		<- c(0.015,2.5,0.015,0.2)
 		tau.us		<- c(0.015,4.5,0.017,0.2)		
 		ltys		<- c(1,3,4,5)
-		cols		<- c(myFadeCol("black",1),myFadeCol("black",0.8),myFadeCol("black",0.6),myFadeCol("black",0.4))
+		cols		<- c(my.fade.col("black",1),my.fade.col("black",0.8),my.fade.col("black",0.6),my.fade.col("black",0.4))
 		f.name		<- paste(dir.name,"power_schuir_obs_SEIRS.pdf",sep='/')
 		cat(paste("\nplot",f.name))
 		pdf(f.name,version="1.4",width=3,height=6)
@@ -4788,7 +4888,7 @@ stop()
 		tau.us		<- c(0.0005,0.5,0.02)
 		tau.us		<- c(0.000275,0.225,0.01)
 		ltys		<- c(1,3,4)
-		cols		<- c(myFadeCol("black",0.8),myFadeCol("black",0.6),myFadeCol("black",0.4))
+		cols		<- c(my.fade.col("black",0.8),my.fade.col("black",0.6),my.fade.col("black",0.4))
 		f.name		<- paste(dir.name,"power_schuir_simu_SEIRS.pdf",sep='/')
 		cat(paste("\nplot",f.name))
 		pdf(f.name,version="1.4",width=3,height=4)
@@ -4980,10 +5080,10 @@ project.nABC.ISBA2012talk<- function()
 		lines(c(mean(x),mean(x)),c(0,0.1),col="black",lwd=2)
 		lines(c(mean(y),mean(y)),c(0,0.1),col="blue",lwd=2)
 		points(mean(x),0.1,pch=19)
-		points(mean(y),0.1,pch=19,col=myFadeCol("#0080FFFF",1))
+		points(mean(y),0.1,pch=19,col=my.fade.col("#0080FFFF",1))
 		p.arrows((mean(x)+mean(y))/2,0.05,mean(y),0.05,fill="red",col="red")
 		p.arrows((mean(x)+mean(y))/2,0.05,mean(x),0.05,fill="red",col="red")
-		legend("topleft",expression(paste("sim | ",theta)),fill=myFadeCol("#0080FFFF",0.6),bty='n')
+		legend("topleft",expression(paste("sim | ",theta)),fill=my.fade.col("#0080FFFF",0.6),bty='n')
 		legend("topright","obs",fill="gray60",bty='n')
 		dev.off()
 	}
@@ -4997,12 +5097,12 @@ project.nABC.ISBA2012talk<- function()
 		par(mar=c(0,0,0,0))
 		plot(1,1,xlab='', xlim= xlim,type='n',ylim=ylim,ylab='',main="", xaxt='n', yaxt='n', bty='n')
 		plot(hx,freq=F,col="gray60",border=NA,add=TRUE)
-		plot(hy,freq=F,col=myFadeCol("#0080FFFF",0.6),border=NA,add=TRUE)
+		plot(hy,freq=F,col=my.fade.col("#0080FFFF",0.6),border=NA,add=TRUE)
 		lines(c(mean(x),mean(x)),c(0,0.4),col="black",lwd=2)
 		lines(c(mean(y),mean(y)),c(0,0.4),col="blue",lwd=2)
 		p.arrows((mean(x)+mean(y))/2,0.1,mean(y),0.1,fill="red",col="red")
 		p.arrows((mean(x)+mean(y))/2,0.1,mean(x),0.1,fill="red",col="red")
-		legend("topleft",expression(paste("sim | ",theta)),fill=myFadeCol("#0080FFFF",0.6),bty='n')
+		legend("topleft",expression(paste("sim | ",theta)),fill=my.fade.col("#0080FFFF",0.6),bty='n')
 		legend("topright","obs",fill="gray60",bty='n')
 		dev.off()
 	}
@@ -5016,10 +5116,10 @@ project.nABC.ISBA2012talk<- function()
 		par(mar=c(1,0,0,0))
 		plot(1,1,xlab='', xlim= xlim,type='n',ylim=ylim,ylab='',main="", xaxt='n', yaxt='n', bty='n')
 		plot(hx,freq=F,col="gray60",border=NA,add=TRUE)
-		plot(hy,freq=F,col=myFadeCol("#0080FFFF",0.6),border=NA,add=TRUE)
+		plot(hy,freq=F,col=my.fade.col("#0080FFFF",0.6),border=NA,add=TRUE)
 		lines(c(mean(x),mean(x)),c(0,0.4),col="black",lwd=1)
 		lines(c(mean(y),mean(y)),c(0,0.4),col="blue",lwd=1)
-		legend("topleft",expression(paste("sim | ",theta)),fill=myFadeCol("#0080FFFF",0.6),bty='n')
+		legend("topleft",expression(paste("sim | ",theta)),fill=my.fade.col("#0080FFFF",0.6),bty='n')
 		legend("topright","obs",fill="gray60",bty='n')
 		mtext(expression(nu[k](theta)),side=1,line=-0.5,at=mean(y),col="blue")
 		mtext(expression(nu[k](x)),side=1,line=-0.5,at=mean(x))
@@ -5048,8 +5148,8 @@ project.nABC.ISBA2012talk<- function()
 		pdf(paste(dir.name,"/talk_nABC4.pdf",sep=''),version="1.4",width=4,height=4)
 		par(mar=c(4.5,0,0,0))
 		plot(t,dt(t, df=2*n-2),type='l', xlab="Student T-test",yaxt='n',bty='n')
-		polygon(  c(seq(t[1],qt(alpha/2, df=2*n-2),0.01),qt(alpha/2, df=2*n-2),t[1]), c(dt(seq(t[1],qt(alpha/2, df=2*n-2),0.01), df=2*n-2),0,0), border=NA, col=myFadeCol("red",0.6)  )
-		polygon(  c(seq(qt(1-alpha/2, df=2*n-2),t[length(t)],0.01),t[length(t)],qt(1-alpha/2, df=2*n-2)), c(dt(seq(qt(1-alpha/2, df=2*n-2),t[length(t)],0.01), df=2*n-2),0,0), border=NA, col=myFadeCol("red",0.6)  )
+		polygon(  c(seq(t[1],qt(alpha/2, df=2*n-2),0.01),qt(alpha/2, df=2*n-2),t[1]), c(dt(seq(t[1],qt(alpha/2, df=2*n-2),0.01), df=2*n-2),0,0), border=NA, col=my.fade.col("red",0.6)  )
+		polygon(  c(seq(qt(1-alpha/2, df=2*n-2),t[length(t)],0.01),t[length(t)],qt(1-alpha/2, df=2*n-2)), c(dt(seq(qt(1-alpha/2, df=2*n-2),t[length(t)],0.01), df=2*n-2),0,0), border=NA, col=my.fade.col("red",0.6)  )
 		legend("topleft",legend=expression( paste("P( R | ",H[0]," )") ),fill="red",bty='n')
 		legend("topright",legend=expression( paste(H[0]," : ",nu[k](theta)-nu[k](x)," = 0") ),bty='n')
 		dev.off()
@@ -5065,9 +5165,9 @@ project.nABC.ISBA2012talk<- function()
 		plot(-t, dt(-t+tau, df=2*n-2),type='l', xlab="Schuirmann T-test",xlim=c(-t[length(t)],t[length(t)]),ylim=c(0,1.1*max(dt(-t, df=2*n-2))),yaxt='n',ylab='',bty='n')
 		lines(c(-tau,-tau),c(0,dt(0, df=2*n-2)), lty=2)
 		polygon(  c(seq(qt(1-alpha, df=2*n-2)-tau,0,0.01),0,qt(1-alpha, df=2*n-2)-tau),
-						c(dt(seq(qt(1-alpha, df=2*n-2),tau,0.01), df=2*n-2),0,0), border=NA, col=myFadeCol("red",0.6)  )
+						c(dt(seq(qt(1-alpha, df=2*n-2),tau,0.01), df=2*n-2),0,0), border=NA, col=my.fade.col("red",0.6)  )
 		polygon(  c(seq(0,qt(alpha, df=2*n-2)+tau,0.01),qt(alpha, df=2*n-2)+tau,0),
-						c(dt(seq(-tau,qt(alpha, df=2*n-2),0.01), df=2*n-2),0,0), border=NA, col=myFadeCol("red",0.6)  )
+						c(dt(seq(-tau,qt(alpha, df=2*n-2),0.01), df=2*n-2),0,0), border=NA, col=my.fade.col("red",0.6)  )
 		lines(t, dt(t-tau, df=2*n-2) )
 		lines(c(tau,tau),c(0,dt(0, df=2*n-2)), lty=2)
 		legend("topleft",legend=expression( paste("P( R | ",H[0]," )") ),fill="red",bty='n')
@@ -5082,11 +5182,11 @@ project.nABC.ISBA2012talk<- function()
 		par(mar=c(2,2,2,2))
 		plot(1,1,type='n',xlim=c(0,4),ylim=c(0,4),xlab='',ylab='',xaxt='n',yaxt='n',bty='n')
 		c11<- 1.25; c12<- 2.75
-		polygon(c(-1,c11,c11,-1),c(-1,-1,5,5),bty='n',col=myFadeCol("red",0.4),border=NA)
-		polygon(c(5,c12,c12,5),c(-1,-1,5,5),bty='n',col=myFadeCol("red",0.4),border=NA)
+		polygon(c(-1,c11,c11,-1),c(-1,-1,5,5),bty='n',col=my.fade.col("red",0.4),border=NA)
+		polygon(c(5,c12,c12,5),c(-1,-1,5,5),bty='n',col=my.fade.col("red",0.4),border=NA)
 		c21<- 1.5; c22<- 2.5
-		polygon(c(-1,-1,5,5),c(c21,-1,-1,c21),bty='n',col=myFadeCol("#0080FFFF",0.4),border=NA)
-		polygon(c(-1,-1,5,5),c(c22,5,5,c22),bty='n',col=myFadeCol("#0080FFFF",0.4),border=NA)
+		polygon(c(-1,-1,5,5),c(c21,-1,-1,c21),bty='n',col=my.fade.col("#0080FFFF",0.4),border=NA)
+		polygon(c(-1,-1,5,5),c(c22,5,5,c22),bty='n',col=my.fade.col("#0080FFFF",0.4),border=NA)
 		#abline(v=2,lty=3)
 		#abline(h=2,lty=3)
 		points(2,2,pch=19,cex=0.5)
@@ -5125,9 +5225,9 @@ project.nABC.ISBA2012talk<- function()
 		alpha<- dt(-tau, df=2*n-2)
 		par(mar=c(1,0.5,0.5,0.5))
 		plot(1,1,type='n',xlim=range(t),ylim=range(s),xaxt='n',yaxt='n',bty='n')
-		polygon(  c(t[1],-tau,-tau,t[1]), c(0,0,alpha,alpha), border=NA, col=myFadeCol("red",0.4)  )
-		polygon(  c(tau,t[length(t)],t[length(t)],tau), c(0,0,alpha,alpha), border=NA, col=myFadeCol("red",0.4)  )
-		polygon(  c(-tau,tau,tau,-tau), c(1,1,alpha,alpha), border=NA, col=myFadeCol("blue",0.4)  )
+		polygon(  c(t[1],-tau,-tau,t[1]), c(0,0,alpha,alpha), border=NA, col=my.fade.col("red",0.4)  )
+		polygon(  c(tau,t[length(t)],t[length(t)],tau), c(0,0,alpha,alpha), border=NA, col=my.fade.col("red",0.4)  )
+		polygon(  c(-tau,tau,tau,-tau), c(1,1,alpha,alpha), border=NA, col=my.fade.col("blue",0.4)  )
 		lines(c(0,0),c(0,dt(0, df=2*n-2)),lty=4,col="gray40")
 		lines(c(-5,-tau),c(0,0),col="red")
 		lines(c(-tau,tau),c(0,0),col="blue")
@@ -5153,15 +5253,15 @@ project.nABC.ISBA2012talk<- function()
 		par(mar=c(0,0,0,0))
 		plot(1,1,xlab='', xlim= xlim,type='n',ylim=ylim,ylab='',main="", xaxt='n', yaxt='n', bty='n')
 
-		plot(hy,freq=F,col=myFadeCol("#0080FFFF",0.4),border=NA,add=TRUE)
-		plot(hy2,freq=F,col=myFadeCol("red",0.4),border=NA,add=TRUE)
-		plot(hy3,freq=F,col=myFadeCol("green",0.4),border=NA,add=TRUE)
+		plot(hy,freq=F,col=my.fade.col("#0080FFFF",0.4),border=NA,add=TRUE)
+		plot(hy2,freq=F,col=my.fade.col("red",0.4),border=NA,add=TRUE)
+		plot(hy3,freq=F,col=my.fade.col("green",0.4),border=NA,add=TRUE)
 		plot(hx,freq=F,col="gray60",border=NA,add=TRUE)
 		lines(c(mean(x),mean(x)),c(0,0.4),col="black",lwd=2)
 		lines(c(mean(y),mean(y)),c(0,0.4),col="blue",lwd=2)
 		lines(c(mean(y2),mean(y2)),c(0,0.4),col="red",lwd=2)
 		lines(c(mean(y3),mean(y3)),c(0,0.4),col="green",lwd=2)
-		legend("topleft",c(expression(paste("sim | ",theta,"1")),expression(paste("sim | ",theta,"2")),expression(paste("sim | ",theta,"3"))),fill=c(myFadeCol("#0080FFFF",0.6),myFadeCol("red",0.6),myFadeCol("green",0.6)),bty='n')
+		legend("topleft",c(expression(paste("sim | ",theta,"1")),expression(paste("sim | ",theta,"2")),expression(paste("sim | ",theta,"3"))),fill=c(my.fade.col("#0080FFFF",0.6),my.fade.col("red",0.6),my.fade.col("green",0.6)),bty='n')
 		legend("topright","obs",fill="gray60",bty='n')
 		dev.off()
 	}

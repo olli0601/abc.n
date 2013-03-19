@@ -4,7 +4,7 @@
 \usage{
   nabc.chisqstretch(sim, obs.mc, args = NA,
     verbose = FALSE, tau.l = 1, tau.u = 1, guess.tau.l = 0,
-    alpha = 0, normal.test = "sf.test")
+    alpha = 0, normal.test = "sf.test", for.mle = 0)
 }
 \arguments{
   \item{sim}{simulated summary values}
@@ -35,6 +35,9 @@
 
   \item{normal.test}{name of function with which normality
   of the summary values is tested}
+
+  \item{for.mle}{calibrate so that the mode of the power is
+  at the MLE}
 }
 \value{
   vector containing \item{error}{test statistic, here
