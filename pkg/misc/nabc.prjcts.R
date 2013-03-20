@@ -2294,7 +2294,7 @@ project.nABC.StretchedChi2<- function()
 		
 
 		args<- paste("chisqstretch",for.mle,tau.l,tau.l,tau.u,alpha,sep='/')
-		print(args)
+		#print(args)
 		#perform one ABC - rejection run
 		ans			<- vector("list",4)
 		names(ans)	<- c("xsigma2","cil","cir","data")		
@@ -2303,9 +2303,7 @@ project.nABC.StretchedChi2<- function()
 		{		
 			tmp				<- nabc.chisqstretch(rnorm(yn,ymu,sd=sqrt(ans[["xsigma2"]])), ans[["xsigma2"]], args=args, verbose= 0)
 			ans[["cil"]]	<- tmp["cil"]
-			ans[["cir"]]	<- tmp["cir"]
-			print(ans)
-			stop()
+			ans[["cir"]]	<- tmp["cir"]		
 		}
 		else
 		{
