@@ -1,6 +1,4 @@
-#! /Library/Frameworks/R.framework/Versions/2.15/Resources/bin/Rscript
-#--DSCR------- #! /opt/apps/R-2.15.1/lib64/R/bin/Rscript
-#--CX1-------- #! /apps/R/2.13.0/lib64/R/bin/Rscript
+#! /apps/R/2.13.0/lib64/R/bin/Rscript
 ###############################################################################
 #
 #
@@ -28,10 +26,10 @@ if(!any(args=='--args'))
 if(any(args=='--args'))
 	args<- args[-(1:match("--args", args)) ]
 
-CODE.HOME	<<- "/Users/Oliver/git/abc.n/pkg"
-#CODE.HOME	<<- "/work/or105/libs/abc.n/pkg"
-HOME		<<- "/Users/Oliver/workspace_sandbox/phylody"
-#HOME		<<- "/work/or105/phylody"
+#CODE.HOME	<<- "/Users/Oliver/git/abc.n/pkg"
+CODE.HOME	<<- "/work/or105/libs/abc.n/pkg"
+#HOME		<<- "/Users/Oliver/workspace_sandbox/phylody"
+HOME		<<- "/work/or105/phylody"
 DATA		<<- paste(HOME,"data",sep='/')
 NABC.DEBUG	<<- 0
 LIB.LOC		<<- NULL
