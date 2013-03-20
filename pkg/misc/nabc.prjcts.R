@@ -2825,14 +2825,14 @@ project.nABC.StretchedChi2<- function()
 				f.name<- list.files(dir.name, pattern=paste("^nABC.Chisq_mle_ok_",sep=''), full.names = TRUE)
 				tmp<- sort(sapply(strsplit(f.name,'_',fixed=1),function(x)	as.numeric(substr(x[length(x)],2,nchar(x[length(x)])-2))		), index.return=1)
 				f.name<- f.name[tmp$ix]				
-				f.name2<- list.files(dir.name, pattern=paste("^nABC.Chisq_mle_naive_",sep=''), full.names = TRUE)
-				tmp2<- sort(sapply(strsplit(f.name2,'_',fixed=1),function(x)	as.numeric(substr(x[length(x)],2,nchar(x[length(x)])-2))		), index.return=1)
-				f.name2<- f.name2[tmp2$ix]
+				#f.name2<- list.files(dir.name, pattern=paste("^nABC.Chisq_mle_naive_",sep=''), full.names = TRUE)
+				#tmp2<- sort(sapply(strsplit(f.name2,'_',fixed=1),function(x)	as.numeric(substr(x[length(x)],2,nchar(x[length(x)])-2))		), index.return=1)
+				#f.name2<- f.name2[tmp2$ix]
 				#f.name3<- list.files(dir.name, pattern=paste("^nABC.Chisq_wprior_",sep=''), full.names = TRUE)
 				#tmp3<- sort(sapply(strsplit(f.name3,'_',fixed=1),function(x)	as.numeric(substr(x[length(x)],2,nchar(x[length(x)])-2))		), index.return=1)
 				#f.name3<- f.name3[tmp3$ix]											
-				f.name<- rbind( 	f.name[tmp$x%in%intersect(tmp$x,tmp2$x)], f.name2[tmp2$x%in%intersect(tmp$x,tmp2$x)]	)
-				#f.name<- t(as.matrix(f.name))
+				#f.name<- rbind( 	f.name[tmp$x%in%intersect(tmp$x,tmp2$x)], f.name2[tmp2$x%in%intersect(tmp$x,tmp2$x)]	)
+				f.name<- t(as.matrix(f.name))
 				#f.name<- rbind( 	f.name[tmp$x%in%intersect(intersect(tmp$x,tmp2$x),tmp3$x)], 
 				#		f.name2[tmp2$x%in%intersect(intersect(tmp$x,tmp2$x),tmp3$x)],
 				#		f.name3[tmp3$x%in%intersect(intersect(tmp$x,tmp2$x),tmp3$x)]	)	
@@ -2851,9 +2851,9 @@ project.nABC.StretchedChi2<- function()
 							
 							
 							cat(paste("\nload",f.name[2,j]))	
-							#ans.naive<- ans.ok
-							readAttempt<-try(suppressWarnings(load( f.name[2,j] )))
-							if(inherits(readAttempt, "try-error"))	stop("error at naive")	
+							ans.naive<- ans.ok
+							#readAttempt<-try(suppressWarnings(load( f.name[2,j] )))
+							#if(inherits(readAttempt, "try-error"))	stop("error at naive")	
 							#tmp fix bug (now resolved)
 				ans.naive[["cil"]]<- 0.5084666
 				ans.naive[["cir"]]<- 1.009202
