@@ -2831,7 +2831,8 @@ project.nABC.StretchedChi2<- function()
 				#f.name3<- list.files(dir.name, pattern=paste("^nABC.Chisq_wprior_",sep=''), full.names = TRUE)
 				#tmp3<- sort(sapply(strsplit(f.name3,'_',fixed=1),function(x)	as.numeric(substr(x[length(x)],2,nchar(x[length(x)])-2))		), index.return=1)
 				#f.name3<- f.name3[tmp3$ix]											
-				f.name<- rbind( 	f.name[tmp$x%in%intersect(tmp$x,tmp2$x)], f.name2[tmp2$x%in%intersect(tmp$x,tmp2$x)]	)	
+				f.name<- rbind( 	f.name[tmp$x%in%intersect(tmp$x,tmp2$x)], f.name2[tmp2$x%in%intersect(tmp$x,tmp2$x)]	)
+				#f.name<- t(as.matrix(f.name))
 				#f.name<- rbind( 	f.name[tmp$x%in%intersect(intersect(tmp$x,tmp2$x),tmp3$x)], 
 				#		f.name2[tmp2$x%in%intersect(intersect(tmp$x,tmp2$x),tmp3$x)],
 				#		f.name3[tmp3$x%in%intersect(intersect(tmp$x,tmp2$x),tmp3$x)]	)	
@@ -2849,7 +2850,8 @@ project.nABC.StretchedChi2<- function()
 							out["ok",]<- c(acc.h.ok[["mean"]],acc.h.ok[["hmode"]],acc.h.ok[["dmode"]],ans.ok[["xsigma2"]])
 							
 							
-							cat(paste("\nload",f.name[2,j]))							
+							cat(paste("\nload",f.name[2,j]))	
+							#ans.naive<- ans.ok
 							readAttempt<-try(suppressWarnings(load( f.name[2,j] )))
 							if(inherits(readAttempt, "try-error"))	stop("error at naive")	
 							#tmp fix bug (now resolved)
@@ -2860,8 +2862,8 @@ project.nABC.StretchedChi2<- function()
 							acc.h.naive<- project.nABC.movingavg.gethist(ans.naive[["data"]]["ysigma2",acc.naive], ans.naive[["xsigma2"]], nbreaks= 100, width= 0.5, plot=0)
 							out["naive",]<- c(acc.h.naive[["mean"]],acc.h.naive[["hmode"]],acc.h.naive[["dmode"]],ans.naive[["xsigma2"]])
 				print(length(acc.naive) / ncol(ans.naive[["data"]]))			
-print(out)										
-							if(1 && j==1)
+#print(out)										
+							if(0 && j==2)
 							{
 								require(pscl)
 								cols<- c(my.fade.col("black",0.2),my.fade.col("black",0.6),"black")
@@ -2907,12 +2909,21 @@ print(out)
 				
 				f.name<- paste(dir.name,"/nABC.Chisq_modemean_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,".R",sep='')
 				cat(paste("\nnABC.Chisq save 'ans' to ",f.name))				
-				save(ans,file=f.name)
-				print(ans[,1:5])
-				stop()
+				#save(ans,file=f.name)
+				print(ans)
+				#stop()
 			}			
-			#
+			# 
 			#compute means 
+			est.theta0<- 	sapply(seq_along(ans),function(i)	c(ans[[i]]["ok","xsigma2"],ans[[i]]["ok","dmode"],ans[[i]]["ok","mean"],ans[[i]]["naive","dmode"],ans[[i]]["naive","mean"])	)
+			rownames(est.theta0)<- c("xsigma2","ok.mo","ok.me","naive.mo","naive.me")
+			cat("\n estimated means\n")
+			print( apply(est.theta0,1,mean) )
+			print( mean(est.theta0["ok.mo",]-est.theta0["xsigma2",]) )
+			print( mean(est.theta0["ok.me",]-est.theta0["xsigma2",]) )
+			print( mean(est.theta0["naive.mo",]-est.theta0["xsigma2",]) )
+			print( mean(est.theta0["naive.me",]-est.theta0["xsigma2",]) )
+			
 		}
 		stop()
 	}	
