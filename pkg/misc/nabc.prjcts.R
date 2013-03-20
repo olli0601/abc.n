@@ -2781,7 +2781,7 @@ project.nABC.StretchedChi2<- function()
 		xsigma2<- 1
 		prior.u<- 4
 		prior.l<- 0.2
-		N<- 2e6
+		N<- 1e6
 		
 		resume<- 1
 		if(!is.na(m))
@@ -2850,7 +2850,7 @@ project.nABC.StretchedChi2<- function()
 							out["ok",]<- c(acc.h.ok[["mean"]],acc.h.ok[["hmode"]],acc.h.ok[["dmode"]],ans.ok[["xsigma2"]])
 							
 							
-							cat(paste("\nload",f.name[2,j]))	
+							#cat(paste("\nload",f.name[2,j]))	
 							ans.naive<- ans.ok
 							#readAttempt<-try(suppressWarnings(load( f.name[2,j] )))
 							#if(inherits(readAttempt, "try-error"))	stop("error at naive")	
