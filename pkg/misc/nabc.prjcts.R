@@ -2301,7 +2301,7 @@ project.nABC.StretchedChi2<- function()
 		ans[["xsigma2"]]	<- ifelse( for.mle, (length(x)-1)*var(x)/length(x), var(x) )		#either MLE or unbiased estimate of sig2
 		if(with.c)
 		{		
-			tmp				<- nabc.chisqstretch(rnorm(yn,ymu,sd=sqrt(ans[["xsigma2"]])), ans[["xsigma2"]], args=args, verbose= 0)
+			tmp				<- nabc.chisqstretch(rnorm(yn,ymu,sd=sd(x)), var(x), args=args, verbose= 0)
 			ans[["cil"]]	<- tmp["cil"]
 			ans[["cir"]]	<- tmp["cir"]		
 		}
@@ -2313,15 +2313,15 @@ project.nABC.StretchedChi2<- function()
 								{					
 									ysigma2	<- runif(1,prior.l,prior.u)
 									y		<- rnorm(yn,ymu,sd=sqrt(ysigma2))
-									if(with.c)
-									{
-										tmp	<- nabc.chisqstretch(y, ans[["xsigma2"]], args=args, verbose= 0)						
-										tmp	<- c(  ysigma2,tmp[c("error","rho.mc")],var(y)-ans[["xsigma2"]]   )							
-									}
-									else 
-									{					
-										tmp	<- c(ysigma2, var(y)/ans[["xsigma2"]], log( var(y)/ans[["xsigma2"]] ), var(y)-ans[["xsigma2"]])
-									}
+									#if(with.c)
+									#{
+									#	tmp	<- nabc.chisqstretch(y, var(x), args=args, verbose= 0)						
+									#	tmp	<- c(  ysigma2,tmp[c("error","rho.mc")],var(y)-ans[["xsigma2"]]   )							
+									#}
+									#else 
+									#{					
+									tmp	<- c(ysigma2, var(y)/var(x), log( var(y)/var(x) ), var(y)-var(x) )
+									#}
 									names(tmp)<- c("ysigma2","error","rho.mc","sy2-sx2")
 									tmp					
 								})		
@@ -2793,7 +2793,8 @@ project.nABC.StretchedChi2<- function()
 			options(show.error.messages = TRUE)						
 			if(!resume || inherits(readAttempt, "try-error"))
 			{
-				x<- rnorm(xn,xmu,sd=sqrt(xsigma2))							
+				x<- rnorm(xn,xmu,sd=sqrt(xsigma2))				
+				x<- (x-mean(x))/sd(x)
 				f.name<- paste(dir.name,"/nABC.Chisq_mle_ok_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
 				ans.ok<- project.nABC.StretchedChi2.fix.x.uprior.ysig2(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu, for.mle=for.mle)
 				cat(paste("\nnABC.Chisq: save ",f.name))
@@ -2843,7 +2844,9 @@ project.nABC.StretchedChi2<- function()
 							
 							cat(paste("\nload",f.name[1,j]))
 							readAttempt<-try(suppressWarnings(load( f.name[1,j] )))
-							if(inherits(readAttempt, "try-error"))	stop("error at ok")																					
+							if(inherits(readAttempt, "try-error"))	stop("error at ok")
+							#tmp fix bug (now resolved)
+							ans.ok[["data"]]["error",]<- ans.ok[["data"]]["error",]*59/60
 							#accept if T in boundaries					
 							acc.ok<- which( ans.ok[["data"]]["error",]<=ans.ok[["cir"]]  &  ans.ok[["data"]]["error",]>=ans.ok[["cil"]] )
 							acc.h.ok<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok], ans.ok[["xsigma2"]], nbreaks= 100, width= 0.5, plot=0)
