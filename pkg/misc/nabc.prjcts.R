@@ -2923,7 +2923,7 @@ project.nABC.StretchedChi2<- function()
 			cat("\n estimated means\n")
 			print( apply(est.theta0,1,mean) )
 			print( mean(est.theta0["ok.mo",]-est.theta0["xsigma2",]) )
-			print( mean(est.theta0["ok.me",]-est.theta0["xsigma2",]) )
+			print( mean(est.theta0["ok.me",]-est.theta0["xsigma2",]*xn/(xn-4)) )
 			print( mean(est.theta0["naive.mo",]-est.theta0["xsigma2",]) )
 			print( mean(est.theta0["naive.me",]-est.theta0["xsigma2",]) )
 			
