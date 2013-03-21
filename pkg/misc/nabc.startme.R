@@ -1,4 +1,5 @@
-#! /apps/R/2.13.0/lib64/R/bin/Rscript
+#! /Library/Frameworks/R.framework/Versions/2.15/Resources/bin/Rscript
+##! /apps/R/2.13.0/lib64/R/bin/Rscript
 ###############################################################################
 #
 #
@@ -26,10 +27,10 @@ if(!any(args=='--args'))
 if(any(args=='--args'))
 	args<- args[-(1:match("--args", args)) ]
 
-#CODE.HOME	<<- "/Users/Oliver/git/abc.n/pkg"
-CODE.HOME	<<- "/work/or105/libs/abc.n/pkg"
-#HOME		<<- "/Users/Oliver/workspace_sandbox/phylody"
-HOME		<<- "/work/or105/phylody"
+CODE.HOME	<<- "/Users/Oliver/git/abc.n/pkg"
+#CODE.HOME	<<- "/work/or105/libs/abc.n/pkg"
+HOME		<<- "/Users/Oliver/workspace_sandbox/phylody"
+#HOME		<<- "/work/or105/phylody"
 DATA		<<- paste(HOME,"data",sep='/')
 NABC.DEBUG	<<- 0
 LIB.LOC		<<- NULL
@@ -38,7 +39,7 @@ EPS			<<- 1e-12
 default.fun	<- "my.make.documentation"
 default.fun	<- "project.nABC.TOST"
 default.fun	<- "project.nABC.StretchedChi2"
-#default.fun<- "project.nABC.movingavg"
+default.fun<- "project.nABC.movingavg"
 ###############################################################################
 #if(length(args) && !is.loaded("tipc_tabulate_after_sample"))
 #{
@@ -67,6 +68,60 @@ my.make.documentation<- function()
 my.fade.col<-function(col,alpha=0.5)
 {
 	return(rgb(col2rgb(col)[1]/255,col2rgb(col)[2]/255,col2rgb(col)[3]/255,alpha))
+}
+
+plot.2D.dens<- function(x,y,xlab,ylab,xlim=NA,ylim=NA,nbin=NA,width.infl=2,n.hists=5,method="gauss", palette= "topo", persp.theta= -30, persp.phi= 30, zero.abline=TRUE, ...)
+{
+	if(!method%in%c("gauss","ash","persp"))	stop("plot.2D.dens: exception 1a")
+	if(!palette%in%c("topo","heat","gray"))	stop("plot.2D.dens: exception 1b")
+	switch(method,
+			gauss=
+					{
+						require(KernSmooth)
+						require(fields)
+						x.bw<- width.infl*diff(summary(x)[c(2,5)])
+						y.bw<- width.infl*diff(summary(y)[c(2,5)])
+						if(!x.bw) x.bw<- EPS
+						if(!y.bw) y.bw<- EPS
+						if(any(is.na(xlim)))	xlim<- range(x)+c(-1.5,1.5)*x.bw
+						if(any(is.na(ylim)))	ylim<- range(y)+c(-1.5,1.5)*y.bw
+						dens <- bkde2D(cbind(x, y), range.x=list(xlim,ylim),bandwidth=c(x.bw,y.bw))
+						contour(dens$x1, dens$x2, dens$fhat,xlab=xlab,ylab=ylab)
+						if(zero.abline) abline(v=0,col="black",lty=3,lwd=1.5)
+						if(zero.abline) abline(h=0,col="black",lty=3,lwd=1.5)
+					},
+			ash={
+				require(ash)
+				if(any(is.na(xlim))) xlim<- range(x)*1.05
+				if(any(is.na(ylim))) ylim<- range(y)*1.05
+				if(any(is.na(nbin))) nbin<- 2*c(nclass.Sturges(x),nclass.Sturges(y))
+				bins<- bin2(cbind(x, y), ab=rbind(xlim,ylim),nbin=nbin)
+				f <- ash2(bins,rep(n.hists,2))
+				#image(f$x,f$y,f$z, col=rainbow(50,start= 4/6,end=0),xlab=xlab,ylab=ylab)
+				if(palette=="topo")					image(f$x,f$y,f$z, col=tail( topo.colors(trunc(50*1.4)), 50 ),xlab=xlab,ylab=ylab,...)
+				else if(palette=="gray")			image(f$x,f$y,f$z, col=head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50),xlab=xlab,ylab=ylab,...)					
+				else								image(f$x,f$y,f$z, col=heat.colors( 50 ),xlab=xlab,ylab=ylab,...)
+				contour(f$x,f$y,f$z,add=TRUE, nlevels= 5)
+				if(zero.abline) abline(v=0,col="black",lty=2,lwd=2)
+				if(zero.abline) abline(h=0,col="black",lty=2,lwd=2)
+			},
+			persp={
+				require(ash)
+				require(MASS)
+				if(any(is.na(xlim))) xlim<- range(x)*1.05
+				if(any(is.na(ylim))) ylim<- range(y)*1.05
+				bins<- bin2(cbind(x, y), ab=rbind(xlim,ylim),nbin=2*c(nclass.Sturges(x),nclass.Sturges(y)))
+				f <- ash2(bins,rep(n.hists,2))
+				
+				nrz <- nrow(f$z)
+				ncz <- ncol(f$z)
+				col<- tail(topo.colors(trunc(1.4 * 50)),50)
+				fcol      <- col[trunc(f$z / max(f$z)*(50-1))+1]
+				dim(fcol) <- c(nrz,ncz)
+				fcol      <- fcol[-nrz,-ncz]
+				par(mar=c(1/2,1/2,1/2,1/2))
+				persp(x=f$x,y=f$y,z=f$z,col= fcol,theta=persp.theta,phi=persp.phi,xlab=xlab,ylab=ylab,zlab='', ticktype= "detailed" )
+			})
 }
 ###############################################################################
 my.mkdir(HOME,"data")

@@ -24,6 +24,8 @@ extern "C" {
  */
 SEXP abcScaledChiSq(SEXP args);
 
+SEXP abcIntersectLevelSets(SEXP m1, SEXP m2, SEXP s);
+
 }
 
 

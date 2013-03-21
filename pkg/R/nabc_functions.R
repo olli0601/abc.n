@@ -563,7 +563,7 @@ nabc.chisqstretch<- function(sim, obs.mc, args=NA, verbose= FALSE, tau.l=1, tau.
 	ans["pval"]			<- ( ans["pval"] - ans["ar"]/2 ) / ( 1 - ans["ar"] )
 	ans["link.mc.sim"]	<- var(sim)
 	ans["link.mc.obs"]	<- obs.mc
-	ans["rho.mc"]		<- log(var(sim) / obs.mc)
+	ans["rho.mc"]		<- log(var(sim) / obs.mc )
 	if(verbose)	cat(paste(paste("\n{",args,"<-list(sim.var=",var(sim) ," , obs.var=",obs.mc," , alpha=",alpha," , tau.l=",tau.l," , tau.u=",tau.u,", log.ciu=",log(ans["cir"]),", ",sep=''),paste(names(ans), ans, collapse=', ', sep='='),")}",sep=''))
 	ans
 }	

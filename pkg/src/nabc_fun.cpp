@@ -67,4 +67,37 @@ SEXP abcScaledChiSq(SEXP args)
 	return ans;
 }
 
+SEXP abcIntersectLevelSets(SEXP m1, SEXP m2, SEXP s)
+{
+	FAIL_ON(! Rf_isMatrix(m1) ,"abcIntersectLevelSets: error at 1a %c");
+	FAIL_ON(! Rf_isMatrix(m2) ,"abcIntersectLevelSets: error at 1b %c");
+	FAIL_ON(! Rf_isReal(s) ,"abcIntersectLevelSets: error at 1c %c");
 
+	int i,j1,j2,error= 0;
+	int nr1= Rf_nrows(m1), nr2= Rf_nrows(m2), nc1= Rf_ncols(m1), nc2= Rf_ncols(m2), ns= Rf_length(s);
+	double tmp, *xd= NULL, *ym2=NULL, *xm1= NULL, *xm2= NULL, *xs= NULL, *is=NULL;
+	SEXP ans;
+
+	FAIL_ON(nr1!=nr2,"abcIntersectLevelSets: error at 2a %c");
+	FAIL_ON(nr1!=ns,"abcIntersectLevelSets: error at 2b %c");
+
+	PROTECT(ans=  Rf_allocMatrix(REALSXP, nc1, nc2));
+	for(i= nc1*nc2, xd= REAL(ans); 	i--;  *xd++= 0.);
+
+	is= NEW_ARY(double,ns);
+	for(i=ns, xd=is, xs=REAL(s);		i--;	*xd++= 1 / *xs++);
+
+	//std::cout<<"n"<<nr1<<"col"<<nc1<<"\t"<<*xm1<<'\t'<<*(xm1+1)<<'\t'<<*(xm1+2)<<'\t'<<*(xm1+3)<<std::endl;
+
+	//xd= (dist= oNFLTYM_NewFill(nc2,nc1,0.,error))->rdata;	//rdata is byrow
+	for(j2= nc2, xm2= REAL(m2), xd= REAL(ans);		j2--;		xm2+=nr1)
+		for(j1= nc1, xm1= REAL(m1);		j1--;		xd++)
+			for(i=nr1, xs= is, ym2=xm2;		i--;	)
+			{
+				tmp= (*xm1++ - *ym2++) * *xs++;
+				(*xd)+= tmp * tmp;
+			}
+	DELETE(is);
+	UNPROTECT(1);
+	return ans;
+}
