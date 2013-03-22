@@ -1164,13 +1164,13 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 			yn.lb<- yn
 #print(c(abs(error), (yn.lb+1)!=yn.ub) )	
 	}
-	c(yn,-tau.u,tau.u,pw.cvar,pw.cmx,abs(error))
+	c(yn,-tau.u,tau.u,pw.cvar,pw.cmx,abs(error), max.it==0 || (yn.lb+1)==yn.ub)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Perform the exact TOST for location equivalence when the summary values are normally distributed
 #' @export
 #' @param sim			simulated summary values
-#' @param obs.mean		sample mean of the observed summary values
+#' @param obs		observed summary values
 #' @param args			argument that contains the equivalence region and the level of the test (see Examples). This is the preferred method for specifying arguments and overwrites the dummy default values
 #' @param verbose		flag if detailed information on the computations should be printed to standard out
 #' @param s.of.x		standard deviation of the observed summary values
@@ -1190,45 +1190,40 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 #'	args<- paste("mutost",1,tau.l,tau.u,alpha,sep='/')
 #'	x<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 #'	y<- rnorm(yn,ymu,sd=sqrt(ysigma2))
-#'	nabc.mutost.onesample(y, mean(x), std.sd=sd(x), args= args, verbose= 0)
-nabc.mutost.onesample<- function(sim, obs.mean, args= NA, verbose= FALSE, s.of.x=NA, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test")
+#'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
+nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test")
 {
 	#verbose<- 1
 	ans<- NABC.DEFAULT.ANS
 	#compute two sample t-test on either z-scores or untransformed data points
 	if(any(is.na(sim)))			stop("nabc.mutost: error at 1a")
-	if(any(is.na(obs.mean)))	stop("nabc.mutost: error at 1b")
+	if(any(is.na(obs)))	stop("nabc.mutost: error at 1b")
 	if(!is.na(args))
 	{
 		args<- strsplit(args,'/')[[1]]
 		if(length(args)==4)
 		{
-			standardize	<- as.numeric( args[2] )						
+			standardize	<- as.numeric( args[2] )
+			if(standardize!=1)	stop("standardize must be 1")
 			tau.u		<- as.numeric( args[3] )
 			tau.l		<- -tau.u
 			alpha		<- as.numeric( args[4] )
 		}
-		else if(length(args)==5)
+		else if(length(args)==6)
 		{
 			standardize	<- as.numeric( args[2] )
-			if(standardize==2)
-			{
-				annealing<- as.numeric( args[3] )
-				mx.pw	<- as.numeric( args[4] )
-			}
-			else
-			{
-				tau.l	<- as.numeric( args[3] )
-				tau.u	<- as.numeric( args[4] )
-			}
-			alpha		<- as.numeric( args[5] )
+			if(!standardize%in%c(2,3))	stop("standardize must be 2 or 3")
+			annealing	<- as.numeric( args[3] )
+			mx.pw		<- as.numeric( args[4] )
+			tau.u.ub	<- as.numeric( args[5] )
+			alpha		<- as.numeric( args[6] )
 		}
 		else
 			stop("nabc.mutost: error at 1c")
 		args<- args[1]
 	}
-	if(!standardize%in%c(0,1,2))	stop("incorrect standardize")
-	if(standardize==1 && is.na(s.of.x)) stop("s.of.x not specified but required")	
+	if(!standardize%in%c(0,1,2,3))	stop("incorrect standardize")		
+	if(standardize==1 && is.na(sd(obs)))	stop("cannot use standardize==1 when sd(obs) is undefined")
 	if(alpha<0 || alpha>1)		stop("incorrect alpha")
 	if(tau.u<0 || tau.l>0)		stop("incorrect tau.u or tau.l")
 	if(annealing<1)				stop("incorrect annealing parameter")
@@ -1236,21 +1231,57 @@ nabc.mutost.onesample<- function(sim, obs.mean, args= NA, verbose= FALSE, s.of.x
 #standardize<- 0
 	ans["pfam.pval"]<-	nabc.get.pfam.pval(sim,normal.test)	
 	if(!any(diff(sim)>0))	return(ans)
-	sim.mean	<- mean(sim)
-	if(standardize==1)
-		sim		<- (sim-sim.mean)/sd(sim)*s.of.x+sim.mean
+	obs.n		<- ifelse(!is.na(obs.n),obs.n,length(obs))
+	obs.mean	<- mean(obs)
+	if(obs.n<2)	stop("length of observed summaries too small, or set 'obs.n' explicitly")		
 	sim.n		<- length(sim)	
-	sim.sd		<- sd(sim)	
+	if(standardize==1)
+	{
+		if(sim.n>obs.n)
+			sim.n	<- obs.n
+		sim.mean<- mean(sim[seq.int(1,sim.n)])
+		sim.sd	<- sd(sim[seq.int(1,sim.n)])
+		sim		<- (sim[seq.int(1,sim.n)]-sim.mean)/sim.sd*sd(obs)+sim.mean					
+	}
 	if(standardize==2)
 	{	
 		#print(sim); 
 		#print(c(mx.pw,sim.n,sim.sd,alpha))
-		tmp		<- nabc.mutost.onesample.tau.lowup(mx.pw, sim.n-1, sim.sd/sqrt(sim.n), 2, alpha)
-		if(tmp[4]>0.09)	stop("nabc.mutost: tau.up not accurate")		
+		if(sim.n>obs.n)
+			sim.n	<- obs.n		
+cat(paste("\nstd is 2 and sim.n is",sim.n))
+		sim.mean<- mean(sim[seq.int(1,sim.n)])
+		sim.sd	<- sd(sim[seq.int(1,sim.n)])					
+		tmp		<- nabc.mutost.onesample.tau.lowup(mx.pw, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha)
+		if(tmp[4]>0.09)	stop("tau.up not accurate")		
 		tau.l	<- tmp[1]*annealing
 		tau.u	<- tmp[2]*annealing				
 		#print(c(annealing,mx.pw,tau.l,tau.u))
 		#rho<- seq(tau.l,tau.u,length.out=1e3); y<- nabc.mutost.pow(rho, sim.n-1, tau.u, sim.sd/sqrt(sim.n), alpha); plot(rho,y,type='l')		
+	}
+	if(standardize==3)
+	{
+		cat(print.v(sim))
+		cat(print.v(obs))
+		s.of.lkl<- sqrt( var(obs)*(obs.n-1)/obs.n  * (obs.n-1)/(obs.n-3)	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
+cat(paste("\nstd is 3 and sim.n obs.n is",sim.n,obs.n))
+		sim.sd	<- sd(sim)
+print(c(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u*annealing))
+		
+		tmp		<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=2*tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-3)		#for simplicity keep sim.sd fixed even if we use shorter 'sim' overall
+print(tmp)		
+		if(abs(tmp[5]-mx.pw)>0.09)	stop("tau.up not accurate")
+		sim.n	<- tmp[1]
+		options(warn=1)
+		if(sim.n>length(sim))
+		{
+			warning(paste("not enough simulated summary values",sim.n,length(sim)))
+			sim.n<- length(sim)
+		}
+		options(warn=2)
+		sim.mean<- mean(sim[1:sim.n])
+		tau.l	<- tmp[2]*annealing
+		tau.u	<- tmp[3]*annealing								
 	}
 	tmp			<- c(	sqrt(sim.n)*(sim.mean-obs.mean-tau.l) / sim.sd,			#[1]	T-	test statistic for -tau (lower test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
 						sqrt(sim.n)*(sim.mean-obs.mean-tau.u) / sim.sd,			#[2]	T+	test statistic for tau (upper test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1

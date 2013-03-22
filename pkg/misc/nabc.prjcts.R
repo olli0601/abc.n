@@ -2860,14 +2860,19 @@ project.nABC.StretchedChi2<- function()
 				var.lkl	<- b*b/((a-1)*(a-1)*(a-2))				
 				tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.lkl), 0.9, alpha, tau.u.ub=tau.u, for.mle=1)
 				yn		<- tmp[1]
-				f.name	<- paste(dir.name,"/nABC.Chisq_mle_yn_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+				tau.l	<- tmp[2]
+				tau.u	<- tmp[3]
+				f.name	<- paste(dir.name,"/nABC.Chisq_mle_yn_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')
 				ans.ok	<- project.nABC.StretchedChi2.fix.x.uprior.ysig2(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu, for.mle=for.mle)
 				cat(paste("\nnABC.Chisq: save ",f.name))
 				save(ans.ok,file=f.name)				
 				ans.ok	<- NULL				
 				
 				yn		<- round(yn*3/100)*100
-				f.name	<- paste(dir.name,"/nABC.Chisq_mle_yntoolarge_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+				tmp		<- nabc.chisqstretch.tau.lowup(0.9, tau.u, yn-1, alpha, for.mle=for.mle)
+				tau.l	<- tmp[1]
+				tau.u	<- tmp[2]
+				f.name	<- paste(dir.name,"/nABC.Chisq_mle_yntoolarge_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')				
 				ans.too	<- project.nABC.StretchedChi2.fix.x.uprior.ysig2(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu, for.mle=for.mle)
 				cat(paste("\nnABC.Chisq: save ",f.name))
 				save(ans.too,file=f.name)				
@@ -2884,6 +2889,110 @@ project.nABC.StretchedChi2<- function()
 			else
 				cat(paste("\nnABC.MA: resumed ",f.name))
 		}	
+		else
+		{
+			#load data
+			cat(paste("\nnABC.Chisq",dir.name))
+			f.name<- paste(dir.name,"/nABC.Chisq_mle_yn_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,".R",sep='')
+			options(show.error.messages = FALSE, warn=1)		
+			readAttempt<-try(suppressWarnings(load(f.name)))						
+			options(show.error.messages = TRUE)		
+			if(!resume || inherits(readAttempt, "try-error"))
+			{				
+				f.name<- list.files(dir.name, pattern=paste("^nABC.Chisq_mle_yn_",sep=''), full.names = TRUE)
+				tmp<- sort(sapply(strsplit(f.name,'_',fixed=1),function(x)	as.numeric(substr(x[length(x)],2,nchar(x[length(x)])-2))		), index.return=1)
+				f.name<- f.name[tmp$ix]				
+				f.name2<- list.files(dir.name, pattern=paste("^nABC.Chisq_mle_yntoolarge_",sep=''), full.names = TRUE)
+				tmp2<- sort(sapply(strsplit(f.name2,'_',fixed=1),function(x)	as.numeric(substr(x[length(x)],2,nchar(x[length(x)])-2))		), index.return=1)
+				f.name2<- f.name2[tmp2$ix]
+				f.name<- rbind( 	f.name[tmp$x%in%intersect(tmp$x,tmp2$x)], f.name2[tmp2$x%in%intersect(tmp$x,tmp2$x)]	)
+				print(f.name)
+				cat(paste("\nnABC.Chisq load data: ", ncol(f.name)))
+				ans<- lapply(seq_len(ncol(f.name)),function(j)
+						{
+							out<- matrix(NA,2,4,dimnames=list(c("ok","large"),c("mean","hmode","dmode","xsigma2")))
+							
+							cat(paste("\nload",f.name[1,j]))
+							readAttempt<-try(suppressWarnings(load( f.name[1,j] )))
+							if(inherits(readAttempt, "try-error"))	stop("error at ok")
+							#tmp fix bug (now resolved)
+							#ans.ok[["data"]]["error",]<- ans.ok[["data"]]["error",]*59/60
+							#accept if T in boundaries					
+							acc.ok<- which( ans.ok[["data"]]["error",]<=ans.ok[["cir"]]  &  ans.ok[["data"]]["error",]>=ans.ok[["cil"]] )
+							acc.h.ok<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok], ans.ok[["xsigma2"]], nbreaks= 100, width= 0.5, plot=0)
+							out["ok",]<- c(acc.h.ok[["mean"]],acc.h.ok[["hmode"]],acc.h.ok[["dmode"]],ans.ok[["xsigma2"]])
+							
+							
+							#cat(paste("\nload",f.name[2,j]))	
+							#ans.naive<- ans.ok
+							readAttempt<-try(suppressWarnings(load( f.name[2,j] )))
+							if(inherits(readAttempt, "try-error"))	stop("error at toolarge")	
+							#tmp fix bug (now resolved)
+							#ans.naive[["cil"]]<- 0.5084666; ans.naive[["cir"]]<- 1.009202
+							
+							acc.too<- which( ans.too[["data"]]["error",]<=ans.too[["cir"]]  &  ans.too[["data"]]["error",]>=ans.too[["cil"]] )
+							acc.h.too<- project.nABC.movingavg.gethist(ans.too[["data"]]["ysigma2",acc.too], ans.too[["xsigma2"]], nbreaks= 100, width= 0.5, plot=0)
+							out["large",]<- c(acc.h.too[["mean"]],acc.h.too[["hmode"]],acc.h.too[["dmode"]],ans.too[["xsigma2"]])
+							print(length(acc.too) / ncol(ans.too[["data"]]))			
+#print(out)										
+							if(1 && j==1)
+							{								
+								cols<- c(my.fade.col("black",0.2),my.fade.col("black",0.6),"black")
+								ltys<- c(1,1,4,3)
+								
+								#plot rho
+								require(pscl)
+								rho.h.ok<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok]/ans.ok[["xsigma2"]], 1, nbreaks= 100, width= 0.5, plot=1)								
+								
+								a		<- (xn-2)/2	 
+								b		<- ans.ok[["xsigma2"]]*xn/2
+								var.lkl	<- b*b/((a-1)*(a-1)*(a-2))				
+								tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.lkl), 0.9, alpha, tau.u.ub=tau.u, for.mle=1)
+								yn		<- tmp[1]																
+								
+								x		<- seq(prior.l,prior.u,0.001)
+								y		<- densigamma(x,a,b) / diff(pigamma(c(prior.l,prior.u),a,b))							
+								lines(x,y,col="red",lty=ltys[4])								
+								
+								pw		<- nabc.chisqstretch.pow(seq(prior.l,prior.u,by=0.001),yn,yn-1,ans.ok[["cil"]],ans.ok[["cir"]])
+								lines(seq(prior.l,prior.u,by=0.001),pw/(sum(pw)*0.001),type='l',col="blue")								
+								abline(v=ans.ok[["xsigma2"]],col=cols[3],lty=ltys[3])								
+																																
+								stop()
+								rho.h.naive	<- project.nABC.movingavg.gethist(ans.naive[["data"]]["ysigma2",acc.naive]/ans.naive[["xsigma2"]], 1, nbreaks= 50, width= 0.5, plot=0)								
+								f.name<- paste(dir.name,"/nABC.Chisq_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",j,"_rho.pdf",sep='')
+								#pdf(f.name,version="1.4",width=4,height=5)
+								par(mar=c(5,5,0.5,0.5))
+								plot(1,1,type='n',bty='n',ylab=expression("n-ABC estimate of "*pi[tau]*'('*rho*'|'*x*')'),xlab=expression(rho),xlim=c(0,3),ylim=range(c(rho.h.ok$density,rho.h.naive$density)))
+								plot(rho.h.ok, col=cols[1],border=NA,main='',add=1,freq=0)
+								plot(rho.h.naive, col=cols[2],border=NA,main='',add=1,freq=0)
+								abline(v=1,col=cols[3],lty=ltys[3])
+								legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,ltys[2],NA,NA,NA,NA,ltys[3]),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.477", tau^'+'*"=2.2","naive","tolerances",tau^'-'*"=0.35",tau^'+'*"=1.65","",rho^symbol("\x2a")))
+								#dev.off()
+								#plot sigma2
+								f.name<- paste(dir.name,"/nABC.Chisq_mle_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",j,".pdf",sep='')
+								#pdf(f.name,version="1.4",width=4,height=5)
+								par(mar=c(5,5,0.5,0.5))
+								plot(acc.h.ok, col=cols[1],border=NA,main='',freq=0,ylab=expression("n-ABC estimate of "*pi[tau]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,2))
+								plot(acc.h.naive, col=cols[2],border=NA,main='',add=1,freq=0)
+								x<- seq(prior.l,prior.u,0.001)
+								y<- densigamma(x,(xn-2)/2,ans.ok[["xsigma2"]]*xn/2) / diff(pigamma(c(prior.l,prior.u),(xn-2)/2,ans.ok[["xsigma2"]]*xn/2))							
+								lines(x,y,col=cols[3],lty=ltys[4])
+								abline(v=ans.ok[["xsigma2"]],col=cols[3],lty=ltys[3])								
+								legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,ltys[2],NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.477", tau^'+'*"=2.2","naive","tolerances",tau^'-'*"=0.35",tau^'+'*"=1.65","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))								
+								#dev.off()
+								stop()
+							}							
+							out			
+						})
+				
+				f.name<- paste(dir.name,"/nABC.Chisq_ynmean_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,".R",sep='')
+				cat(paste("\nnABC.Chisq save 'ans' to ",f.name))				
+				#save(ans,file=f.name)
+				print(ans)
+			#stop()
+			}
+		}
 	}
 	if(!is.na(subprog) && subprog==7)		#check MLE
 	{
@@ -4670,14 +4779,14 @@ project.nABC.TOST<- function()
 		names(ans)		<- c("xmu","xsigma2","cil","cir","data")		
 		ans[["xmu"]]	<- mean(x)
 		ans[["xsigma2"]]<- var(x)		
-		tmp				<- nabc.mutost.onesample(rnorm(yn,mean(x),sd=sd(x)), mean(x), std.sd=sd(x), args= args, verbose= 0)
+		tmp				<- nabc.mutost.onesample(rnorm(yn,mean(x),sd=sd(x)), x, args= args, verbose= 0)
 		ans[["cil"]]	<- tmp[["cil"]]
 		ans[["cir"]]	<- tmp[["cir"]]		
 		ans[["data"]]	<- sapply(1:N,function(i)
 				{					
 					ymu			<- runif(1,prior["mu","l"],prior["mu","u"])
 					ysigma2		<- runif(1,prior["sig2","l"],prior["sig2","u"])
-					tmp			<- nabc.mutost.onesample(rnorm(yn,ymu,sd=sqrt(ysigma2)), mean(x), std.sd=sd(x), args= args, verbose= 0)
+					tmp			<- nabc.mutost.onesample(rnorm(yn,ymu,sd=sqrt(ysigma2)), x, args= args, verbose= 0)
 					tmp			<- c(ymu,ysigma2,tmp[c("error","rho.mc")])
 					names(tmp)	<- c("ymu","ysigma2","error","rho.mc")					
 					tmp					
@@ -4700,7 +4809,7 @@ project.nABC.TOST<- function()
 		names(ans)		<- c("xmu","xsigma2","cil","cir","data")		
 		ans[["xmu"]]	<- mean(x)
 		ans[["xsigma2"]]<- var(x)
-		tmp				<- nabc.mutost.onesample(x, mean(x), std.sd=sd(x), args= args, verbose= 0)
+		tmp				<- nabc.mutost.onesample(x, x, args= args, verbose= 0)
 		ans[["cil"]]	<- tmp[["cil"]]
 		ans[["cir"]]	<- tmp[["cir"]]		
 		ans[["data"]]	<- sapply(1:N,function(i)
@@ -4708,7 +4817,7 @@ project.nABC.TOST<- function()
 					ymu			<- runif(1,prior["mu","l"],prior["mu","u"])
 					tmp			<- rnorm(yn,0,1)
 					tmp			<- tmp/sd(tmp)*sqrt(ans[["xsigma2"]])+ymu
-					tmp			<- nabc.mutost.onesample(tmp, mean(x), std.sd=sd(x), args= args, verbose= 0)
+					tmp			<- nabc.mutost.onesample(tmp, x, args= args, verbose= 0)
 					tmp			<- c(ymu,ans[["xsigma2"]],tmp[c("error","rho.mc")])
 					names(tmp)	<- c("ymu","ysigma2","error","rho.mc")
 					tmp					
