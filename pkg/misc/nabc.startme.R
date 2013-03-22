@@ -39,7 +39,7 @@ EPS			<<- 1e-12
 default.fun	<- "my.make.documentation"
 default.fun	<- "project.nABC.TOST"
 default.fun	<- "project.nABC.StretchedChi2"
-default.fun<- "project.nABC.movingavg"
+#default.fun<- "project.nABC.movingavg"
 ###############################################################################
 #if(length(args) && !is.loaded("tipc_tabulate_after_sample"))
 #{
@@ -123,6 +123,47 @@ plot.2D.dens<- function(x,y,xlab,ylab,xlim=NA,ylim=NA,nbin=NA,width.infl=2,n.his
 				persp(x=f$x,y=f$y,z=f$z,col= fcol,theta=persp.theta,phi=persp.phi,xlab=xlab,ylab=ylab,zlab='', ticktype= "detailed" )
 			})
 }
+
+plot.persplocfit<- function(x, pv, theta= 30, phi= 20, palette= "gray",tcl=-0.05,...)
+{	
+	d <- x$mi["d"]
+	ev <- x$mi["ev"]
+	where <- "grid"
+	
+	pv <- match(pv, x$vnames)
+	tv <- (1:d)[-pv]
+	vrs <- c(pv, tv)
+	if (any(duplicated(vrs))) 
+		warning("Duplicated variables in pv, tv")
+	if (any((vrs <= 0) | (vrs > d))) 
+		stop("Invalid variable numbers in pv, tv")
+	m <- ifelse(d == 1, 100, 40) 
+	m <- rep(m, d)
+	m[tv] <- mtv<- 6		
+	xl <- x$box
+	marg <- lfmarg(xl, m)
+	pred <- locfit:::preplot.locfit(x, marg, band = "none", tr = NULL, what = "coef", get.data = 0, f3d = 0)
+	z<- matrix(pred$fit, nrow = length(marg[[1]]))
+	nbcol <- 100
+	if(palette=="gray")	
+		color<- head( rev(gray(seq(0,0.95,len=trunc(nbcol*1.4)))), nbcol)
+	else
+	{
+		jet.colors <- colorRampPalette( c("blue", "green") )
+		color <- jet.colors(nbcol)
+	}
+	# Compute the z-value at the facet centres
+	nrz <- nrow(z)
+	ncz <- ncol(z)
+	zfacet <- z[-1, -1] + z[-1, -ncz] + z[-nrz, -1] + z[-nrz, -ncz]
+	# Recode facet z-values into color indices
+	facetcol <- cut(zfacet, nbcol)		
+	par(mar=c(0,2.5,0,0), tcl=tcl)
+	pmat<- persp(marg[[1]], marg[[2]], z, zlim= range(z)*1.1, col = color[facetcol], shade= 0.1, border=NA, ticktype = "detailed", ltheta = 120,theta = theta, phi = phi, expand = 0.75, box=1, ... )
+	
+	list(pmat=pmat, x= marg[[1]], y= marg[[2]], z= z)
+}
+
 ###############################################################################
 my.mkdir(HOME,"data")
 my.mkdir(HOME,"pdf")

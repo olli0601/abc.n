@@ -417,10 +417,11 @@ project.nABC.movingavg.estimateTheta0<- function(m, theta.names,links.names )
 	lsets<- lapply(links.names,function(x)
 			{
 				#nABC.getlevelset.2d(m, x, theta.names, rho.eq=0, rho.eq.sep=35, rho.eq.q=0.05, theta.sep=250, plot=0, method="quantile", verbose=verbose)
-				nABC.getlevelset.2d(m, x, theta.names, rho.eq=0, rho.eq.sep=15, rho.eq.q=0.005, theta.sep=250, plot=0, method="fixed", verbose=verbose)
+				nABC.getlevelset.2d(m, x, theta.names, rho.eq=0, rho.eq.sep=15, rho.eq.q=0.005, theta.sep=250, plot=1, method="fixed", verbose=verbose)
 			})
 	names(lsets)<- links.names
 	#print(lsets)
+	stop()
 	theta.intersection<- nABC.getlevelsetintersection.2d(lsets,theta.names, 50, plot=0, verbose=verbose)				
 	cat(paste("\nfinal number of theta in intersection",ncol(theta.intersection),"\n"))
 	apply(theta.intersection,1,mean)
@@ -773,7 +774,7 @@ project.nABC.movingavg<- function()
 		xsig2.prior.u<- 1.15 
 		xsig2.prior.l<- 0.8
 		
-		resume<- 0
+		resume<- 1
 		verbose<- 1
 		if(verbose)	cat(paste("true xmapa, correlation scale",r.xa,"true xmapa, test scale",z.xa,"\n"))						
 		prior.u<- project.nABC.movingavg.rho2a( .423 )	#project.nABC.movingavg.rho2a( z.xa+tau.u )		
@@ -858,18 +859,42 @@ print(out)
 							if(1)
 							{
 #bookmarkMA						
-								#get level set
-								m<- cbind( ans[["data"]]["a.theta",acc2], ans[["data"]]["v.theta",acc2], ans[["data"]]["a.error",acc2], log(ans[["data"]]["v.error",acc2]) )
-								colnames(m)<- c("a","sigma2","ACF","VAR")
-								theta0<- project.nABC.movingavg.estimateTheta0(as.data.frame(m), c("a","sigma2"), c("ACF","VAR"))
-								print(theta0)
-								stop()
-								
-								#plot posterior for SD					
 								ax<- project.nABC.movingavg.rho2a(ans[["xa"]])
 								sig2x	<- ans[["xv"]]/(1+ax*ax)
-								f.name<- paste(dir.name,"/nABC.MA1_",N,"_",xn,"_",m,"_theta_sd.pdf",sep='')
-								cat(paste("plot to",f.name))
+print(c(ax,sig2x))								
+								#reconstruct link function for VAR
+								require(locfit)
+								m<- data.frame(a= ans[["data"]]["a.theta",], sigma2= ans[["data"]]["v.theta",], ACF= ans[["data"]]["a.error",]/sqrt(xn/3-3), VAR= log(ans[["data"]]["v.error",]) )								
+								thin<- 2000										
+								m<- m[seq.int(1,nrow(m),by=thin),]
+								f.name<- paste(dir.name,"/nABC.MA1_",N,"_",xn,"_rho_VAR.pdf",sep='')
+								cat(paste("\nplot to",f.name))
+								pdf(f.name,version="1.4",width=5,height=5)
+								out<- plot.persplocfit(locfit(VAR~a:sigma2, data=m), pv= c("a","sigma2"), xlab= "a", ylab= expression(sigma^2), zlab= expression(log(rho[1])), palette="gray", theta=30, phi=30	)
+								z<- log( (1+out$x*out$x)*min(out$y) / ((1+ax*ax)*sig2x) )
+								lines(trans3d(out$x, min(out$y), z= z, pmat = out$pmat), col = "black",lty=4)
+								z<- log( (1+max(out$x)^2)*out$y / ((1+ax*ax)*sig2x) )
+								lines(trans3d(max(out$x), out$y, z= z, pmat = out$pmat), col = "black",lty=4)
+								z<- seq(min(out$x),sqrt((1+ax*ax)*sig2x / min(out$y) - 1)*0.84,0.001)
+								lines(trans3d(x=z, y=(1+ax*ax)*sig2x/(1+z*z), z= 0, pmat = out$pmat), col = "white", lwd=1.5, lty=1)
+								dev.off()
+								
+								#reconstruct link function for ACF
+								
+								f.name<- paste(dir.name,"/nABC.MA1_",N,"_",xn,"_rho_ACF.pdf",sep='')
+								cat(paste("\nplot to",f.name))
+								pdf(f.name,version="1.4",width=5,height=5)	
+								out<- plot.persplocfit(locfit(ACF~a:sigma2, data=m), pv= c("a","sigma2"), xlab= "a", ylab= expression(sigma^2), zlab= expression(rho[2]), palette="gray", theta=30, phi=30	)
+								z<- (project.nABC.movingavg.a2rho(out$x) - project.nABC.movingavg.a2rho(ax))
+								lines (trans3d(out$x, min(out$y), z= z, pmat = out$pmat), col = "black", lty=4)
+								z<- project.nABC.movingavg.a2rho(min(out$x)) - project.nABC.movingavg.a2rho(ax)
+								lines (trans3d(min(out$x), out$y, z= z, pmat = out$pmat), col = "black", lty=4)								
+								lines (trans3d(project.nABC.movingavg.rho2a(ans[["xa"]]), out$y, z= 0, pmat = out$pmat), col = "white", lty=1, lwd=1.5)		
+								dev.off()
+								
+								#plot posterior for SD					
+								f.name<- paste(dir.name,"/nABC.MA1_",N,"_",xn,"_theta_sd.pdf",sep='')
+								cat(paste("\nplot to",f.name))
 								pdf(f.name,version="1.4",width=4,height=4)
 								par(mar=c(4,4.5,0.5,0.75))
 								plot.2D.dens(ans[["data"]]["a.theta",acc],ans[["data"]]["v.theta",acc],xlab="a",ylab=expression(sigma^2),xlim= range(ans[["data"]]["a.theta",]), ylim= range(ans[["data"]]["v.theta",])*c(1,1.1),method="ash",zero.abline=0, palette="gray")
@@ -880,8 +905,8 @@ print(out)
 								dev.off()
 								
 								#plot posterior for SD & ACF
-								f.name<- paste(dir.name,"/nABC.MA1_",N,"_",xn,"_",m,"_theta_sdacf.pdf",sep='')
-								cat(paste("plot to",f.name))	
+								f.name<- paste(dir.name,"/nABC.MA1_",N,"_",xn,"_theta_sdacf.pdf",sep='')
+								cat(paste("\nplot to",f.name))	
 								pdf(f.name,version="1.4",width=4,height=4)
 								par(mar=c(4,4.5,0.5,0.75))
 								plot.2D.dens(ans[["data"]]["a.theta",acc2],ans[["data"]]["v.theta",acc2],xlab="a",ylab=expression(sigma^2),xlim= range(ans[["data"]]["a.theta",]), ylim= range(ans[["data"]]["v.theta",])*c(1,1.1),method="ash",zero.abline=0, palette="gray")
@@ -890,20 +915,12 @@ print(out)
 								points(ax,sig2x,col="white", pch=16)
 								dev.off()
 								
-								print(ans[["xa"]])
-								print(ans[["xv"]])
-								print(project.nABC.movingavg.rho2a(ans[["xa"]]))
 								stop()
-								print(ans[["data"]][,1:5])
-								print(length(acc2)/ncol(ans[["data"]]))
-								print(ncol(ans[["data"]]))
-								tmp<- project.nABC.movingavg.gethist(ans[["data"]]["a.link",acc2], ans[["xa"]], nbreaks= 50, width= 0.5, plot=1)
-								print(tmp[["dmode"]])
-								tmp<- project.nABC.movingavg.gethist(ans[["data"]]["v.link",acc2], ans[["xv"]], nbreaks= 50, width= 0.5, plot=1)
-								print(tmp[["dmode"]])
-								stop()
-								print(range(ans[["data"]]["a.theta",acc2]))
-								print(range(ans[["data"]]["v.theta",acc2]))								
+								#get level set
+								m<- cbind( ans[["data"]]["a.theta",acc2], ans[["data"]]["v.theta",acc2], ans[["data"]]["a.error",acc2], log(ans[["data"]]["v.error",acc2]) )
+								colnames(m)<- c("a","sigma2","ACF","VAR")
+								theta0<- project.nABC.movingavg.estimateTheta0(as.data.frame(m), c("a","sigma2"), c("ACF","VAR"))
+								print(theta0)														
 							}
 							out
 						})					
@@ -917,14 +934,20 @@ print(out)
 			cat(paste("\nlength of ABC repetitions is",ncol(modes)))
 			ax		<- project.nABC.movingavg.rho2a(modes["xa",])
 			sig2x	<- modes["xv",]/(1+project.nABC.movingavg.rho2a(modes["xa",])^2)
-			err		<- 	sqrt(	(modes["ya.dmode.sdacf",]-ax)^2	+	(modes["yv.dmode.sdacf",]-sig2x)^2	)
+			sig2map	<- modes["xv",]*(xn-1)/(xn)/(1+project.nABC.movingavg.rho2a(modes["xa",])^2)
+			sig2me	<- modes["xv",]*(xn-1)/(xn-4)/(1+project.nABC.movingavg.rho2a(modes["xa",])^2)
+			errmap	<- 	sqrt(	(modes["ya.dmode.sdacf",]-ax)^2	+	(modes["yv.dmode.sdacf",]-sig2map)^2	)
+			errme	<- 	sqrt(	(modes["ya.dmode.sdacf",]-ax)^2	+	(modes["yv.dmode.sdacf",]-sig2me)^2	)
 			cat(paste("\n mean v1",mean(modes["xv",])))
 			cat(paste("\n mean v2",mean(modes["xa",])))
 			cat(paste("\n mean ax",mean(ax)))			
 			cat(paste("\n mean sig2x",mean(sig2x)))
+			cat(paste("\n mean sig2map",mean(sig2map)))
+			cat(paste("\n mean sig2me",mean(sig2me)))
 			cat(paste("\n mean mode of a",mean(modes["ya.dmode.sdacf",])))
 			cat(paste("\n mean mode of sig2",mean(modes["yv.dmode.sdacf",])))					
-			cat(paste("\n mean mode-(ax,sig2x)",mean(err)))
+			cat(paste("\n mean mode-MAP(ax,sig2x)",mean(errmap)))
+			cat(paste("\n mean mode-ME(ax,sig2x)",mean(errme)))
 #bookmark_tableMA			
 			stop()
 			require(ash)
@@ -2309,7 +2332,7 @@ project.nABC.StretchedChi2<- function()
 {	
 	my.mkdir(DATA,"nABC.StretchedChisq")
 	dir.name<- paste(DATA,"nABC.StretchedChisq",sep='/')
-	subprog<- 2
+	subprog<- 8
 	pdf.width<- 4
 	pdf.height<-5
 	
@@ -2346,6 +2369,7 @@ project.nABC.StretchedChi2<- function()
 		{
 			ans[["cil"]]	<- ans[["cir"]]<- NA
 		}
+		print(yn)
 		ans[["data"]]		<- sapply(1:N,function(i)
 								{					
 									ysigma2	<- runif(1,prior.l,prior.u)
@@ -2794,6 +2818,72 @@ project.nABC.StretchedChi2<- function()
 			}
 			stop()
 		}
+	}
+	if(!is.na(subprog) && subprog==8)		#check MLE, yn>xn
+	{
+		m<- NA
+		
+		if(exists("argv"))
+		{
+			tmp<- na.omit(sapply(argv,function(arg)
+							{	switch(substr(arg,2,2),
+										m= return(as.numeric(substr(arg,3,nchar(arg)))),NA)	}))
+			if(length(tmp)>0) m<- tmp[1]
+		}
+		for.mle	<- 1
+		xn		<- yn<- 60
+		df		<- yn-1
+		alpha	<- 0.01		
+		tau.u	<- 2.2 		
+		tau.l	<- nabc.chisqstretch.tau.low(tau.u, df, alpha, for.mle=for.mle)
+		tau.h	<- 0.65
+		
+		ymu<- xmu<- 0
+		xsigma2<- 1
+		prior.u<- 4
+		prior.l<- 0.2
+		N<- 1e6
+		
+		resume<- 1
+		if(!is.na(m))
+		{		
+			f.name<- paste(dir.name,"/nABC.Chisq_mle_yn_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+			cat(paste("\nnABC.Chisq: compute ",f.name))
+			options(show.error.messages = FALSE, warn=1)		
+			readAttempt<-try(suppressWarnings(load(f.name)))						
+			options(show.error.messages = TRUE)						
+			if(!resume || inherits(readAttempt, "try-error"))
+			{
+				x		<- rnorm(xn,xmu,sd=sqrt(xsigma2))	
+				a		<- (xn-2)/2	 
+				b		<- var(x)*(xn-1)/2
+				var.lkl	<- b*b/((a-1)*(a-1)*(a-2))				
+				tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.lkl), 0.9, alpha, tau.u.ub=tau.u, for.mle=1)
+				yn		<- tmp[1]
+				f.name	<- paste(dir.name,"/nABC.Chisq_mle_yn_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+				ans.ok	<- project.nABC.StretchedChi2.fix.x.uprior.ysig2(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu, for.mle=for.mle)
+				cat(paste("\nnABC.Chisq: save ",f.name))
+				save(ans.ok,file=f.name)				
+				ans.ok	<- NULL				
+				
+				yn		<- round(yn*3/100)*100
+				f.name	<- paste(dir.name,"/nABC.Chisq_mle_yntoolarge_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+				ans.too	<- project.nABC.StretchedChi2.fix.x.uprior.ysig2(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu, for.mle=for.mle)
+				cat(paste("\nnABC.Chisq: save ",f.name))
+				save(ans.too,file=f.name)				
+				ans.too	<- NULL								
+				#ans.naive<- project.nABC.StretchedChi2.fix.x.uprior.ysig2(N,xsigma2-tau.h,xsigma2+tau.h,prior.l,prior.u,alpha,x,yn,ymu, for.mle=for.mle)
+				#f.name<- paste(dir.name,"/nABC.Chisq_mle_naive_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+				#cat(paste("\nnABC.Chisq: save ",f.name))
+				#save(ans.naive,file=f.name)
+				#ans.wprior<- project.nABC.StretchedChi2.fix.x.stdprior.ysig2(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu)
+				#f.name<- paste(dir.name,"/nABC.Chisq_wprior_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+				#cat(paste("\nnABC.Chisq: save ",f.name))
+				#save(ans.wprior,file=f.name)
+			}
+			else
+				cat(paste("\nnABC.MA: resumed ",f.name))
+		}	
 	}
 	if(!is.na(subprog) && subprog==7)		#check MLE
 	{

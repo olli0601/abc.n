@@ -1450,6 +1450,11 @@ nABC.getlevelset.2d<- function(df, lnk.name, theta.names, rho.eq=0, rho.eq.sep=1
 	require(locfit)
 	tmp<- paste("locfit(",lnk.name,'~',paste(theta.names,collapse=':',sep=''),", data=df,maxk=200)",sep='')
 	lnk.locfit<- eval(parse(text=tmp))
+	if(plot)
+	{
+		plot(lnk.locfit)
+		stop()
+	}
 	lnk.xrange<- lfmarg(lnk.locfit$box, rep(ifelse(lnk.locfit$mi["d"]==1, 100, theta.sep), lnk.locfit$mi["d"]))
 	names(lnk.xrange)<- theta.names
 	lnk.pred<- locfit:::preplot.locfit(lnk.locfit, lnk.xrange, band = "none", tr = NULL, what = "coef", get.data = 0, f3d = 0)
