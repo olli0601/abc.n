@@ -4,6 +4,97 @@
 #include "nabc_error_handling.h"
 #include "nabc_fun.h"
 
+static inline void oprintf(const char * format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	//Rvprintf(format, args);
+	vprintf(format, args);
+	va_end(args);
+}
+
+static inline void oprintff(const char * format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	//Rvprintf(format, args);
+	vprintf(format, args);
+	va_end(args);
+	fflush(stdout);
+}
+
+static inline void oprinta(double const * const start,const int &n,std::ostream& os)
+{
+	double const * xfltty= start;
+	int m= n;
+
+	os<<"c(";
+	if(m>1)
+		for(m--;m--;)
+			os<<*xfltty++<<", ";
+	if(n>0)
+		os<<*xfltty;
+	os<<")";
+}
+
+static inline void oseq_nout(const double &a, const double &b, const int &n, double * const ans)
+{
+	FAIL_ON(n<2,"oseq_nout: error at 1a %c");
+	double *xans=NULL, *yans=NULL;
+	int xn= n-1;
+	const double by= (b-a)/xn;
+
+	yans= xans= ans;
+	*xans++= a;
+	for(; 		xn--; 		*xans++= *yans++ + by);
+}
+
+static inline void ovar(const int &n, double * const x, double * const fx, const double &mean, double &var)
+{
+	FAIL_ON(n<1,"ovar: error at 1a %c");
+	int xn= n;
+	double *xx= x, *xfx= fx, norm=0;
+
+	if(mean==0)
+		for(var=0, norm=0;		xn--;		xx++)
+		{
+			var+= *xx * *xx * *xfx;
+			norm+= *xfx++;//assume that x is equidistant
+		}
+	else
+		for(var=0, norm=0;		xn--;		xx++)
+		{
+			var+= (*xx-mean) * (*xx-mean) * *xfx;
+			norm+= *xfx++;//assume that x is equidistant
+		}
+	var/= norm;
+}
+
+
+static inline int oIsZero(const int &n, double * const x)
+{
+	int xn= n, isZero=1;
+	double *xx= x;
+	for(; 		isZero && xn--;		xx++)
+		isZero= (	*xx > std::numeric_limits<double>::epsilon() || *xx < -std::numeric_limits<double>::epsilon()	)?0:1;
+		//isZero= CAST(int,*xx==0);
+	return isZero;
+}
+
+static inline void abcMuTOST_pow(const int &nrho, double * const rho, const double &df, const double &tau_up, const double &sT, const double &alpha, double *ans)
+{
+	int n= nrho;
+	const int LOG= 0, LOWERTAIL=1;
+	double *xans= ans, *xrho=rho;
+	const double QU= qt(alpha, df, LOWERTAIL, LOG), TIS=tau_up/sT;
+
+	for(; n--; xrho++, xans++)
+	{
+		*xans= pnt( TIS + QU, df, *xrho/sT, LOWERTAIL, LOG) - pnt( -TIS - QU, df, *xrho/sT, LOWERTAIL, LOG);
+		*xans= *xans<0 ? 0 : *xans;
+	}
+}
+
 static inline void abcScaledChiSq_criticalregion(	const double scale, const double df, const double tl, const double tu, const double alpha, const double tol, const double incit,
 													double &maxit, double &c1, double &c2, double &mxpw, double &error	)
 {
@@ -45,6 +136,150 @@ static inline void abcScaledChiSq_criticalregion(	const double scale, const doub
 	//maxit updated
 }
 
+static inline void abcMuTOST_taulowup_pw(	const double &mxpw, const double &df, const double &sT, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
+											double &maxit, double &tau_u, double &curr_mxpw, double &error)
+{
+	const int LOWERTAIL= 1, LOG=0, NRHO=1;
+	int n= CAST(int,maxit);
+	const double DIGITS= std::ldexp(1,33);
+	double tau_ubd= tau_ub/2, tau_lbd=0, *rho= NULL;
+
+	rho= NEW_ARY(double,NRHO);
+	*rho= rho_eq;
+	for(curr_mxpw=0; 	n-- && curr_mxpw<mxpw; 		)
+	{
+		tau_ubd*=2;
+		abcMuTOST_pow(NRHO, rho, df, tau_ubd, sT, alpha, &curr_mxpw);
+		//std::cout<<"H1 "<<curr_mxpw<<'\t'<<mxpw<<'\t'<<tau_ubd<<'\t'<<n<<std::endl;
+	}
+	FAIL_ON(n<0,"\nabcMuTOST_tau_taulowup: error at 1a %c");
+	for(	error=1;
+			maxit-- && (ABS(error)>tol) && std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS);
+			)
+	{
+		tau_u= (tau_lbd+tau_ubd)/2;
+		abcMuTOST_pow(NRHO, rho, df, tau_u, sT, alpha, &curr_mxpw);
+		error= curr_mxpw-mxpw;
+		if(error<0)
+			tau_lbd= tau_u;
+		else
+			tau_ubd= tau_u;
+		//std::cout<<"H2 "<<curr_mxpw<<'\t'<<mxpw<<'\t'<<tau_ubd<<'\t'<<tau_u<<'\t'<<n<<std::endl;
+	}
+	if(maxit<0)
+		oprintff("\nabcMuTOST_tau_taulowup: reached max it %g current pw %g requ pw %g",n,curr_mxpw,mxpw); //could not find Rvprintf ??
+	DELETE(rho);
+}
+
+static inline void abcMuTOST_taulowup_var(	const double &slkl, const double &df, const double &sT, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
+											double &maxit, double &tau_u, double &curr_pwv, double &error)
+{
+	const int LOWERTAIL= 1, LOG=0, NRHO= 1024;
+	int n= CAST(int,maxit);
+	const double DIGITS= std::ldexp(1,33), S2LKL= slkl*slkl, MEAN=0.;
+	double tau_ubd= tau_ub/2, tau_lbd=0, *rho= NULL, *pw=NULL;
+
+	rho= NEW_ARY(double,NRHO);
+	pw= NEW_ARY(double,NRHO);
+	for(curr_pwv=0; 	n-- && curr_pwv<S2LKL; 		)
+	{
+		tau_ubd*=2;
+		oseq_nout(-tau_ubd, tau_ubd, NRHO, rho);
+		abcMuTOST_pow(NRHO, rho, df, tau_ubd, sT, alpha, pw);
+		if(oIsZero(NRHO,pw))//must increase tau_u to get non-zero power
+			curr_pwv= 0;
+		else
+			ovar(NRHO, rho, pw, MEAN, curr_pwv);
+		//FAIL_ON(CAST(double,n+1)==maxit && curr_pwv>S2LKL,"abcMuTOST_taulowup_var: variance of power assumed to be smaller than variance of summary likelihood %c");
+//std::cout<<"H1 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_ubd<<'\t'<<n<<std::endl;
+		//oprinta(pw, NRHO, std::cout);
+	}
+	FAIL_ON(n<0,"\nabcMuTOST_taulowup_var: error at 1a %c");
+	for(	error=1;
+			maxit-- && (ABS(error)>tol) && std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS);
+			)
+	{
+		tau_u= (tau_lbd+tau_ubd)/2;
+		oseq_nout(-tau_u, tau_u, NRHO, rho);
+		abcMuTOST_pow(NRHO, rho, df, tau_u, sT, alpha, pw);
+		if(oIsZero(NRHO,pw))//must increase tau_u to get non-zero power
+			curr_pwv= 0;
+		else
+			ovar(NRHO, rho, pw, MEAN, curr_pwv);
+		error= curr_pwv-S2LKL;
+		if(error<0)
+			tau_lbd= tau_u;
+		else
+			tau_ubd= tau_u;
+//std::cout<<"H2 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<error<<'\t'<<maxit<<'\t'<<tol<<'\t'<< (std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS)) <<std::endl;
+	}
+//oprinta(pw, NRHO, std::cout);
+	if(maxit<0)
+		oprintff("\nabcMuTOST_tau_taulowup_var: reached max it %g current pw variance %g requ pw variance %g",n,curr_pwv,S2LKL);
+	maxit++;
+	DELETE(rho);
+	DELETE(pw);
+}
+
+static inline void abcMuTOST_nsim(	const double &nobs, const double &slkl, const double &mxpw, const double &sSim, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
+									double &maxit, double &nsim, double &tau_u, double &curr_pwv, double &curr_pw, double &error)
+{
+	const int LOWERTAIL= 1, LOG=0, NRHO= 1024;
+	int n= CAST(int,maxit);
+	const double DIGITS= std::ldexp(1,33), S2LKL= slkl*slkl, MEAN=0.;
+	double nsim_lb=nobs-1, nsim_ub=std::floor(nobs/2), xtau_ub= tau_ub, *rho= NULL, *pw=NULL, *cali_tau=NULL;
+
+	rho= NEW_ARY(double,NRHO);
+	pw= NEW_ARY(double,NRHO);
+	cali_tau= NEW_ARY(double,2);
+//std::cout<<"\nnobs"<<nobs<<"\nslkl"<<slkl<<"\nmxpw"<<mxpw<<"\nsSim"<<sSim<<"\ntau_ub"<<tau_ub<<"\nalpha"<<alpha<<"\nrho_eq"<<rho_eq<<"\ntol"<<tol<<"\nmaxit"<<maxit<<std::endl;
+	for(	curr_pwv=2*S2LKL;
+			n-- && curr_pwv>S2LKL;
+			)
+	{
+		nsim_ub*= 2;
+		*(cali_tau+1)= maxit;
+		abcMuTOST_taulowup_pw(mxpw, nsim_ub-1, sSim/std::sqrt(nsim_ub), xtau_ub, alpha, rho_eq, tol, *(cali_tau+1) /*maxit*/, tau_u /*tau_u*/, curr_pw, *cali_tau /*error*/);
+		oseq_nout(-tau_u, tau_u, NRHO, rho);
+		abcMuTOST_pow(NRHO, rho, nsim_ub-1, tau_u, sSim/std::sqrt(nsim_ub), alpha, pw);
+		if(oIsZero(NRHO,pw))//must increase nsim to get non-zero power
+			curr_pwv= 2*S2LKL;
+		else
+			ovar(NRHO, rho, pw, MEAN, curr_pwv);
+//std::cout<<"H1 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<nsim_ub<<std::endl;
+		//FAIL_ON(CAST(double,n+1)==maxit && curr_pwv<S2LKL,"abcMuTOST_nsim: variance of power assumed to be larger than variance of summary likelihood %c");
+	}
+	FAIL_ON(n<0,"\nabcMuTOST_nsim: error at 1a %c");
+	for(	error=1, nsim= nsim_ub;
+			maxit-- && (ABS(error)>tol) && (nsim_lb+1)!=nsim_ub;
+			)
+	{
+			nsim= std::floor( (nsim_lb+nsim_ub)/2 );
+			*(cali_tau+1)= maxit;
+			xtau_ub= tau_u;
+			abcMuTOST_taulowup_pw(mxpw, nsim-1, sSim/std::sqrt(nsim), xtau_ub, alpha, rho_eq, tol, *(cali_tau+1) /*maxit*/, tau_u /*tau_u*/, curr_pw, *cali_tau /*error*/);
+			oseq_nout(-tau_u, tau_u, NRHO, rho);
+			abcMuTOST_pow(NRHO, rho, nsim-1, tau_u, sSim/std::sqrt(nsim), alpha, pw);
+			if(oIsZero(NRHO,pw))//must increase nsim to get non-zero power
+				curr_pwv= 2*S2LKL;
+			else
+				ovar(NRHO, rho, pw, MEAN, curr_pwv);
+
+			error= curr_pwv-S2LKL;
+			if(error<0)
+				nsim_ub= nsim;
+			else
+				nsim_lb= nsim;
+//std::cout<<"H2 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<nsim<<'\t'<<curr_pw<<std::endl;
+	}
+	if(maxit<0)
+		oprintff("\nabcMuTOST_nsim: reached max it %g current pw variance %g requ pw variance %g",n,curr_pwv,S2LKL);
+	maxit++;
+	DELETE(rho);
+	DELETE(pw);
+	DELETE(cali_tau);
+}
+
 SEXP abcScaledChiSq(SEXP args)
 {
 	FAIL_ON(! Rf_isReal(args) ,"abcScaledChiSqu: error at 1a %c");
@@ -70,6 +305,109 @@ SEXP abcScaledChiSq(SEXP args)
 
 	//compute stuff
 	abcScaledChiSq_criticalregion(scale, df, tl, tu, alpha, tol, incit, *(xans+4) /*maxit will be updated*/, *xans /*c1*/, *(xans+1) /*c2*/, *(xans+2) /*mxpw*/, *(xans+3) /*error*/);
+
+	UNPROTECT(1);
+	return ans;
+}
+
+SEXP abcMuTOST_pow(SEXP arg_rho, SEXP arg_df, SEXP arg_tau_up, SEXP arg_sT, SEXP arg_alpha)
+{
+	FAIL_ON(!Rf_isReal(arg_rho) ,"abcMuTOST_pow: error at 1a %c");
+
+	int nrho= Rf_length(arg_rho);
+	double *xrho= REAL(arg_rho), *xans=NULL;
+	double df= ::Rf_asReal(arg_df), tau_up= ::Rf_asReal(arg_tau_up), sT= ::Rf_asReal(arg_sT), alpha= ::Rf_asReal(arg_alpha);
+	SEXP ans;
+
+	PROTECT(ans=  allocVector(REALSXP,nrho));
+	xans= REAL(ans);
+	//std::cout<<"abcMuTOST_pow_c\t"<<nrho<<'\t'<<*xrho<<'\t'<<df<<'\t'<<tau_up<<'\t'<<sT<<'\t'<<alpha<<std::endl;
+	abcMuTOST_pow(nrho, xrho, df, tau_up, sT, alpha, xans);
+
+	UNPROTECT(1);
+	return ans;
+}
+
+SEXP abcMuTOST_taulowup_pw(SEXP args)
+{
+	FAIL_ON(!Rf_isReal(args) ,"abcMuTOST_tau_taulowup_pw: error at 1a %c");
+	double mxpw=0, df=0, sT= 1, tu_ub= 1, alpha= 0.01, rho_eq=0, tol= 1e-10, maxit= 100;
+	double *xans= NULL;
+	SEXP ans;
+
+	//convert SEXP into C
+	FAIL_ON(length(args)!=8,					"abcMuTOST_tau_taulowup_pw: error at 1b %c");
+	FAIL_ON((mxpw= REAL(args)[0])>1 || mxpw<=0,	"abcMuTOST_tau_taulowup_pw: error at 1c %c");
+	FAIL_ON((df= REAL(args)[1])<2,				"abcMuTOST_tau_taulowup_pw: error at 1d %c");
+	FAIL_ON((sT= REAL(args)[2])<=0,				"abcMuTOST_tau_taulowup_pw: error at 1e %c");
+	FAIL_ON((tu_ub= REAL(args)[3])<0,			"abcMuTOST_tau_taulowup_pw: error at 1f %c");
+	FAIL_ON((alpha= REAL(args)[4])>1 || alpha<0,"abcMuTOST_tau_taulowup_pw: error at 1g %c");
+	rho_eq= REAL(args)[5];
+	tol= REAL(args)[6];
+	maxit= REAL(args)[7];
+
+	PROTECT(ans=  allocVector(REALSXP,5));
+	xans= REAL(ans);
+	*(xans+4)= maxit;
+	abcMuTOST_taulowup_pw(mxpw, df, sT, tu_ub, alpha, rho_eq, tol, *(xans+4) /*maxit*/, *(xans+1)/*tau_u*/, *(xans+2)/*curr_mxpw*/, *(xans+3)/*error*/);
+	*xans= -*(xans+1);
+
+	UNPROTECT(1);
+	return ans;
+}
+
+SEXP abcMuTOST_taulowup_var(SEXP args)
+{
+	FAIL_ON(!Rf_isReal(args) ,"abcMuTOST_tau_taulowup_var: error at 1a %c");
+	double sLkl=0, df=0, sT= 1, tu_ub= 1, alpha= 0.01, rho_eq=0, tol= 1e-10, maxit= 100;
+	double *xans= NULL;
+	SEXP ans;
+
+	//convert SEXP into C
+	FAIL_ON(length(args)!=8,					"abcMuTOST_tau_taulowup_var: error at 1b %c");
+	FAIL_ON((sLkl= REAL(args)[0])<=0,			"abcMuTOST_tau_taulowup_var: error at 1c %c");
+	FAIL_ON((df= REAL(args)[1])<2,				"abcMuTOST_tau_taulowup_var: error at 1d %c");
+	FAIL_ON((sT= REAL(args)[2])<=0,				"abcMuTOST_tau_taulowup_var: error at 1e %c");
+	FAIL_ON((tu_ub= REAL(args)[3])<0,			"abcMuTOST_tau_taulowup_var: error at 1f %c");
+	FAIL_ON((alpha= REAL(args)[4])>1 || alpha<0,"abcMuTOST_tau_taulowup_var: error at 1g %c");
+	rho_eq= REAL(args)[5];
+	tol= REAL(args)[6];
+	maxit= REAL(args)[7];
+
+	PROTECT(ans=  allocVector(REALSXP,5));
+	xans= REAL(ans);
+	*(xans+4)= maxit;
+	abcMuTOST_taulowup_var(sLkl, df, sT, tu_ub, alpha, rho_eq, tol, *(xans+4) /*maxit*/, *(xans+1)/*tau_u*/, *(xans+2)/*curr_pwv*/, *(xans+3)/*error*/);
+	*xans= -*(xans+1);
+
+	UNPROTECT(1);
+	return ans;
+}
+
+SEXP abcMuTOST_nsim(SEXP args)
+{
+	FAIL_ON(!Rf_isReal(args) ,"abcMuTOST_nsim: error at 1a %c");
+	double nobs= 1, sLkl=0, mxpw=0, sSim=0, df=0, tu_ub= 1, alpha= 0.01, rho_eq=0, tol= 1e-10, maxit= 100;
+	double *xans= NULL;
+	SEXP ans;
+
+	//convert SEXP into C
+	FAIL_ON(length(args)!=9,					"abcMuTOST_nsim: error at 1b %c");
+	FAIL_ON((nobs= REAL(args)[0])<=0,			"abcMuTOST_nsim: error at 1c %c");
+	FAIL_ON((sLkl= REAL(args)[1])<=0,			"abcMuTOST_nsim: error at 1d %c");
+	FAIL_ON((mxpw= REAL(args)[2])<=0 || mxpw>1,	"abcMuTOST_nsim: error at 1e %c");
+	FAIL_ON((sSim= REAL(args)[3])<=0,			"abcMuTOST_nsim: error at 1f %c");
+	FAIL_ON((tu_ub= REAL(args)[4])<0,			"abcMuTOST_nsim: error at 1f %c");
+	FAIL_ON((alpha= REAL(args)[5])>1 || alpha<0,"abcMuTOST_nsim: error at 1g %c");
+	rho_eq= REAL(args)[6];
+	tol= REAL(args)[7];
+	maxit= REAL(args)[8];
+
+	PROTECT(ans=  allocVector(REALSXP,7));
+	xans= REAL(ans);
+	*(xans+6)= maxit;
+	abcMuTOST_nsim(nobs, sLkl, mxpw, sSim, tu_ub, alpha, rho_eq, tol, *(xans+6) /*maxit*/, *xans /*nsim*/,*(xans+2)/*tau_u*/, *(xans+3)/*curr_pwv*/, *(xans+4)/*curr_pw*/, *(xans+5)/*error*/);
+	*(xans+1)= -*(xans+2);
 
 	UNPROTECT(1);
 	return ans;

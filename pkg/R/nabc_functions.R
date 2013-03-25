@@ -1045,15 +1045,24 @@ nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE)
 #' @param rho.star	point of reference. Defaults to the point of equality rho.star=0.
 #' @param tol		this algorithm stops when the actual maximum power is less than 'tol' from 'mx.pw'
 #' @param max.it	this algorithm stops prematurely when the number of iterations to find the equivalence region exceeds 'max.it'
+#' @param debug		Flag if C implementation is used.
 #' @return	vector of length 4
 #' 	\item{1}{lower tolerance of the equivalence region}		
 #' 	\item{2}{upper tolerance of the equivalence region}
 #' 	\item{3}{actual maximum power associated with the equivalence region}
 #' 	\item{4}{error ie abs(actual power - mx.pw)}
 #' @examples yn<- 60; ysigma2<- 1; alpha<- 0.01
-#'	nabc.mutost.onesample.tau.lowup(0.9, yn-1, sqrt(ysigma2/yn), 2, alpha )
-nabc.mutost.onesample.tau.lowup<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star=0, tol= 1e-5, max.it=100)
+#'	nabc.mutost.onesample.tau.lowup.pw(0.9, yn-1, sqrt(ysigma2/yn), 2, alpha )
+nabc.mutost.onesample.tau.lowup.pw<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star=0, tol= 1e-5, max.it=100, debug=0)
 {
+	if(!debug)
+	{
+		suppressWarnings({	#suppress numerical inaccuracy warnings
+			ans<- .Call("abcMuTOST_taulowup_pw",c(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star, tol, max.it))
+		})
+		return(ans)
+	}
+	#else do R implementation
 	curr.mx.pw	<- 0
 	tau.up.ub	<- tau.up.ub/2
 	tmp			<- max.it
@@ -1061,9 +1070,13 @@ nabc.mutost.onesample.tau.lowup<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, 
 	{
 		tmp			<- tmp-1
 		tau.up.ub	<- 2*tau.up.ub
-		curr.mx.pw	<- nabc.mutost.pow(rho.star, df, tau.up.ub, s.of.T, alpha)		
+#print( list(rho.star, df, tau.up.ub, s.of.T, alpha) )
+		curr.mx.pw	<- .Call("abcMuTOST_pow", as.double(rho.star), df, tau.up.ub, s.of.T, alpha)
+		#print( curr.mx.pw )
+		#curr.mx.pw	<- nabc.mutost.pow(rho.star, df, tau.up.ub, s.of.T, alpha)
+		#print( curr.mx.pw )		
 	}
-	if(tmp==0)	stop("nabc.mutost.onesample.tau.lowup: could not find tau.up.ub")	
+	if(tmp==0)	stop("nabc.mutost.onesample.tau.lowup.pw: could not find tau.up.ub")	
 #print(tau.up.ub); stop()
 	tau.up.lb	<- 0
 	error		<- 1	
@@ -1071,7 +1084,10 @@ nabc.mutost.onesample.tau.lowup<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, 
 	{
 		max.it		<- max.it-1
 		tau.up		<- (tau.up.lb + tau.up.ub)/2
-		curr.mx.pw	<- nabc.mutost.pow(rho.star, df, tau.up, s.of.T, alpha) 
+		curr.mx.pw	<- .Call("abcMuTOST_pow", as.double(rho.star), df, tau.up, s.of.T, alpha)
+		#print( curr.mx.pw )
+		#curr.mx.pw	<- nabc.mutost.pow(rho.star, df, tau.up, s.of.T, alpha)
+		#print( curr.mx.pw )
 		error		<- curr.mx.pw - mx.pw
 #print(c(curr.mx.pw, tau.up, tau.up.lb, tau.up.ub, max.it))
 		if(error<0)
@@ -1080,7 +1096,8 @@ nabc.mutost.onesample.tau.lowup<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, 
 			tau.up.ub<- tau.up
 #print(c(abs(error), round(tau.up.lb,d=10)!=round(tau.up.ub,d=10)) )	
 	}
-	if(max.it==0)	warning("nabc.mutost.onesample.tau.lowup: reached max.it")
+	if(max.it==0)	warning("nabc.mutost.onesample.tau.lowup.pw: reached max.it")
+#	stop("HERE")
 	c(-tau.up,tau.up,curr.mx.pw,abs(error))
 }
 #------------------------------------------------------------------------------------------------------------------------
@@ -1094,6 +1111,7 @@ nabc.mutost.onesample.tau.lowup<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, 
 #' @param tau.up.ub	guess on an upper bound on the upper tolerance of the equivalence region
 #' @param tol		this algorithm stops when the actual variation in the ABC approximation to the summary likelihood is less than 'tol' from 's.of.Sx*s.of.Sx'
 #' @param max.it	this algorithm stops prematurely when the number of iterations to calibrate the number of simulated data points exceeds 'max.it'
+#' @param debug		Flag if C implementation is used.
 #' @return	vector of length 6
 #' 	\item{1}{number of simulated summary values}
 #' 	\item{2}{lower tolerance of the equivalence region}		
@@ -1119,8 +1137,15 @@ nabc.mutost.onesample.tau.lowup<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, 
 #'	lines(rho,y,col="red")
 #'	lines(rho2,y2,col="blue")			
 #'	abline(v=0,col="red")			
-nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, tau.u.ub=2, tol= 1e-5, max.it=100)
+nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, tau.u.ub=2, tol= 1e-5, max.it=100, debug=0)
 {
+	if(!debug)
+	{
+		suppressWarnings({	#suppress numerical inaccuracy warnings
+					ans<- .Call("abcMuTOST_nsim",c(n.of.x, s.of.Sx, mx.pw, s.of.y, tau.u.ub, alpha, 0, tol, max.it))
+				})
+		return(ans)
+	}
 	
 	s2.of.Sx	<- s.of.Sx*s.of.Sx
 	pw.cvar		<- 2*s2.of.Sx
@@ -1132,14 +1157,18 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 	{
 		curr.it	<- curr.it-1
 		yn.ub	<- 2*yn.ub
-#print(c(mx.pw,yn.ub))		
-		tmp		<- nabc.mutost.onesample.tau.lowup(mx.pw, yn.ub-1, s.of.y/sqrt(yn.ub), 2*tau.u, alpha)
+#print(c(mx.pw,yn.ub))			
+		tmp		<- nabc.mutost.onesample.tau.lowup.pw(mx.pw, yn.ub-1, s.of.y/sqrt(yn.ub), 2*tau.u, alpha, debug=0)
 #print(c("OK ",tmp))		
 		tau.u	<- tmp[2]
 		pw.cmx	<- tmp[3]
 		rho		<- seq(-2*tau.u,2*tau.u,length.out=1e3)
-		pw.fun	<- nabc.mutost.pow(rho, yn.ub-1, tau.u, s.of.y/sqrt(yn.ub), alpha, rtn.fun=1)
-		pw.cvar	<- sum(rho*rho*pw.fun(rho)) / sum(pw.fun(rho))			#mean is 0
+		#pw.fun	<- nabc.mutost.pow(rho, yn.ub-1, tau.u, s.of.y/sqrt(yn.ub), alpha, rtn.fun=1)
+		suppressWarnings({	#suppress numerical inaccuracy warnings
+			pw		<- .Call("abcMuTOST_pow", rho, yn.ub-1, tau.u, s.of.y/sqrt(yn.ub), alpha)
+		})	
+		#pw.cvar	<- sum(rho*rho*pw.fun(rho)) / sum(pw.fun(rho))			#mean is 0
+		pw.cvar	<- sum(rho*rho*pw) / sum(pw)			#mean is 0	
 #print(c(yn.ub, tau.u, pw.cvar, s2.of.Sx, pw.cmx ))		
 	}
 	if(curr.it==0)	stop("nabc.mutost.onesample.n.of.y: could not find upper bound for yn")	
@@ -1149,13 +1178,17 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 	while(abs(error)>tol && (yn.lb+1)!=yn.ub && max.it>0)
 	{
 		max.it	<- max.it-1
-		yn		<- round( (yn.lb + yn.ub)/2 )
-		tmp		<- nabc.mutost.onesample.tau.lowup(mx.pw, yn-1, s.of.y/sqrt(yn), 2*tau.u, alpha)
+		yn		<- round( (yn.lb + yn.ub)/2 )		
+		tmp		<- nabc.mutost.onesample.tau.lowup.pw(mx.pw, yn-1, s.of.y/sqrt(yn), 2*tau.u, alpha, debug=0)
 		tau.u	<- tmp[2]
 		pw.cmx	<- tmp[3]
-		rho		<- seq(-2*tau.u,2*tau.u,length.out=1e3)		
-		pw.fun	<- nabc.mutost.pow(rho, yn-1, tau.u, s.of.y/sqrt(yn), alpha, rtn.fun=1)
-		pw.cvar	<- sum(rho*rho*pw.fun(rho)) / sum(pw.fun(rho))		 
+		rho		<- seq(-2*tau.u,2*tau.u,length.out=1e3)
+		suppressWarnings({
+			pw		<- .Call("abcMuTOST_pow", rho, yn-1, tau.u, s.of.y/sqrt(yn), alpha)
+		})
+		#pw.fun	<- nabc.mutost.pow(rho, yn-1, tau.u, s.of.y/sqrt(yn), alpha, rtn.fun=1)
+		#pw.cvar	<- sum(rho*rho*pw.fun(rho)) / sum(pw.fun(rho))
+		pw.cvar	<- sum(rho*rho*pw) / sum(pw)
 		error	<- pw.cvar - s2.of.Sx
 #print(c(pw.cvar, yn, yn.lb, yn.ub, max.it))
 		if(error<0)
@@ -1164,7 +1197,74 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 			yn.lb<- yn
 #print(c(abs(error), (yn.lb+1)!=yn.ub) )	
 	}
-	c(yn,-tau.u,tau.u,pw.cvar,pw.cmx,abs(error), max.it==0 || (yn.lb+1)==yn.ub)
+	c(yn,-tau.u,tau.u,pw.cvar,pw.cmx,abs(error), max.it)
+}
+#------------------------------------------------------------------------------------------------------------------------
+#' Calibrate the equivalence region for the test of location equivalence for given variance of the summary likelihood
+#' @export
+#' @param s.of.Sx	standard deviation of the summary likelihood
+#' @param df		degrees of freedom
+#' @param s.of.T	standard deviation of the test statistic
+#' @param tau.up.ub	guess on an upper bound on the upper tolerance of the equivalence region
+#' @param alpha		level of the equivalence test
+#' @param rho.star	point of reference. Defaults to the point of equality rho.star=0.
+#' @param tol		this algorithm stops when the actual maximum power is less than 'tol' from 'mx.pw'
+#' @param max.it	this algorithm stops prematurely when the number of iterations to find the equivalence region exceeds 'max.it'
+#' @param debug		Flag if C implementation is used.
+#' @return	vector of length 4
+#' 	\item{1}{lower tolerance of the equivalence region}		
+#' 	\item{2}{upper tolerance of the equivalence region}
+#' 	\item{3}{actual variance associated with the power}
+#' 	\item{4}{error ie abs(actual var(power) - var(summary likelihood))}
+#' @examples yn<- 60; ysigma2<- 1; alpha<- 0.01
+#'	nabc.mutost.onesample.tau.lowup.var(0.002, yn-1, sqrt(ysigma2/yn), 2, alpha )
+nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, alpha, rho.star=0, tol= 1e-5, max.it=100, debug=0)
+{
+	if(!debug)
+	{
+		suppressWarnings({	#suppress numerical inaccuracy warnings
+			ans<- .Call("abcMuTOST_taulowup_var",c(s.of.Sx, df, s.of.T, tau.up.ub, alpha, rho.star, tol, max.it))
+		})
+		return(ans)
+	}
+	s2.of.Sx	<- s.of.Sx*s.of.Sx
+	pw.cvar		<- 0	
+	tmp			<- max.it		
+	tau.up.ub	<- tau.up.ub/2
+	tmp			<- max.it
+	while(pw.cvar<s2.of.Sx && tmp>0)
+	{
+		tmp			<- tmp-1
+		tau.up.ub	<- 2*tau.up.ub		#increase variance until larger than summary likelihood
+		rho			<- seq(-2*tau.up.ub,2*tau.up.ub,length.out=1e3)
+		suppressWarnings({	#suppress numerical inaccuracy warnings
+			pw			<- .Call("abcMuTOST_pow", rho, df, tau.up.ub, s.of.T, alpha)
+		})
+		pw.cvar		<- sum(rho*rho*pw) / sum(pw)			#mean is 0				
+	}
+	if(tmp==0)	stop("nabc.mutost.onesample.tau.lowup: could not find tau.up.ub")	
+	
+#print(c(yn.ub, tau.u, pw.cvar, s2.of.Sx, pw.cmx ))	
+	tau.up.lb	<- 0
+	error		<- 1	
+	while(abs(error)>tol && round(tau.up.lb,d=10)!=round(tau.up.ub,d=10) && max.it>0)
+	{
+		max.it		<- max.it-1
+		tau.u		<- (tau.up.lb + tau.up.ub)/2
+		rho			<- seq(-2*tau.u,2*tau.u,length.out=1e3)
+		suppressWarnings({	#suppress numerical inaccuracy warnings
+			pw			<- .Call("abcMuTOST_pow", rho, df, tau.u, s.of.T, alpha)
+		})
+		pw.cvar		<- sum(rho*rho*pw) / sum(pw)			#mean is 0						
+		error		<- pw.cvar - s2.of.Sx
+#print(c(curr.mx.pw, tau.up, tau.up.lb, tau.up.ub, max.it))
+		if(error<0)
+			tau.up.lb<- tau.u
+		else
+			tau.up.ub<- tau.u		
+#print(c(abs(error), (yn.lb+1)!=yn.ub) )	
+	}
+	c(-tau.u,tau.u,pw.cvar,abs(error),max.it)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Perform the exact TOST for location equivalence when the summary values are normally distributed
@@ -1249,10 +1349,10 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 		#print(c(mx.pw,sim.n,sim.sd,alpha))
 		if(sim.n>obs.n)
 			sim.n	<- obs.n		
-cat(paste("\nstd is 2 and sim.n is",sim.n))
+#cat(paste("\nstd is 2 and sim.n is",sim.n))
 		sim.mean<- mean(sim[seq.int(1,sim.n)])
 		sim.sd	<- sd(sim[seq.int(1,sim.n)])					
-		tmp		<- nabc.mutost.onesample.tau.lowup(mx.pw, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha)
+		tmp		<- nabc.mutost.onesample.tau.lowup.pw(mx.pw, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha)
 		if(tmp[4]>0.09)	stop("tau.up not accurate")		
 		tau.l	<- tmp[1]*annealing
 		tau.u	<- tmp[2]*annealing				
@@ -1261,27 +1361,39 @@ cat(paste("\nstd is 2 and sim.n is",sim.n))
 	}
 	if(standardize==3)
 	{
-		cat(print.v(sim))
-		cat(print.v(obs))
+#cat(print.v(sim)); cat(print.v(obs))
 		s.of.lkl<- sqrt( var(obs)*(obs.n-1)/obs.n  * (obs.n-1)/(obs.n-3)	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
-cat(paste("\nstd is 3 and sim.n obs.n is",sim.n,obs.n))
 		sim.sd	<- sd(sim)
-print(c(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u*annealing))
-		
-		tmp		<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=2*tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-3)		#for simplicity keep sim.sd fixed even if we use shorter 'sim' overall
-print(tmp)		
-		if(abs(tmp[5]-mx.pw)>0.09)	stop("tau.up not accurate")
-		sim.n	<- tmp[1]
-		options(warn=1)
-		if(sim.n>length(sim))
+#cat(paste("\nstd is 3 and sim.n obs.n is",sim.n,obs.n,"variances are",sim.sd,s.of.lkl))		
+		if(sim.sd>=s.of.lkl)	#adjust sim.n
 		{
-			warning(paste("not enough simulated summary values",sim.n,length(sim)))
-			sim.n<- length(sim)
+			tmp		<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=2*tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5)		#for simplicity keep sim.sd fixed even if we use shorter 'sim' overall
+			if(abs(tmp[5]-mx.pw)>0.09)	stop("tau.up not accurate")
+			sim.n	<- tmp[1]
+			options(warn=1)
+			if(sim.n>length(sim))
+			{
+				warning(paste("not enough simulated summary values",sim.n,length(sim)))
+				sim.n<- length(sim)
+			}
+			options(warn=2)
+			sim.mean<- mean(sim[1:sim.n])
+			tau.l	<- tmp[2]*annealing
+			tau.u	<- tmp[3]*annealing
+#cat(paste("\nadjusted sim.n",sim.n,tau.u,sim.mean,obs.mean,sim.sd,s.of.lkl))			
 		}
-		options(warn=2)
-		sim.mean<- mean(sim[1:sim.n])
-		tau.l	<- tmp[2]*annealing
-		tau.u	<- tmp[3]*annealing								
+		else					#adjust tau.u so that the variance of the summary likelihood is matched even if that means the max pw is > 0.9
+		{
+			if(sim.n>obs.n)
+				sim.n	<- obs.n
+			sim.mean<- mean(sim[seq.int(1,sim.n)])
+			sim.sd	<- sd(sim[seq.int(1,sim.n)])
+			tmp		<- nabc.mutost.onesample.tau.lowup.var(s.of.lkl, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-5)
+			if(tmp[4]>0.09)	stop("tau.up not accurate")		
+			tau.l	<- tmp[1]*annealing
+			tau.u	<- tmp[2]*annealing
+#cat(paste("\nadjusted pw",sim.n,tau.u,sim.mean,obs.mean,sim.sd,s.of.lkl))			
+		}										
 	}
 	tmp			<- c(	sqrt(sim.n)*(sim.mean-obs.mean-tau.l) / sim.sd,			#[1]	T-	test statistic for -tau (lower test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
 						sqrt(sim.n)*(sim.mean-obs.mean-tau.u) / sim.sd,			#[2]	T+	test statistic for tau (upper test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1

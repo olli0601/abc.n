@@ -2426,6 +2426,49 @@ project.nABC.StretchedChi2<- function()
 		prior.u	<- 3
 		prior.l	<- 1/3
 		xsig2	<- 1
+		
+		xmu<- 0
+		xsigma2<- 1
+		
+		tmp<- nabc.chisqstretch.tau.lowup(0.9, 2, yn-1, alpha, for.mle=1)
+		tau.l	<- tmp[1]
+		tau.u	<- tmp[2]
+		cil		<- tmp[5]
+		cir		<- tmp[6]
+		pw2		<- nabc.chisqstretch.pow(seq(prior.l,prior.u,by=0.001),yn,yn-1,cil,cir)
+		
+		x		<- rnorm(xn,xmu,sd=sqrt(xsigma2))	
+		a		<- (xn-2)/2	 
+		b		<- var(x)*(xn-1)/2
+		var.lkl	<- b*b/((a-1)*(a-1)*(a-2))				
+		tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.lkl), 0.9, alpha, tau.u.ub=2, for.mle=1)
+		yn		<- tmp[1]
+		tau.l	<- tmp[2]
+		tau.u	<- tmp[3]
+		cil		<- tmp[4]
+		cir		<- tmp[5]
+		x2		<- seq(prior.l,prior.u,0.001)
+		y		<- densigamma(x2,a,b) / diff(pigamma(c(prior.l,prior.u),a,b))							
+		plot(x2,y,col="red",type='l')		
+		
+		lines(seq(prior.l,prior.u,by=0.001),pw2/(sum(pw2)*0.001),type='l',col="green")
+		
+		pw		<- nabc.chisqstretch.pow(seq(prior.l,prior.u,by=0.001),yn,yn-1,cil,cir)
+		lines(seq(prior.l,prior.u,by=0.001),pw/(sum(pw)*0.001),type='l',col="blue")								
+		abline(v=var(x)*(xn-1)/xn )	
+		abline(v=1,col="green")
+		stop()
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		xsig2.mle<- yn / (yn-1) * xsig2
 		#summary likelihood of sigma2 given sample mean and sum of squares
 		rho		<- seq(prior.l,prior.u,length.out=1e3)
@@ -2919,68 +2962,47 @@ project.nABC.StretchedChi2<- function()
 							#ans.ok[["data"]]["error",]<- ans.ok[["data"]]["error",]*59/60
 							#accept if T in boundaries					
 							acc.ok<- which( ans.ok[["data"]]["error",]<=ans.ok[["cir"]]  &  ans.ok[["data"]]["error",]>=ans.ok[["cil"]] )
-							acc.h.ok<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok], ans.ok[["xsigma2"]], nbreaks= 100, width= 0.5, plot=0)
+							acc.h.ok<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok], ans.ok[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0)
 							out["ok",]<- c(acc.h.ok[["mean"]],acc.h.ok[["hmode"]],acc.h.ok[["dmode"]],ans.ok[["xsigma2"]])
-							
-							
-							#cat(paste("\nload",f.name[2,j]))	
+														
+							cat(paste("\nload",f.name[2,j]))	
 							#ans.naive<- ans.ok
 							readAttempt<-try(suppressWarnings(load( f.name[2,j] )))
 							if(inherits(readAttempt, "try-error"))	stop("error at toolarge")	
 							#tmp fix bug (now resolved)
-							#ans.naive[["cil"]]<- 0.5084666; ans.naive[["cir"]]<- 1.009202
-							
+							#ans.naive[["cil"]]<- 0.5084666; ans.naive[["cir"]]<- 1.009202							
 							acc.too<- which( ans.too[["data"]]["error",]<=ans.too[["cir"]]  &  ans.too[["data"]]["error",]>=ans.too[["cil"]] )
-							acc.h.too<- project.nABC.movingavg.gethist(ans.too[["data"]]["ysigma2",acc.too], ans.too[["xsigma2"]], nbreaks= 100, width= 0.5, plot=0)
+							acc.h.too<- project.nABC.movingavg.gethist(ans.too[["data"]]["ysigma2",acc.too], ans.too[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0)
 							out["large",]<- c(acc.h.too[["mean"]],acc.h.too[["hmode"]],acc.h.too[["dmode"]],ans.too[["xsigma2"]])
-							print(length(acc.too) / ncol(ans.too[["data"]]))			
-#print(out)										
+							#print(length(acc.too) / ncol(ans.too[["data"]]))											
 							if(1 && j==1)
 							{								
-								cols<- c(my.fade.col("black",0.2),my.fade.col("black",0.6),"black")
+								cols<- c(my.fade.col("black",0.6),my.fade.col("black",0.2),"black")
 								ltys<- c(1,1,4,3)
-								
-								#plot rho
 								require(pscl)
-								rho.h.ok<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok]/ans.ok[["xsigma2"]], 1, nbreaks= 100, width= 0.5, plot=1)								
-								
-								a		<- (xn-2)/2	 
-								b		<- ans.ok[["xsigma2"]]*xn/2
-								var.lkl	<- b*b/((a-1)*(a-1)*(a-2))				
-								tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.lkl), 0.9, alpha, tau.u.ub=tau.u, for.mle=1)
-								yn		<- tmp[1]																
-								
-								x		<- seq(prior.l,prior.u,0.001)
-								y		<- densigamma(x,a,b) / diff(pigamma(c(prior.l,prior.u),a,b))							
-								lines(x,y,col="red",lty=ltys[4])								
-								
-								pw		<- nabc.chisqstretch.pow(seq(prior.l,prior.u,by=0.001),yn,yn-1,ans.ok[["cil"]],ans.ok[["cir"]])
-								lines(seq(prior.l,prior.u,by=0.001),pw/(sum(pw)*0.001),type='l',col="blue")								
-								abline(v=ans.ok[["xsigma2"]],col=cols[3],lty=ltys[3])								
-																																
-								stop()
-								rho.h.naive	<- project.nABC.movingavg.gethist(ans.naive[["data"]]["ysigma2",acc.naive]/ans.naive[["xsigma2"]], 1, nbreaks= 50, width= 0.5, plot=0)								
-								f.name<- paste(dir.name,"/nABC.Chisq_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",j,"_rho.pdf",sep='')
-								#pdf(f.name,version="1.4",width=4,height=5)
-								par(mar=c(5,5,0.5,0.5))
-								plot(1,1,type='n',bty='n',ylab=expression("n-ABC estimate of "*pi[tau]*'('*rho*'|'*x*')'),xlab=expression(rho),xlim=c(0,3),ylim=range(c(rho.h.ok$density,rho.h.naive$density)))
-								plot(rho.h.ok, col=cols[1],border=NA,main='',add=1,freq=0)
-								plot(rho.h.naive, col=cols[2],border=NA,main='',add=1,freq=0)
-								abline(v=1,col=cols[3],lty=ltys[3])
-								legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,ltys[2],NA,NA,NA,NA,ltys[3]),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.477", tau^'+'*"=2.2","naive","tolerances",tau^'-'*"=0.35",tau^'+'*"=1.65","",rho^symbol("\x2a")))
-								#dev.off()
 								#plot sigma2
-								f.name<- paste(dir.name,"/nABC.Chisq_mle_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",j,".pdf",sep='')
-								#pdf(f.name,version="1.4",width=4,height=5)
+								f.name<- paste(dir.name,"/nABC.Chisq_mle_yyn_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",j,".pdf",sep='')
+								pdf(f.name,version="1.4",width=4,height=5)
 								par(mar=c(5,5,0.5,0.5))
-								plot(acc.h.ok, col=cols[1],border=NA,main='',freq=0,ylab=expression("n-ABC estimate of "*pi[tau]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,2))
-								plot(acc.h.naive, col=cols[2],border=NA,main='',add=1,freq=0)
+								plot(acc.h.too, col=cols[2],border=NA,main='',freq=0,ylab=expression("n-ABC estimate of "*pi[tau]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,3))
+								plot(acc.h.ok, col=cols[1],border=NA,main='',add=1,freq=0)
+								a		<- (xn-2)/2	 
+								b		<- ans.ok[["xsigma2"]]*(xn)/2
+								var.lkl	<- b*b/((a-1)*(a-1)*(a-2))				
+								tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.lkl), 0.9, alpha, tau.u.ub=2, for.mle=1)								
+								print(tmp)
+								
+								yn		<- round(tmp[1]*3/100)*100
+								print(yn)
+								tmp		<- nabc.chisqstretch.tau.lowup(0.9, 2, yn-1, alpha, for.mle=1)
+								print(tmp)
+															
 								x<- seq(prior.l,prior.u,0.001)
-								y<- densigamma(x,(xn-2)/2,ans.ok[["xsigma2"]]*xn/2) / diff(pigamma(c(prior.l,prior.u),(xn-2)/2,ans.ok[["xsigma2"]]*xn/2))							
+								y<- densigamma(x,a,b) / diff(pigamma(c(prior.l,prior.u),a,b))							
 								lines(x,y,col=cols[3],lty=ltys[4])
 								abline(v=ans.ok[["xsigma2"]],col=cols[3],lty=ltys[3])								
-								legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,ltys[2],NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.477", tau^'+'*"=2.2","naive","tolerances",tau^'-'*"=0.35",tau^'+'*"=1.65","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))								
-								#dev.off()
+								legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,NA,ltys[2],NA,NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.562", tau^'+'*"=1.845","m=91","calibrated","tolerances",tau^'-'*"=0.726",tau^'+'*"=1.392","m=300","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))								
+								dev.off()
 								stop()
 							}							
 							out			
@@ -4945,6 +4967,73 @@ stop()
 		m		<- 1
 		resume	<- 1
 		if(1)
+		{
+			require(abc.n)
+			
+			sim8<- {tmp<-c(0.00023,2e-04,0.00012,9e-05,0.00017,0.00012,1e-04,0.00012,0.00019,0.00014,7e-05,1e-04,0.00014,5e-05,0.00017,0.00011,9e-05,0.00012,0.00019,0.00015,0.00017,1e-04,8e-05,0.00012,2e-04,1e-04,0.00014,0.00016,0.00016,9e-05,0.00012,0.00017,0.00018,0.00016,0.00024,0.00013,0.00019,9e-05,0.00019,0.00011); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000", "46.000000", "48.000000", "50.000000", "52.000000", "54.000000", "56.000000", "58.000000", "60.000000", "62.000000", "64.000000", "66.000000", "68.000000", "70.000000", "72.000000", "74.000000", "76.000000", "78.000000", "80.000000", "82.000000", "84.000000", "86.000000", "88.000000", "90.000000", "92.000000", "94.000000", "96.000000", "98.000000", "100.000000", "102.000000", "104.000000", "106.000000", "108.000000"); tmp}
+			sim8<- {tmp<-c(0.01462,0.01457,0.01451,0.01474,0.015,0.01499,0.01477,0.01474,0.01481,0.01476,0.01482,0.01497,0.01451,0.01437,0.01451,0.01461,0.01481,0.01442,0.01468,0.01464,0.0149,0.0148,0.01468,0.01486,0.01487,0.01492,0.01459,0.01454,0.0146,0.01484,0.01469,0.01477,0.01483,0.01448,0.01448,0.01464,0.01468,0.01471,0.01464,0.01456); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000", "46.000000", "48.000000", "50.000000", "52.000000", "54.000000", "56.000000", "58.000000", "60.000000", "62.000000", "64.000000", "66.000000", "68.000000", "70.000000", "72.000000", "74.000000", "76.000000", "78.000000", "80.000000", "82.000000", "84.000000", "86.000000", "88.000000", "90.000000", "92.000000", "94.000000", "96.000000", "98.000000", "100.000000", "102.000000", "104.000000", "106.000000", "108.000000"); tmp}
+			sim65<- {tmp<-c(0.01218,0.01267,0.01273,0.01309,0.01364,0.0138,0.01397,0.0132,0.0139,0.01374,0.01513,0.01515,0.01557,0.01579,0.01596,0.01565,0.01566,0.01589,0.01532,0.01556,0.01593,0.01583,0.01595,0.01538,0.01654,0.01614,0.01502,0.01547,0.01555,0.01546,0.01534,0.01557,0.01577,0.0158,0.01637,0.01558,0.01572,0.01557,0.01529,0.01504); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000", "46.000000", "48.000000", "50.000000", "52.000000", "54.000000", "56.000000", "58.000000", "60.000000", "62.000000", "64.000000", "66.000000", "68.000000", "70.000000", "72.000000", "74.000000", "76.000000", "78.000000", "80.000000", "82.000000", "84.000000", "86.000000", "88.000000", "90.000000", "92.000000", "94.000000", "96.000000", "98.000000", "100.000000", "102.000000", "104.000000", "106.000000", "108.000000"); tmp}
+			sim60<- {tmp<-c(0.01661,0.01632,0.01698,0.0163,0.01639,0.01621,0.01543,0.01598,0.0165,0.01654,0.01686,0.01647,0.01641,0.01697,0.01629,0.01614,0.01684,0.01642,0.01585,0.01625,0.01698,0.01626,0.01654,0.01615,0.01645,0.01658,0.01631,0.01634,0.01579,0.01614,0.0163,0.01633,0.01604,0.01608,0.01602,0.01574,0.01576,0.01599,0.01627,0.01635); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000", "46.000000", "48.000000", "50.000000", "52.000000", "54.000000", "56.000000", "58.000000", "60.000000", "62.000000", "64.000000", "66.000000", "68.000000", "70.000000", "72.000000", "74.000000", "76.000000", "78.000000", "80.000000", "82.000000", "84.000000", "86.000000", "88.000000", "90.000000", "92.000000", "94.000000", "96.000000", "98.000000", "100.000000", "102.000000", "104.000000", "106.000000", "108.000000"); tmp}
+			sim<- sim8
+			obs<- {tmp<-c(0.01293,0.01278,0.01286,0.01278,0.01261,0.01301,0.01297,0.01251); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000"); tmp}			
+			sim<- sim-mean(obs)
+			obs<- obs-mean(obs)			
+			print(range(sim))
+			print(range(obs))
+			cat( paste("\n sim and obs var",var(sim), var(obs),"\n") )
+			
+			prior		<- c(-0.002, 0.002)			
+			obs.n		<- length(obs)
+			std.of.lkl	<- sqrt( var(obs)*(obs.n-1)/obs.n )
+			s.of.lkl	<- sqrt( var(obs)*(obs.n-1)/obs.n  * (obs.n-1)/(obs.n-3)	)
+			sim.sd		<- sd(sim) 			
+			mx.pw		<- 0.9
+			alpha		<- 0.01
+			#tmp		<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=0.0003, tol= s.of.lkl*s.of.lkl*1e-5, debug=1)
+			#print(tmp)
+			tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=0.0003, tol= s.of.lkl*s.of.lkl*1e-5)
+			print(tmp)
+		
+			yn			<- tmp[1]
+			tau.u		<- tmp[3]	
+			s.of.T		<- sqrt(var(sim)/yn)
+
+			sim2		<- sim[1:length(obs)]
+			#tmp			<- nabc.mutost.onesample.tau.lowup.pw(0.9, length(sim2)-1, sqrt(var(sim2)/length(sim2)), 0.0003, alpha )
+			#print(tmp)
+			tmp			<- nabc.mutost.onesample.tau.lowup.pw(0.9, length(sim2)-1, sqrt(var(sim2)/length(sim2)), 0.0003, alpha, debug=0 )
+			print(tmp)			
+			tau.u2		<- tmp[2]	
+			s.of.T2		<- sqrt(var(sim2)/length(sim2))
+			
+			#tmp<- nabc.mutost.onesample.tau.lowup.var(s.of.lkl, length(sim2)-1, sqrt(var(sim2)/length(sim2)), 0.0003, alpha, 0, s.of.T2*s.of.T2*1e-4, 100, debug=1)
+			#print(tmp)
+			tmp<- nabc.mutost.onesample.tau.lowup.var(s.of.lkl, length(sim2)-1, sqrt(var(sim2)/length(sim2)), 0.0003, alpha, 0, s.of.T2*s.of.T2*1e-4, 100, debug=0)
+			print(tmp)				
+			tau.u3		<- tmp[2]
+			
+			x			<- seq(prior[1],prior[2],length.out=1e3)
+			pw			<- nabc.mutost.pow(x, yn-1, tau.u, s.of.T, alpha)			
+			pw			<- pw/(sum(pw)*1e-3)
+			
+			pw2			<- nabc.mutost.pow(x, length(sim2)-1, tau.u2, s.of.T2, alpha)		
+			pw2			<- pw2/(sum(pw2)*1e-3)
+			
+			pw3			<- nabc.mutost.pow(x, length(sim2)-1, tau.u3, s.of.T2, alpha)		
+			pw3			<- pw3/(sum(pw3)*1e-3)
+			
+			
+			su.lkl		<- dt(x / std.of.lkl, yn-1)
+			su.lkl		<- su.lkl / (sum(su.lkl)*1e-3)
+			print( sum(su.lkl)*1e-3 )
+			plot(x,su.lkl,type='l', col="red",ylim=range(su.lkl,pw))
+			lines(x,pw)
+			lines(x,pw2,col="green")	#fix n=m, pow=0.9
+			lines(x,pw3,col="blue")		#adjusted pow
+			stop()
+			
+		}
+		if(0)
 		{		
 			x	<- rnorm(xn,0,1)
 			x	<- x/sd(x)*sqrt(xsigma2)+xmu
