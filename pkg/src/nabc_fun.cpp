@@ -76,7 +76,8 @@ static inline int oIsZero(const int &n, double * const x)
 	int xn= n, isZero=1;
 	double *xx= x;
 	for(; 		isZero && xn--;		xx++)
-		isZero= (	*xx > std::numeric_limits<double>::epsilon() || *xx < -std::numeric_limits<double>::epsilon()	)?0:1;
+		isZero= CAST(int,*xx==0);
+		//isZero= (	*xx > std::numeric_limits<double>::epsilon() || *xx < -std::numeric_limits<double>::epsilon()	)?0:1;
 		//isZero= CAST(int,*xx==0);
 	return isZero;
 }
