@@ -1362,10 +1362,11 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 	if(standardize==3)
 	{
 #cat(print.v(sim)); cat(print.v(obs))
-		s.of.lkl<- sqrt( var(obs)*(obs.n-1)/obs.n  * (obs.n-1)/(obs.n-3)	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
+		obs.sd<- ifelse(obs.n>length(obs),sd(sim[1:obs.n]),sd(obs))
+		s.of.lkl<- obs.sd * sqrt( (obs.n-1)/obs.n  * (obs.n-1)/(obs.n-3)	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
 		sim.sd	<- sd(sim)
 #cat(paste("\nstd is 3 and sim.n obs.n is",sim.n,obs.n,"variances are",sim.sd,s.of.lkl))		
-		if(sim.sd>=s.of.lkl)	#adjust sim.n
+		if(sim.sd>=obs.sd)	#adjust sim.n
 		{
 			tmp		<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=2*tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5)		#for simplicity keep sim.sd fixed even if we use shorter 'sim' overall
 			if(abs(tmp[5]-mx.pw)>0.09)	stop("tau.up not accurate")
