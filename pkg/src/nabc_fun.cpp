@@ -153,9 +153,10 @@ static inline void abcMuTOST_taulowup_pw(	const double &mxpw, const double &df, 
 		abcMuTOST_pow(NRHO, rho, df, tau_ubd, sT, alpha, &curr_mxpw);
 		//std::cout<<"H1 "<<curr_mxpw<<'\t'<<mxpw<<'\t'<<tau_ubd<<'\t'<<n<<std::endl;
 	}
-	FAIL_ON(n<0,"\nabcMuTOST_tau_taulowup: error at 1a %c");
-	for(	error=1;
-			maxit-- && (ABS(error)>tol) && std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS);
+	if(n<0)	std::cout<<"nabcMuTOST_taulowup_pw: "<<tau_ub<<'\t'<<tau_ubd<<'\t'<<curr_mxpw<<'\t'<<mxpw<<'\t'<<df<<'\t'<<sT<<'\t'<<maxit<<std::endl;
+	FAIL_ON(n<0,"\nabcMuTOST_taulowup_pw: error at 1a %c");
+	for(	error=1, n= CAST(int,maxit);
+			n-- && (ABS(error)>tol) && std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS);
 			)
 	{
 		tau_u= (tau_lbd+tau_ubd)/2;
@@ -167,8 +168,9 @@ static inline void abcMuTOST_taulowup_pw(	const double &mxpw, const double &df, 
 			tau_ubd= tau_u;
 		//std::cout<<"H2 "<<curr_mxpw<<'\t'<<mxpw<<'\t'<<tau_ubd<<'\t'<<tau_u<<'\t'<<n<<std::endl;
 	}
-	if(maxit<0)
+	if(n<0)
 		oprintff("\nabcMuTOST_tau_taulowup: reached max it %g current pw %g requ pw %g",n,curr_mxpw,mxpw); //could not find Rvprintf ??
+	maxit= n+1;
 	DELETE(rho);
 }
 
@@ -196,8 +198,8 @@ static inline void abcMuTOST_taulowup_var(	const double &slkl, const double &df,
 		//oprinta(pw, NRHO, std::cout);
 	}
 	FAIL_ON(n<0,"\nabcMuTOST_taulowup_var: error at 1a %c");
-	for(	error=1;
-			maxit-- && (ABS(error)>tol) && std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS);
+	for(	error=1, n= CAST(int, maxit);
+			n-- && (ABS(error)>tol) && std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS);
 			)
 	{
 		tau_u= (tau_lbd+tau_ubd)/2;
@@ -215,9 +217,9 @@ static inline void abcMuTOST_taulowup_var(	const double &slkl, const double &df,
 //std::cout<<"H2 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<error<<'\t'<<maxit<<'\t'<<tol<<'\t'<< (std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS)) <<std::endl;
 	}
 //oprinta(pw, NRHO, std::cout);
-	if(maxit<0)
+	if(n<0)
 		oprintff("\nabcMuTOST_tau_taulowup_var: reached max it %g current pw variance %g requ pw variance %g",n,curr_pwv,S2LKL);
-	maxit++;
+	maxit= n+1;
 	DELETE(rho);
 	DELETE(pw);
 }
@@ -251,8 +253,8 @@ static inline void abcMuTOST_nsim(	const double &nobs, const double &slkl, const
 		//FAIL_ON(CAST(double,n+1)==maxit && curr_pwv<S2LKL,"abcMuTOST_nsim: variance of power assumed to be larger than variance of summary likelihood %c");
 	}
 	FAIL_ON(n<0,"\nabcMuTOST_nsim: error at 1a %c");
-	for(	error=1, nsim= nsim_ub;
-			maxit-- && (ABS(error)>tol) && (nsim_lb+1)!=nsim_ub;
+	for(	error=1, nsim= nsim_ub, n= CAST(int,maxit);
+			n-- && (ABS(error)>tol) && (nsim_lb+1)!=nsim_ub;
 			)
 	{
 			nsim= std::floor( (nsim_lb+nsim_ub)/2 );
@@ -273,9 +275,9 @@ static inline void abcMuTOST_nsim(	const double &nobs, const double &slkl, const
 				nsim_lb= nsim;
 //std::cout<<"H2 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<nsim<<'\t'<<curr_pw<<std::endl;
 	}
-	if(maxit<0)
+	if(n<0)
 		oprintff("\nabcMuTOST_nsim: reached max it %g current pw variance %g requ pw variance %g",n,curr_pwv,S2LKL);
-	maxit++;
+	maxit= n+1;
 	DELETE(rho);
 	DELETE(pw);
 	DELETE(cali_tau);
