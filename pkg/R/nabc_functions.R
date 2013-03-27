@@ -1,8 +1,9 @@
 #' this file contains all R functions of the abc-n package
 #' @import nortest
 #' @useDynLib nabc
-
-NABC.DEFAULT.ANS<- {tmp<- c(0,50, 1, NA, NA, NA, 0, 0,0,1,1,1,NA); names(tmp)<- c("lkl", "error", "pval","link.mc.obs","link.mc.sim", "rho.mc", "cil", "cir","al","ar","pfam.pval","ts.pval","mx.pow"); tmp}
+  
+#' @export
+NABC.DEFAULT.ANS<- {tmp<- c(0, 50, 1, NA, NA, NA, 0, 0, 0, 0, 0, 1, 1, 1, NA, NA); names(tmp)<- c("lkl", "error", "pval","link.mc.obs","link.mc.sim", "rho.mc", "cil", "cir","tl","tr","al","ar","pfam.pval","ts.pval","nsim","mx.pow"); tmp}
 
 #------------------------------------------------------------------------------------------------------------------------
 #' Test if summary values are normally distributed
@@ -246,8 +247,9 @@ nabc.acf.equivalence<- function(sim, obs, args=NA, verbose= FALSE, alpha=0, leav
 		which.not.reject<- which.min(abs(c(1-alpha-pnorm( tmp[1] ), pnorm( tmp[2] )-alpha )))
 	}
 	#the pvalue of ZU is the lower tail, but for ZL it is the upper tail, so..
-	ans["error"]<-			ifelse(which.not.reject==1, 		1-pnorm( tmp[which.not.reject] ),		pnorm( tmp[which.not.reject] ) )
-	ans[c("cil","cir")]<-	c(0,alpha)		
+	ans["error"]				<- ifelse(which.not.reject==1, 		1-pnorm( tmp[which.not.reject] ),		pnorm( tmp[which.not.reject] ) )
+	ans[c("cil","cir")]			<- c(0,alpha)		
+	ans[c("tl","tr","nsim")]	<- c(tau.l, tau.u, z.sim["n"]) 
 	ans[c("al","ar")]<- 	c(min(tau.l*z.isd+qnorm(1-alpha),0), max(0,tau.u*z.isd+qnorm(alpha)))	#CL and CU of the rejection region of the standardized test statistic
 	ans["mx.pow"]<- 		diff(pnorm( ans[c("al","ar")]))		
 	ans["pval"]<-			( pnorm(tmp[3],0,1) - (1-ans["mx.pow"])/2 ) / ans["mx.pow"]				#rescaled p-value that is expected to follow U(0,1) under the point null hypothesis
@@ -557,6 +559,8 @@ nabc.chisqstretch<- function(sim, obs.mc, args=NA, verbose= FALSE, tau.l=1, tau.
 	
 	
 	ans["error"]		<- var(sim) / obs.mc
+	ans[c("tl","tr")]	<- c(tau.l, tau.u)
+	ans["nsim"]			<- length(sim)
 	ans["lkl"]			<- dchisq(ans["error"]*scale,df.sim)	
 	ans["pval"]			<- pchisq(ans["error"]*scale,df.sim)
 	ans[c("al","ar")]	<- c(0, 1 - diff( pchisq(ans[c("cil","cir")]*scale,df.sim) ) )
@@ -1404,7 +1408,8 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 						sim.sd )												#[6]  	standard deviation of the sample
 	tost.ans	<-	nabc.generic.tost(tmp, tau.l, tau.u, alpha, tost.distr="t")
 	#print(tost.ans)
-	ans[c("error","cil","cir")]<- c(tost.ans["p.error"], 0, alpha)
+	ans[c("error","cil","cir")]	<- c(tost.ans["p.error"], 0, alpha)
+	ans[c("tl","tr","nsim")]	<- c(tau.l,tau.u,sim.n)
 	ans[c("lkl","pval")]<-  tost.ans[c("lkl","ass.pval")]
 	ans[c("al","ar")]	<- 	c(0,alpha)								
 	ans["mx.pow"]		<-	nabc.mutost.pow(0, tmp[4], tau.u, tmp[5], alpha) 				
