@@ -169,7 +169,7 @@ static inline void abcMuTOST_taulowup_pw(	const double &mxpw, const double &df, 
 		//std::cout<<"H2 "<<curr_mxpw<<'\t'<<mxpw<<'\t'<<tau_ubd<<'\t'<<tau_u<<'\t'<<n<<std::endl;
 	}
 	if(n<0)
-		oprintff("\nabcMuTOST_tau_taulowup: reached max it %g current pw %g requ pw %g",n,curr_mxpw,mxpw); //could not find Rvprintf ??
+		oprintff("\nabcMuTOST_tau_taulowup: reached max it %i current pw %g requ pw %g",n,curr_mxpw,mxpw); //could not find Rvprintf ??
 	maxit= n+1;
 	DELETE(rho);
 }
@@ -218,7 +218,7 @@ static inline void abcMuTOST_taulowup_var(	const double &slkl, const double &df,
 	}
 //oprinta(pw, NRHO, std::cout);
 	if(n<0)
-		oprintff("\nabcMuTOST_tau_taulowup_var: reached max it %g current pw variance %g requ pw variance %g",n,curr_pwv,S2LKL);
+		oprintff("\nabcMuTOST_tau_taulowup_var: reached max it %i current pw variance %g requ pw variance %g",n,curr_pwv,S2LKL);
 	maxit= n+1;
 	DELETE(rho);
 	DELETE(pw);
@@ -230,7 +230,7 @@ static inline void abcMuTOST_nsim(	const double &nobs, const double &slkl, const
 	const int LOWERTAIL= 1, LOG=0, NRHO= 1024;
 	int n= CAST(int,maxit);
 	const double DIGITS= std::ldexp(1,33), S2LKL= slkl*slkl, MEAN=0.;
-	double nsim_lb=nobs-1, nsim_ub=std::floor(nobs/2), xtau_ub= tau_ub, *rho= NULL, *pw=NULL, *cali_tau=NULL;
+	double nsim_lb=nobs-1, nsim_ub=std::ceil(nobs/2) /* ceiling to make sure that nsim_ub>=nobs*/, xtau_ub= tau_ub, *rho= NULL, *pw=NULL, *cali_tau=NULL;
 
 	rho= NEW_ARY(double,NRHO);
 	pw= NEW_ARY(double,NRHO);
@@ -273,10 +273,11 @@ static inline void abcMuTOST_nsim(	const double &nobs, const double &slkl, const
 				nsim_ub= nsim;
 			else
 				nsim_lb= nsim;
-//std::cout<<"H2 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<nsim<<'\t'<<curr_pw<<std::endl;
+//std::cout<<"H2 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<nsim<<'\t'<<curr_pw<<'\t'<<nsim_lb<<'\t'<<nsim_ub<<std::endl;
 	}
 	if(n<0)
-		oprintff("\nabcMuTOST_nsim: reached max it %g current pw variance %g requ pw variance %g",n,curr_pwv,S2LKL);
+		oprintff("\nabcMuTOST_nsim: reached max it %i current pw variance %g requ pw variance %g",n,curr_pwv,S2LKL);
+
 	maxit= n+1;
 	DELETE(rho);
 	DELETE(pw);

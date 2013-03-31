@@ -1372,6 +1372,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 		sim.sd	<- sd(sim)		
 		if(sim.sd>=obs.sd)	#adjust sim.n
 		{
+			print(c(obs.n,s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub))
 			tmp		<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=2*tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5)		#for simplicity keep sim.sd fixed even if we use shorter 'sim' overall
 			if(abs(tmp[5]-mx.pw)>0.09)	stop("tau.up not accurate")
 			sim.n	<- tmp[1]
@@ -1380,6 +1381,13 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 			{
 				warning(paste("not enough simulated summary values",sim.n,length(sim)))
 				sim.n<- length(sim)
+			}
+			if(sim.n<obs.n)
+			{
+				print(c(obs.n,s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub))
+				print.v(sim,print.char=0)
+				print.v(obs,print.char=0)
+				stop()
 			}
 			options(warn=2)
 			sim.mean<- mean(sim[1:sim.n])

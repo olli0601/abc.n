@@ -17,26 +17,20 @@ extern "C" {
  * \params calling Character array informing in which function an error occurs.
  * \params format Character array on how the error message is to be formatted.
  */
-inline void postIfError(char* calling, char* format,...)
+inline void postIfError(const char* format, ...)
 {
- 	va_list args;
- 	va_start (args, format);
-  	vsprintf(nabcGlobals::BUFFER,format, args);
- 	va_end(args);
-
- 	char tmp[std::strlen(calling)+3+std::strlen(nabcGlobals::BUFFER)];
- 	std::strcat(tmp,calling);
- 	std::strcat(tmp,"\t");
- 	std::strcat(tmp,nabcGlobals::BUFFER);
- 	std::strcat(tmp,"\n");
- 	printf("%s",tmp);
-
+	va_list args;
+	va_start(args, format);
+	//Rvprintf(format, args);
+	vprintf(format, args);
+	va_end(args);
+	fflush(stdout);
  	std::exit(EXIT_FAILURE);
  	//throw std::runtime_error(nabcGlobals::BUFFER);
 }
 
 #define POST_ERROR(X,Y) postIfError(__FILE__,X, Y)/**< macro to check for error messages */
-#define FAIL_ON(condition, message) if (condition){ POST_ERROR(message,condition); }/**< macro to throw error messages */
+#define FAIL_ON(condition, message) if (condition){ postIfError(message, condition); }/**< macro to throw error messages */
 
 
 

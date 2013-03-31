@@ -24,11 +24,12 @@ typedef unsigned int uint;
 #define DELETE(x) free(x)														/**< macro to free memory*/
 #define MOVE(ty, fr, to, n) (ty *)memmove(to, fr, (n)*sizeof(ty))	/** < macro to move an array */	//void * memmove (void *to, const void *from, size_t size)
 #define COPY_INTO_SEPARATE(ty, fr, to, n)	(ty *)memcpy(to, fr, (n)*sizeof(ty))		/** < macro to copy an array into a non-overlapping array; both arrays are assumed to be at least 'n' units long */			//void * memcpy ( void * destination, const void * source, size_t num );
+#define CONST(x,y) (const_cast<x>(y))									/**< macro to make cast const*/
 #define CAST(x,y) (static_cast<x>(y))									/**< macro to cast between types*/
-#define MIN(x,y) ((x < y) ? x : y) 											/**< macro to return the minimum of two values */
-#define MAX(x,y) ((x < y) ? y : x)											/**< macro to return the maximum of two values */
+#define MIN(x,y) ((x < y) ? x : y) 										/**< macro to return the minimum of two values */
+#define MAX(x,y) ((x < y) ? y : x)										/**< macro to return the maximum of two values */
 #define ABSDIFF(x,y) ((y-x>0) ? y-x : x-y) 								/**< macro to return the absolute difference of two values */
-#define ABS(x) ((x>0) ? x : -x) 												/**< macro to return the absolute value of a number */
+#define ABS(x) ((x>0) ? x : -x) 										/**< macro to return the absolute value of a number */
 
 
 

@@ -4989,26 +4989,31 @@ stop()
 			sim.sd		<- sd(sim) 			
 			mx.pw		<- 0.9
 			alpha		<- 0.01
+			tau.u.ub	<- 0.0003
 			#tmp		<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=0.0003, tol= s.of.lkl*s.of.lkl*1e-5, debug=1)
 			#print(tmp)
-			tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=0.0003, tol= s.of.lkl*s.of.lkl*1e-5)
+		
+			obs.n<- 7; s.of.lkl<- 0.1318777; mx.pw<- 0.6600000; sim.sd<- 0.1262006; alpha<- 0.01; tau.u.ub<- 0.5
+		
+			tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5)
 			print(tmp)
+			stop()
 		
 			yn			<- tmp[1]
 			tau.u		<- tmp[3]	
 			s.of.T		<- sqrt(var(sim)/yn)
 
 			sim2		<- sim[1:length(obs)]
-			#tmp			<- nabc.mutost.onesample.tau.lowup.pw(0.9, length(sim2)-1, sqrt(var(sim2)/length(sim2)), 0.0003, alpha )
+			#tmp			<- nabc.mutost.onesample.tau.lowup.pw(0.9, length(sim2)-1, sqrt(var(sim2)/length(sim2)), tau.u.ub, alpha )
 			#print(tmp)
-			tmp			<- nabc.mutost.onesample.tau.lowup.pw(0.9, length(sim2)-1, sqrt(var(sim2)/length(sim2)), 0.0003, alpha, debug=0 )
+			tmp			<- nabc.mutost.onesample.tau.lowup.pw(0.9, length(sim2)-1, sqrt(var(sim2)/length(sim2)), tau.u.ub, alpha, debug=0 )
 			print(tmp)			
 			tau.u2		<- tmp[2]	
 			s.of.T2		<- sqrt(var(sim2)/length(sim2))
 			
-			#tmp<- nabc.mutost.onesample.tau.lowup.var(s.of.lkl, length(sim2)-1, sqrt(var(sim2)/length(sim2)), 0.0003, alpha, 0, s.of.T2*s.of.T2*1e-4, 100, debug=1)
+			#tmp<- nabc.mutost.onesample.tau.lowup.var(s.of.lkl, length(sim2)-1, sqrt(var(sim2)/length(sim2)), tau.u.ub, alpha, 0, s.of.T2*s.of.T2*1e-4, 100, debug=1)
 			#print(tmp)
-			tmp<- nabc.mutost.onesample.tau.lowup.var(s.of.lkl, length(sim2)-1, sqrt(var(sim2)/length(sim2)), 0.0003, alpha, 0, s.of.T2*s.of.T2*1e-4, 100, debug=0)
+			tmp<- nabc.mutost.onesample.tau.lowup.var(s.of.lkl, length(sim2)-1, sqrt(var(sim2)/length(sim2)), tau.u.ub, alpha, 0, s.of.T2*s.of.T2*1e-4, 100, debug=0)
 			print(tmp)				
 			tau.u3		<- tmp[2]
 			
