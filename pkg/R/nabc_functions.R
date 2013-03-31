@@ -1297,7 +1297,7 @@ nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, a
 #'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
 nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test")
 {
-	#verbose<- 1
+	verbose<- 1
 	ans<- NABC.DEFAULT.ANS
 	#compute two sample t-test on either z-scores or untransformed data points
 	if(any(is.na(sim)))			stop("nabc.mutost: error at 1a")
@@ -1347,29 +1347,29 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 		sim.sd	<- sd(sim[seq.int(1,sim.n)])
 		sim		<- (sim[seq.int(1,sim.n)]-sim.mean)/sim.sd*sd(obs)+sim.mean					
 	}
-	if(standardize==2)
+	else if(standardize==2)
 	{	
 		#print(sim); 
 		#print(c(mx.pw,sim.n,sim.sd,alpha))
 		if(sim.n>obs.n)
 			sim.n	<- obs.n		
-#cat(paste("\nstd is 2 and sim.n is",sim.n))
 		sim.mean<- mean(sim[seq.int(1,sim.n)])
 		sim.sd	<- sd(sim[seq.int(1,sim.n)])					
 		tmp		<- nabc.mutost.onesample.tau.lowup.pw(mx.pw, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha)
 		if(tmp[4]>0.09)	stop("tau.up not accurate")		
 		tau.l	<- tmp[1]*annealing
-		tau.u	<- tmp[2]*annealing				
+		tau.u	<- tmp[2]*annealing	
+		if(verbose) 
+			cat(paste("\nstd is 2 and sim.n is",sim.n,"annealing is",annealing,mx.pw,tau.l,tau.u))		
 		#print(c(annealing,mx.pw,tau.l,tau.u))
 		#rho<- seq(tau.l,tau.u,length.out=1e3); y<- nabc.mutost.pow(rho, sim.n-1, tau.u, sim.sd/sqrt(sim.n), alpha); plot(rho,y,type='l')		
 	}
-	if(standardize==3)
+	else if(standardize==3)
 	{
 #cat(print.v(sim)); cat(print.v(obs))
 		obs.sd<- ifelse(obs.n>length(obs),sd(sim[1:obs.n]),sd(obs))
 		s.of.lkl<- obs.sd * sqrt( (obs.n-1)/obs.n  * (obs.n-1)/(obs.n-3)	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
-		sim.sd	<- sd(sim)
-cat(paste("\nstd is 3 and sim.n obs.n is",sim.n,obs.n,"variances are",sim.sd,obs.sd,"var of su lkl is",s.of.lkl))		
+		sim.sd	<- sd(sim)		
 		if(sim.sd>=obs.sd)	#adjust sim.n
 		{
 			tmp		<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=2*tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5)		#for simplicity keep sim.sd fixed even if we use shorter 'sim' overall
@@ -1385,7 +1385,8 @@ cat(paste("\nstd is 3 and sim.n obs.n is",sim.n,obs.n,"variances are",sim.sd,obs
 			sim.mean<- mean(sim[1:sim.n])
 			tau.l	<- tmp[2]*annealing
 			tau.u	<- tmp[3]*annealing
-#cat(paste("\nadjusted sim.n",sim.n,tau.u,sim.mean,obs.mean,sim.sd,s.of.lkl))			
+			if(verbose)
+				cat(paste("\nstd is 3, adj sim.n, and sim.n obs.n is",sim.n,obs.n,"variances are",sim.sd,obs.sd,"var of su lkl is",s.of.lkl))			
 		}
 		else					#adjust tau.u so that the variance of the summary likelihood is matched even if that means the max pw is > 0.9
 		{
@@ -1397,8 +1398,10 @@ cat(paste("\nstd is 3 and sim.n obs.n is",sim.n,obs.n,"variances are",sim.sd,obs
 			if(tmp[4]>0.09)	stop("tau.up not accurate")		
 			tau.l	<- tmp[1]*annealing
 			tau.u	<- tmp[2]*annealing
-#cat(paste("\nadjusted pw",sim.n,tau.u,sim.mean,obs.mean,sim.sd,s.of.lkl))			
-		}										
+			if(verbose)
+				cat(paste("\nstd is 3, adj var, and sim.n obs.n is",sim.n,obs.n,"variances are",sim.sd,obs.sd,"var of su lkl is",s.of.lkl))			
+		}	
+		
 	}
 	tmp			<- c(	sqrt(sim.n)*(sim.mean-obs.mean-tau.l) / sim.sd,			#[1]	T-	test statistic for -tau (lower test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
 						sqrt(sim.n)*(sim.mean-obs.mean-tau.u) / sim.sd,			#[2]	T+	test statistic for tau (upper test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
