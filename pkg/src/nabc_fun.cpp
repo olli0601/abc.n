@@ -140,7 +140,7 @@ static inline void abcScaledChiSq_criticalregion(	const double scale, const doub
 static inline void abcMuTOST_taulowup_pw(	const double &mxpw, const double &df, const double &sT, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
 											double &maxit, double &tau_u, double &curr_mxpw, double &error)
 {
-	const int LOWERTAIL= 1, LOG=0, NRHO=1;
+	const int NRHO=1;
 	int n= CAST(int,maxit);
 	const double DIGITS= std::ldexp(1,33);
 	double tau_ubd= tau_ub/2, tau_lbd=0, *rho= NULL;
@@ -177,7 +177,7 @@ static inline void abcMuTOST_taulowup_pw(	const double &mxpw, const double &df, 
 static inline void abcMuTOST_taulowup_var(	const double &slkl, const double &df, const double &sT, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
 											double &maxit, double &tau_u, double &curr_pwv, double &error)
 {
-	const int LOWERTAIL= 1, LOG=0, NRHO= 1024;
+	const int NRHO= 1024;
 	int n= CAST(int,maxit);
 	const double DIGITS= std::ldexp(1,33), S2LKL= slkl*slkl, MEAN=0.;
 	double tau_ubd= tau_ub/2, tau_lbd=0, *rho= NULL, *pw=NULL;
@@ -227,9 +227,9 @@ static inline void abcMuTOST_taulowup_var(	const double &slkl, const double &df,
 static inline void abcMuTOST_nsim(	const double &nobs, const double &slkl, const double &mxpw, const double &sSim, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
 									double &maxit, double &nsim, double &tau_u, double &curr_pwv, double &curr_pw, double &error)
 {
-	const int LOWERTAIL= 1, LOG=0, NRHO= 1024;
+	const int NRHO= 1024;
 	int n= CAST(int,maxit);
-	const double DIGITS= std::ldexp(1,33), S2LKL= slkl*slkl, MEAN=0.;
+	const double S2LKL= slkl*slkl, MEAN=0.;
 	double nsim_lb=nobs-1, nsim_ub=std::ceil(nobs/2) /* ceiling to make sure that nsim_ub>=nobs*/, xtau_ub= tau_ub, *rho= NULL, *pw=NULL, *cali_tau=NULL;
 
 	rho= NEW_ARY(double,NRHO);
@@ -391,7 +391,7 @@ SEXP abcMuTOST_taulowup_var(SEXP args)
 SEXP abcMuTOST_nsim(SEXP args)
 {
 	FAIL_ON(!Rf_isReal(args) ,"abcMuTOST_nsim: error at 1a %c");
-	double nobs= 1, sLkl=0, mxpw=0, sSim=0, df=0, tu_ub= 1, alpha= 0.01, rho_eq=0, tol= 1e-10, maxit= 100;
+	double nobs= 1, sLkl=0, mxpw=0, sSim=0, tu_ub= 1, alpha= 0.01, rho_eq=0, tol= 1e-10, maxit= 100;
 	double *xans= NULL;
 	SEXP ans;
 
@@ -423,7 +423,7 @@ SEXP abcIntersectLevelSets(SEXP m1, SEXP m2, SEXP s)
 	FAIL_ON(! Rf_isMatrix(m2) ,"abcIntersectLevelSets: error at 1b %c");
 	FAIL_ON(! Rf_isReal(s) ,"abcIntersectLevelSets: error at 1c %c");
 
-	int i,j1,j2,error= 0;
+	int i,j1,j2;
 	int nr1= Rf_nrows(m1), nr2= Rf_nrows(m2), nc1= Rf_ncols(m1), nc2= Rf_ncols(m2), ns= Rf_length(s);
 	double tmp, *xd= NULL, *ym2=NULL, *xm1= NULL, *xm2= NULL, *xs= NULL, *is=NULL;
 	SEXP ans;
