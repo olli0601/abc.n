@@ -1297,7 +1297,7 @@ nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, a
 #'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
 nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test")
 {
-	#verbose<- 1
+	verbose<- 0
 	ans<- NABC.DEFAULT.ANS
 	#compute two sample t-test on either z-scores or untransformed data points
 	if(any(is.na(sim)))			stop("nabc.mutost: error at 1a")
@@ -1367,10 +1367,11 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 	else if(standardize==3)
 	{
 #cat(print.v(sim)); cat(print.v(obs))
-		obs.sd<- ifelse(obs.n>length(obs),sd(sim[1:obs.n]),sd(obs))
-		s.of.lkl<- obs.sd * sqrt( (obs.n-1)/obs.n  * (obs.n-1)/(obs.n-3)	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
-		sim.sd	<- sd(sim)		
-		if(sim.sd>=obs.sd)	#adjust sim.n
+		obs.sd	<- ifelse(obs.n>length(obs),sd(sim[1:obs.n]),sd(obs))
+		s.of.lkl<- obs.sd * sqrt( (obs.n-1)/(obs.n-3)/obs.n	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
+		sim.sd	<- sd(sim)
+		s.of.pw	<- sqrt( .Call("abcMuTOST_pwvar",c(mx.pw, obs.n, sim.sd/sqrt(obs.n), tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-5, 100))[1] )	#base case: sim.n=obs.n -- for simplicity use sim.sd 						
+		if(s.of.pw>=s.of.lkl)	#adjust sim.n
 		{
 #print(c(obs.n,s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub))
 			tmp		<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=2*tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5)		#for simplicity keep sim.sd fixed even if we use shorter 'sim' overall
@@ -1394,7 +1395,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 			tau.l	<- tmp[2]*annealing
 			tau.u	<- tmp[3]*annealing
 			if(verbose)
-				cat(paste("\nstd is 3, adj sim.n, and sim.n obs.n is",sim.n,obs.n,"std dev are",sim.sd,obs.sd,"sd of su lkl is",s.of.lkl))			
+				cat(paste("\nstd is 3, adj sim.n, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",s.of.pw,s.of.lkl))			
 		}
 		else					#adjust tau.u so that the variance of the summary likelihood is matched even if that means the max pw is > 0.9
 		{

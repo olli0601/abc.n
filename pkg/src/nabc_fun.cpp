@@ -224,6 +224,27 @@ static inline void abcMuTOST_taulowup_var(	const double &slkl, const double &df,
 	DELETE(pw);
 }
 
+static inline void abcMUTOST_pwvar(	const double &mxpw, const double &df, const double &sT, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
+									double &maxit, double &curr_pwv)
+{
+	const int NRHO= 1024;
+	const double MEAN= 0.;
+	double curr_pw= 1., tau_u=1., error=0., *rho= NULL, *pw=NULL;
+
+	rho= NEW_ARY(double,NRHO);
+	pw= NEW_ARY(double,NRHO);
+
+	abcMuTOST_taulowup_pw(mxpw, df, sT, tau_ub, alpha, rho_eq, tol, maxit, tau_u, curr_pw, error);
+	oseq_nout(-tau_u, tau_u, NRHO, rho);
+	abcMuTOST_pow(NRHO, rho, df, tau_u, sT, alpha, pw);
+	if(oIsZero(NRHO,pw))//must increase nsim to get non-zero power
+		curr_pwv= R_PosInf;
+	else
+		ovar(NRHO, rho, pw, MEAN, curr_pwv);
+	DELETE(rho);
+	DELETE(pw);
+}
+
 static inline void abcMuTOST_nsim(	const double &nobs, const double &slkl, const double &mxpw, const double &sSim, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
 									double &maxit, double &nsim, double &tau_u, double &curr_pwv, double &curr_pw, double &error)
 {
@@ -331,6 +352,36 @@ SEXP abcMuTOST_pow(SEXP arg_rho, SEXP arg_df, SEXP arg_tau_up, SEXP arg_sT, SEXP
 	UNPROTECT(1);
 	return ans;
 }
+
+SEXP abcMuTOST_pwvar(SEXP args)
+{
+	FAIL_ON(!Rf_isReal(args) ,"abcMuTOST_pwvar: error at 1a %c");
+	double mxpw=0, df=0, sT= 1, tu_ub= 1, alpha= 0.01, rho_eq=0, tol= 1e-10, maxit= 100;
+	double *xans= NULL;
+	SEXP ans;
+
+	//convert SEXP into C
+	FAIL_ON(length(args)!=8,					"abcMuTOST_pwvar: error at 1b %c");
+	FAIL_ON((mxpw= REAL(args)[0])>1 || mxpw<=0,	"abcMuTOST_pwvar: error at 1c %c");
+	FAIL_ON((df= REAL(args)[1])<2,				"abcMuTOST_pwvar: error at 1d %c");
+	FAIL_ON((sT= REAL(args)[2])<=0,				"abcMuTOST_pwvar: error at 1e %c");
+	FAIL_ON((tu_ub= REAL(args)[3])<0,			"abcMuTOST_pwvar: error at 1f %c");
+	FAIL_ON((alpha= REAL(args)[4])>1 || alpha<0,"abcMuTOST_pwvar: error at 1g %c");
+	rho_eq= REAL(args)[5];
+	tol= REAL(args)[6];
+	maxit= REAL(args)[7];
+
+	PROTECT(ans=  allocVector(REALSXP,2));
+	xans= REAL(ans);
+	*(xans+1)= maxit;
+	abcMUTOST_pwvar(mxpw, df, sT, tu_ub, alpha, rho_eq, tol, *(xans+1) /*maxit*/, *xans/*curr_pwv*/);
+
+	UNPROTECT(1);
+	return ans;
+}
+
+
+
 
 SEXP abcMuTOST_taulowup_pw(SEXP args)
 {

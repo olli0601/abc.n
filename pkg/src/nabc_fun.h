@@ -30,6 +30,8 @@ SEXP abcMuTOST_taulowup_pw(SEXP args);
 
 SEXP abcMuTOST_taulowup_var(SEXP args);
 
+SEXP abcMuTOST_pwvar(SEXP args);
+
 SEXP abcMuTOST_pow(SEXP arg_rho, SEXP arg_df, SEXP arg_tau_up, SEXP arg_sT, SEXP arg_alpha);
 
 SEXP abcIntersectLevelSets(SEXP m1, SEXP m2, SEXP s);

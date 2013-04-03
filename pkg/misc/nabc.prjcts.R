@@ -4930,11 +4930,11 @@ project.nABC.TOST<- function()
 	if(!is.na(subprog) && subprog==2)
 	{
 		xn		<- 60
-		yn		<- 10*xn
+		yn		<- 20*xn
 		alpha	<- 0.01	
 		tau		<- 0.5
 		tau		<- matrix(c(-tau,tau),ncol=2,dimnames=list(c("mu"),c("l","u"))) 		
-		prior	<- matrix(c(0.2,0.8,0.05^2,0.3^2),ncol=2,byrow=1,dimnames=list(c("mu","sig2"),c("l","u")))
+		prior	<- matrix(c(0.35,0.6,0.05^2,0.3^2),ncol=2,byrow=1,dimnames=list(c("mu","sig2"),c("l","u")))
 		
 		xmu		<- 0.5
 		xsigma2	<- 0.1*0.1
@@ -4949,6 +4949,10 @@ project.nABC.TOST<- function()
 										m= return(as.numeric(substr(arg,3,nchar(arg)))),NA)	}))
 			if(length(tmp)>0) m<- tmp[1]
 			tmp<- na.omit(sapply(argv,function(arg)
+							{	switch(substr(arg,2,2),
+										N= return(as.numeric(substr(arg,3,nchar(arg)))),NA)	}))
+			if(length(tmp)>0) N<- tmp[1]
+			tmp<- na.omit(sapply(argv,function(arg)
 							{	switch(substr(arg,2,4),
 										pvl= return(as.numeric(substr(arg,5,nchar(arg)))),NA)	}))
 			if(length(tmp)>0) prior[2,1]<- tmp[1]
@@ -4958,6 +4962,7 @@ project.nABC.TOST<- function()
 			if(length(tmp)>0) prior[2,2]<- tmp[1]
 		}
 		print(m)
+		print(N)
 		print(prior)
 		
 		resume	<- 0
@@ -4977,7 +4982,8 @@ project.nABC.TOST<- function()
 				)[3]
 				acc<- which( ans[["data"]]["error",]<=ans[["cir"]]  &  ans[["data"]]["error",]>=ans[["cil"]] )
 				print(length(acc)/ncol(ans[["data"]]))
-				print(simu.time)								
+				print(simu.time)					
+				print(ans[["data"]][,1:20])
 				cat(paste("\nnABC.mutost: save ",f.name))
 				save(ans,file=f.name)				
 			}
@@ -5073,7 +5079,41 @@ stop()
 		resume	<- 1
 		if(1)
 		{
-			require(abc.n)
+			yn		<- 1200
+			xsigma2	<- 0.1*0.1
+			obs<- rnorm(xn,0.5,0.1)
+			obs<- (obs-mean(obs))/sd(obs)*sqrt(xsigma2)+xmu
+			sim<- rnorm(yn,0.6,0.3)
+			cat( paste("\n sim and obs sd",sd(sim), sd(sim[1:900]), sd(obs), sd(obs)/sqrt(xn),"\n") )
+			
+			prior		<- c(-0.002, 0.002)			
+			obs.n		<- length(obs)
+			std.of.lkl	<- sqrt( var(obs)/obs.n )
+			s.of.lkl	<- sqrt( var(obs)/obs.n  * (obs.n-1)/(obs.n-3)	)
+			print(s.of.lkl)
+			sim.sd		<- sd(sim) 			
+			mx.pw		<- 0.9
+			alpha		<- 0.01
+			tau.u.ub	<- 0.1
+			
+			df			<- yn-1
+			s.of.T		<- sim.sd / sqrt(xn)
+			tmp			<- .Call("abcMuTOST_pwvar",c(mx.pw, df, s.of.T, tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-5, 100))
+			print(sqrt(tmp)[1])
+			tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5, debug=0)
+			print(tmp)
+			
+			sim.sd		<- sd(sim[1:900])
+			tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5, debug=0)
+			print(tmp)
+			
+			stop()
+			
+		}
+		if(0)
+		{
+			require(abc.n)			
+			
 			
 			sim8<- {tmp<-c(0.00023,2e-04,0.00012,9e-05,0.00017,0.00012,1e-04,0.00012,0.00019,0.00014,7e-05,1e-04,0.00014,5e-05,0.00017,0.00011,9e-05,0.00012,0.00019,0.00015,0.00017,1e-04,8e-05,0.00012,2e-04,1e-04,0.00014,0.00016,0.00016,9e-05,0.00012,0.00017,0.00018,0.00016,0.00024,0.00013,0.00019,9e-05,0.00019,0.00011); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000", "46.000000", "48.000000", "50.000000", "52.000000", "54.000000", "56.000000", "58.000000", "60.000000", "62.000000", "64.000000", "66.000000", "68.000000", "70.000000", "72.000000", "74.000000", "76.000000", "78.000000", "80.000000", "82.000000", "84.000000", "86.000000", "88.000000", "90.000000", "92.000000", "94.000000", "96.000000", "98.000000", "100.000000", "102.000000", "104.000000", "106.000000", "108.000000"); tmp}
 			sim8<- {tmp<-c(0.01462,0.01457,0.01451,0.01474,0.015,0.01499,0.01477,0.01474,0.01481,0.01476,0.01482,0.01497,0.01451,0.01437,0.01451,0.01461,0.01481,0.01442,0.01468,0.01464,0.0149,0.0148,0.01468,0.01486,0.01487,0.01492,0.01459,0.01454,0.0146,0.01484,0.01469,0.01477,0.01483,0.01448,0.01448,0.01464,0.01468,0.01471,0.01464,0.01456); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000", "46.000000", "48.000000", "50.000000", "52.000000", "54.000000", "56.000000", "58.000000", "60.000000", "62.000000", "64.000000", "66.000000", "68.000000", "70.000000", "72.000000", "74.000000", "76.000000", "78.000000", "80.000000", "82.000000", "84.000000", "86.000000", "88.000000", "90.000000", "92.000000", "94.000000", "96.000000", "98.000000", "100.000000", "102.000000", "104.000000", "106.000000", "108.000000"); tmp}
