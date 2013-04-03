@@ -1297,7 +1297,7 @@ nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, a
 #'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
 nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test")
 {
-	verbose<- 1
+	#verbose<- 1
 	ans<- NABC.DEFAULT.ANS
 	#compute two sample t-test on either z-scores or untransformed data points
 	if(any(is.na(sim)))			stop("nabc.mutost: error at 1a")
@@ -1372,7 +1372,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 		sim.sd	<- sd(sim)		
 		if(sim.sd>=obs.sd)	#adjust sim.n
 		{
-			print(c(obs.n,s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub))
+#print(c(obs.n,s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub))
 			tmp		<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=2*tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5)		#for simplicity keep sim.sd fixed even if we use shorter 'sim' overall
 			if(abs(tmp[5]-mx.pw)>0.09)	stop("tau.up not accurate")
 			sim.n	<- tmp[1]
@@ -1394,7 +1394,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 			tau.l	<- tmp[2]*annealing
 			tau.u	<- tmp[3]*annealing
 			if(verbose)
-				cat(paste("\nstd is 3, adj sim.n, and sim.n obs.n is",sim.n,obs.n,"variances are",sim.sd,obs.sd,"var of su lkl is",s.of.lkl))			
+				cat(paste("\nstd is 3, adj sim.n, and sim.n obs.n is",sim.n,obs.n,"std dev are",sim.sd,obs.sd,"sd of su lkl is",s.of.lkl))			
 		}
 		else					#adjust tau.u so that the variance of the summary likelihood is matched even if that means the max pw is > 0.9
 		{

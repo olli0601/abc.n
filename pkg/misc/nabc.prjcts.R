@@ -378,12 +378,15 @@ project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,n.hists=5,nbin
 	mx
 }
 #------------------------------------------------------------------------------------------------------------------------
-project.nABC.movingavg.gethist<- function(x, theta, nbreaks= 20, width= 0.5, plot=0, rtn.dens=0)
+project.nABC.movingavg.gethist<- function(x, theta, nbreaks= 20, breaks= NULL, width= 0.5, plot=0, rtn.dens=0)
 {
 	#compute break points sth theta is in the middle
-	breaks<- max(abs( theta - x ))*1.1 / nbreaks								
-	breaks<- c( rev(seq(from= theta-breaks/2, by=-breaks, length.out= nbreaks )), seq(from= theta+breaks/2, by=breaks, length.out= nbreaks ) )
-	ans.h<- hist(x,breaks=breaks, plot= 0)
+	if(is.null(breaks))
+	{
+		breaks<- max(abs( theta - x ))*1.1 / nbreaks								
+		breaks<- c( rev(seq(from= theta-breaks/2, by=-breaks, length.out= nbreaks )), seq(from= theta+breaks/2, by=breaks, length.out= nbreaks ) )		
+	}
+	ans.h<- hist(x, breaks=breaks, plot= 0)
 	ans.h[["mean"]]<- mean(x)		
 	ans.h[["hmode"]]<- mean(ans.h[["breaks"]][seq(which.max(ans.h[["counts"]]),length.out=2)])	
 	tmp<- density(x, kernel="biweight",from=breaks[1],to=breaks[length(breaks)],width = max(EPS,width*diff(summary(x)[c(2,5)])))
@@ -2224,7 +2227,7 @@ project.nABC.compareSEIRS<- function()
 	{
 		require(ash)
 		grace.after.annealing<- 1
-		resume<- 0
+		resume<- 1
 		if(resume)
 		{
 			f.name<- paste(d.name,"simu_allruns.R",sep='/')
@@ -2234,13 +2237,14 @@ project.nABC.compareSEIRS<- function()
 		}									
 		if(!resume || inherits(readAttempt, "try-error"))
 		{
-			f.name<- c("abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v7","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v6","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.03","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.025","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.02","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.01")
-			f.name<- c("abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.015","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.011","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.009")
-			f.name<- c("abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.009","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v1")			
+			f.name<- c("abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.65","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v16")			
 			tmp<- paste("nABC.SEIIRScompare",f.name,sep='/')
 			
-			print(tmp)
+			rho.names	<- c("MED.ANN.ATT.R","AMED.FD.ATT.R","MED.INC.ATT.R")
+			theta.names	<- c("R0","durImm","repProb")
+			require(locfit)
 			
+			print(tmp)			
 			post<- lapply(tmp,function(x)
 					{
 						cat(paste("\nprocess ABC run",x))
@@ -2249,7 +2253,23 @@ project.nABC.compareSEIRS<- function()
 						acc		<- ABC.MMCMC.get.acceptance(mabc, grace.after.annealing= grace.after.annealing)
 						samples	<- ABC.MMCMC.getsamples(mabc, grace.after.annealing= grace.after.annealing)
 						links	<- ABC.MMCMC.getsamples(mabc, only.nonconst=FALSE, grace.after.annealing= grace.after.annealing, what= "rho.mc")
-						list(abc.core=abc.core,acc=acc,samples=samples, links=links)
+						
+						samples.j	<- do.call(rbind, samples)
+						links.j		<- do.call(rbind, links)
+						idx			<- c(1,diff(samples.j[,1]))!=0					
+						df			<- as.data.frame(cbind(samples.j[idx,theta.names], links.j[idx,rho.names]))
+						links.exp	<- sapply(rho.names,function(rho)
+								{
+									tmp		<- paste("locfit(",rho,'~',paste(theta.names,collapse=':',sep=''),", data=df,maxk=200)",sep='')
+									lnk.fit	<- eval(parse(text=tmp))
+									tmp		<- locfit:::preplot.locfit(lnk.fit, newdata= NULL, where="data", band = "none", tr = NULL, what = "coef", get.data = 0, f3d = 0)
+									tmp$fit
+								})					
+						replicate	<- c(diff(seq_len(nrow(samples.j))[idx]),1)											
+						links.exp	<- apply(links.exp, 2, function(x) rep(x,replicate))
+						colnames(links.exp)<- rho.names
+												
+						list(abc.core=abc.core,acc=acc,samples=samples, links=links, links.exp=links.exp)
 					})
 			f.name<- paste(d.name,"simu_allruns.R",sep='/')
 			cat("\nsave runs to ",f.name)
@@ -2258,8 +2278,9 @@ project.nABC.compareSEIRS<- function()
 		else
 			cat(paste("\nproject.nABC.compareSEIRS: resumed ",f.name))
 		
-		post	<- list(post[[1]],post[[2]])
-		cols	<- c("black","gray20","gray40")
+		post	<- list(post[[1]],post[[2]])	
+		#cols	<- c("black","gray20","gray40")
+		cols	<- c("black","red","blue")
 		xnames	<- c("R0","durImm","repProb")
 		xlab	<- expression(R[0],1/nu,rho)
 		xtrue	<- c(3.5,10,0.08)
@@ -2272,10 +2293,12 @@ project.nABC.compareSEIRS<- function()
 										c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xname]), recursive=1)	
 									})	
 							print(range(xs))
+							tmp<- max(abs(unlist(xs)-xtrue[j]))*1.1							
+							breaks<- seq(from=-tmp+xtrue[j],to=tmp+xtrue[j],len=70)														
 							hxs<- lapply(seq_along(xs),function(i)
 									{
-										project.nABC.movingavg.gethist(xs[[i]],theta=xtrue[j],nbreaks=37)
-									})	
+										project.nABC.movingavg.gethist(xs[[i]],theta=xtrue[j],breaks=breaks)
+									})								
 							
 							f.name<- paste(d.name,"/nABC.compareSEIRS_simu_",xname,".pdf",sep='')
 							cat(paste("\nABC.StretchedF: write pdf to",f.name))
@@ -2292,6 +2315,53 @@ project.nABC.compareSEIRS<- function()
 							legend("topright",bty='n',border=NA,fill=c("gray30","gray50","gray70"),legend=c(expression(tau^'+'==0.01),expression(tau^'+'==0.02),expression(tau^'+'==0.05)))		
 							dev.off()														
 						})		
+				
+		xnames	<- c("MED.ANN.ATT.R","AMED.FD.ATT.R","MED.INC.ATT.R")
+		xlab	<- expression("MED.ANN.ATT.R","AMED.FD.ATT.R","MED.INC.ATT.R")
+		xtrue	<- c(0,0,0)		
+		xn		<- c(8,7,8)
+		xsd		<- c(0.000174923452646334, 0.116305220653568, 0.00219087066841343)
+		#xsd		<- c(0.000174923452646334, 0.030305220653568, 0.00219087066841343)
+		lapply(seq_along(xnames),function(j)
+						{
+							xname<- xnames[j]
+							cat(paste("\nprocess",xname))
+							xs<- lapply(seq_along(post),function(i)
+									{
+										post[[i]][["links.exp"]][,xname]	
+									})	
+							tmp<- max(abs(unlist(xs)-xtrue[j]))*1.1							
+							breaks<- seq(from=-tmp+xtrue[j],to=tmp+xtrue[j],len=100)							
+							hxs<- lapply(seq_along(xs),function(i)
+									{
+										project.nABC.movingavg.gethist(xs[[i]],theta=xtrue[j],breaks=breaks)
+									})	
+							
+							print(sum(hxs[[1]][["density"]])*diff(breaks)[1])
+							
+							f.name<- paste(d.name,"/nABC.compareSEIRS_simu_linksexp_",xname,".pdf",sep='')
+							cat(paste("\nABC.StretchedF: write pdf to",f.name))
+							pdf(f.name,version="1.4",width=4,height=5)
+							par(mar=c(4,4,.5,.5))		
+							plot(1,1,type='n',xlim=range(breaks),ylim=range(sapply(seq_along(hxs),function(i) hxs[[i]][["density"]] )),ylab="density",xlab=xlab[j])
+							abline(v=xtrue[j],lty=1,col="red")	
+							sapply(seq_along(post),function(i)
+									{			
+										plot(hxs[[i]],add=1,freq=0, border=NA, col=my.fade.col(cols[i],0.5))
+										abline(v=hxs[[i]][["dmode"]],lty=2,col=my.fade.col(cols[i],0.75))
+										abline(v=hxs[[i]][["mean"]],lty=3,col=my.fade.col(cols[i],0.75))
+										print( hxs[[i]][["mean"]] )
+									})
+							x			<- seq(min(breaks),max(breaks), len=1e3)
+							std.of.lkl	<- xsd[j]*sqrt( (xn[j]-1)/xn[j] )
+							su.lkl		<- dt(x / std.of.lkl, xn[j]-1)
+							su.lkl		<- su.lkl / (sum(su.lkl)*diff(x)[1])
+							lines(x,su.lkl)
+							#legend("topright",bty='n',border=NA,fill=c("gray30","gray50","gray70"),legend=c(expression(tau^'+'==0.01),expression(tau^'+'==0.02),expression(tau^'+'==0.05)))		
+							#stop()
+							dev.off()														
+						})		
+				
 		xnames	<- c("MED.ANN.ATT.R","AMED.FD.ATT.R","MED.INC.ATT.R")
 		xlab	<- expression("MED.ANN.ATT.R","AMED.FD.ATT.R","MED.INC.ATT.R")
 		xtrue	<- c(0,0,0)				
@@ -2303,25 +2373,28 @@ project.nABC.compareSEIRS<- function()
 									{
 										c(sapply(seq_along(post[[i]][["links"]]),function(r)	post[[i]][["links"]][[r]][,xname]), recursive=1)	
 									})	
-							print(range(xs))
+							tmp<- max(abs(unlist(xs)-xtrue[j]))*1.1							
+							breaks<- seq(from=-tmp+xtrue[j],to=tmp+xtrue[j],len=100)							
 							hxs<- lapply(seq_along(xs),function(i)
 									{
-										project.nABC.movingavg.gethist(xs[[i]],theta=xtrue[j],nbreaks=37)
+										project.nABC.movingavg.gethist(xs[[i]],theta=xtrue[j],breaks=breaks)
 									})	
 							
-							f.name<- paste(d.name,"/nABC.compareSEIRS_simu_",xname,".pdf",sep='')
+							f.name<- paste(d.name,"/nABC.compareSEIRS_simu_linksmc_",xname,".pdf",sep='')
 							cat(paste("\nABC.StretchedF: write pdf to",f.name))
 							pdf(f.name,version="1.4",width=4,height=5)
 							par(mar=c(4,4,.5,.5))		
-							plot(1,1,type='n',xlim=range(sapply(xs,range)),ylim=range(sapply(seq_along(hxs),function(i) hxs[[i]][["density"]] )),ylab="density",xlab=xlab[j])
+							plot(1,1,type='n',xlim=range(breaks),ylim=range(sapply(seq_along(hxs),function(i) hxs[[i]][["density"]] )),ylab="density",xlab=xlab[j])
 							abline(v=xtrue[j],lty=1,col="red")	
 							sapply(seq_along(post),function(i)
 									{			
 										plot(hxs[[i]],add=1,freq=0, border=NA, col=my.fade.col(cols[i],0.5))
 										abline(v=hxs[[i]][["dmode"]],lty=2,col=my.fade.col(cols[i],0.75))
 										abline(v=hxs[[i]][["mean"]],lty=3,col=my.fade.col(cols[i],0.75))
+										print( hxs[[i]][["mean"]] )
 									})
-							legend("topright",bty='n',border=NA,fill=c("gray30","gray50","gray70"),legend=c(expression(tau^'+'==0.01),expression(tau^'+'==0.02),expression(tau^'+'==0.05)))		
+							#legend("topright",bty='n',border=NA,fill=c("gray30","gray50","gray70"),legend=c(expression(tau^'+'==0.01),expression(tau^'+'==0.02),expression(tau^'+'==0.05)))		
+							#stop()
 							dev.off()														
 						})				
 		stop()
@@ -4775,7 +4848,7 @@ project.nABC.TOST<- function()
 	require(PowerTOST)	
 	my.mkdir(DATA,"nABC.mutost")
 	dir.name<- paste(DATA,"nABC.mutost",sep='/')
-	subprog<- 5
+	subprog<- 2
 	pdf.width<- 4
 	pdf.height<-5
 	
@@ -4788,14 +4861,18 @@ project.nABC.TOST<- function()
 	}
 	
 	#simulate N times from same ytau.u, simulate from same xsigma
-	project.nABC.mutost.fix.x.uprior.ysig2<- function(N,tau,prior,alpha,x,yn,stdize)		
+	project.nABC.mutost.fix.x.uprior.ysig2<- function(N, tau, prior, alpha, x, yn, stdize, annealing=1, mx.pw=0.9, nparallel=8)		
 	{		
+		require(multicore)
 		if(!is.matrix(tau)	|| nrow(tau)!=1	|| ncol(tau)!=2)	
 			stop("project.nABC.mutost.fix.x.uprior.ysig2: error at 1a")		
 		if(!is.matrix(prior)	|| nrow(prior)!=2	|| ncol(prior)!=2)	
 			stop("project.nABC.mutost.fix.x.uprior.ysig2: error at 1b")
 		
-		args<- paste("mutost",stdize,tau["mu","l"],tau["mu","u"],alpha,sep='/')
+		if(stdize%in%c(2,3))
+			args<- paste("mutost",stdize,annealing,mx.pw,tau["mu","u"],alpha,sep='/')
+		else
+			args<- paste("mutost",stdize,tau["mu","u"],alpha,sep='/')
 		#perform one ABC - rejection run
 		ans				<- vector("list",5)
 		names(ans)		<- c("xmu","xsigma2","cil","cir","data")		
@@ -4804,15 +4881,18 @@ project.nABC.TOST<- function()
 		tmp				<- nabc.mutost.onesample(rnorm(yn,mean(x),sd=sd(x)), x, args= args, verbose= 0)
 		ans[["cil"]]	<- tmp[["cil"]]
 		ans[["cir"]]	<- tmp[["cir"]]		
-		ans[["data"]]	<- sapply(1:N,function(i)
+		ans[["data"]]	<- mclapply(1:N,function(i)
 				{					
 					ymu			<- runif(1,prior["mu","l"],prior["mu","u"])
 					ysigma2		<- runif(1,prior["sig2","l"],prior["sig2","u"])
-					tmp			<- nabc.mutost.onesample(rnorm(yn,ymu,sd=sqrt(ysigma2)), x, args= args, verbose= 0)
-					tmp			<- c(ymu,ysigma2,tmp[c("error","rho.mc")])
-					names(tmp)	<- c("ymu","ysigma2","error","rho.mc")					
+					y			<- rnorm(yn,ymu,sd=sqrt(ysigma2))
+					tmp			<- nabc.mutost.onesample(y, x, args= args, verbose= 0)					
+					tmp			<- c(ymu,ysigma2,var(y),var(y[1:tmp["nsim"]]),tmp[c("error","tr","nsim","rho.mc")])
+					names(tmp)	<- c("ymu","ysigma2","yvar","yvar.nsim","error","tau.u","nsim","rho.mc")					
 					tmp					
-				})		
+				}, mc.cores=nparallel)	
+		ans[["data"]]			<- matrix(unlist(ans[["data"]]),8,N)
+		rownames(ans[["data"]])	<- c("ymu","ysigma2","yvar","yvar.nsim","error","tau.u","nsim","rho.mc")
 		ans
 	}	
 	project.nABC.mutost.fix.x.fix.ysig2<- function(N,tau,prior,alpha,x,yn,stdize)		
@@ -4849,21 +4929,41 @@ project.nABC.TOST<- function()
 	
 	if(!is.na(subprog) && subprog==2)
 	{
-		xn<- yn	<- 60
+		xn		<- 60
+		yn		<- 10*xn
 		alpha	<- 0.01	
 		tau		<- 0.5
 		tau		<- matrix(c(-tau,tau),ncol=2,dimnames=list(c("mu"),c("l","u"))) 		
-		prior	<- matrix(c(-5,5,0.5,4),ncol=2,byrow=1,dimnames=list(c("mu","sig2"),c("l","u")))
+		prior	<- matrix(c(0.2,0.8,0.05^2,0.3^2),ncol=2,byrow=1,dimnames=list(c("mu","sig2"),c("l","u")))
 		
 		xmu		<- 0.5
-		xsigma2	<- 2
-		N		<- 2e6
-		stdize	<- 2
-		m		<- NA
+		xsigma2	<- 0.1*0.1
+		N		<- 1e3
+		stdize	<- 3
+		m		<- 1
+		
+		if(exists("argv"))
+		{
+			tmp<- na.omit(sapply(argv,function(arg)
+							{	switch(substr(arg,2,2),
+										m= return(as.numeric(substr(arg,3,nchar(arg)))),NA)	}))
+			if(length(tmp)>0) m<- tmp[1]
+			tmp<- na.omit(sapply(argv,function(arg)
+							{	switch(substr(arg,2,4),
+										pvl= return(as.numeric(substr(arg,5,nchar(arg)))),NA)	}))
+			if(length(tmp)>0) prior[2,1]<- tmp[1]
+			tmp<- na.omit(sapply(argv,function(arg)
+							{	switch(substr(arg,2,4),
+										pvu= return(as.numeric(substr(arg,5,nchar(arg)))),NA)	}))
+			if(length(tmp)>0) prior[2,2]<- tmp[1]
+		}
+		print(m)
+		print(prior)
+		
 		resume	<- 0
 		if(!is.na(m))
 		{		
-			f.name<- paste(dir.name,"/nABC.mutost_unbiasedrepeat_",N,"_",xn,"_",stdize,"_",prior[1,1],"_",prior[1,2],"_",prior[2,1],"_",prior[2,2],"_",tau[1,2],"_m",m,".R",sep='')
+			f.name<- paste(dir.name,"/nABC.mutost_unbiasedrepeat_",N,"_",xn,"_",yn,"_",stdize,"_",prior[1,1],"_",prior[1,2],"_",prior[2,1],"_",prior[2,2],"_",tau[1,2],"_m",m,".R",sep='')
 			cat(paste("\nnABC.mutost: compute ",f.name))
 			options(show.error.messages = FALSE, warn=1)		
 			readAttempt<-try(suppressWarnings(load(f.name)))						
@@ -4871,8 +4971,13 @@ project.nABC.TOST<- function()
 			if(!resume || inherits(readAttempt, "try-error"))
 			{
 				x	<- rnorm(xn,0,1)
-				x	<- x/sd(x)*sqrt(xsigma2)+xmu						
-				ans	<- project.nABC.mutost.fix.x.uprior.ysig2(N,tau,prior,alpha,x,yn,stdize)				
+				x	<- x/sd(x)*sqrt(xsigma2)+xmu	#for debug make sure this is always 0.5/0.1
+				simu.time<- system.time(
+				ans	<- project.nABC.mutost.fix.x.uprior.ysig2(N,tau,prior,alpha,x,yn,stdize,annealing=1,mx.pw=0.9)
+				)[3]
+				acc<- which( ans[["data"]]["error",]<=ans[["cir"]]  &  ans[["data"]]["error",]>=ans[["cil"]] )
+				print(length(acc)/ncol(ans[["data"]]))
+				print(simu.time)								
 				cat(paste("\nnABC.mutost: save ",f.name))
 				save(ans,file=f.name)				
 			}
@@ -4993,11 +5098,10 @@ stop()
 			#tmp		<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=0.0003, tol= s.of.lkl*s.of.lkl*1e-5, debug=1)
 			#print(tmp)
 		
-			obs.n<- 7; s.of.lkl<- 0.1318777; mx.pw<- 0.6600000; sim.sd<- 0.1262006; alpha<- 0.01; tau.u.ub<- 0.5
-		
+			#obs.n<- 7; s.of.lkl<- 0.1318777; mx.pw<- 0.6600000; sim.sd<- 0.1262006; alpha<- 0.01; tau.u.ub<- 0.5		
 			tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5)
-			print(tmp)
-			stop()
+			#print(tmp)
+			#stop()
 		
 			yn			<- tmp[1]
 			tau.u		<- tmp[3]	
@@ -5019,17 +5123,17 @@ stop()
 			
 			x			<- seq(prior[1],prior[2],length.out=1e3)
 			pw			<- nabc.mutost.pow(x, yn-1, tau.u, s.of.T, alpha)			
-			pw			<- pw/(sum(pw)*1e-3)
+			pw			<- pw/(sum(pw)*diff(x)[1])
 			
 			pw2			<- nabc.mutost.pow(x, length(sim2)-1, tau.u2, s.of.T2, alpha)		
-			pw2			<- pw2/(sum(pw2)*1e-3)
+			pw2			<- pw2/(sum(pw2)*diff(x)[1])
 			
 			pw3			<- nabc.mutost.pow(x, length(sim2)-1, tau.u3, s.of.T2, alpha)		
-			pw3			<- pw3/(sum(pw3)*1e-3)
+			pw3			<- pw3/(sum(pw3)*diff(x)[1])
 			
 			
-			su.lkl		<- dt(x / std.of.lkl, yn-1)
-			su.lkl		<- su.lkl / (sum(su.lkl)*1e-3)
+			su.lkl		<- dt(x / std.of.lkl, obs.n-1)
+			su.lkl		<- su.lkl / (sum(su.lkl)*diff(x)[1])
 			print( sum(su.lkl)*1e-3 )
 			plot(x,su.lkl,type='l', col="red",ylim=range(su.lkl,pw))
 			lines(x,pw)
