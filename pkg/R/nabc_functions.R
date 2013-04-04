@@ -572,6 +572,29 @@ nabc.chisqstretch<- function(sim, obs.mc, args=NA, verbose= FALSE, tau.l=1, tau.
 	ans
 }	
 #------------------------------------------------------------------------------------------------------------------------
+#' Estimate summary parameter errors rho from unbiased Monte Carlo estimates rho.mc for all proposed theta including rejections 
+#' @export
+#' @param df			data frame with all proposed theta and corresponding rho.mc for each summary of interest 
+#' @param theta.names	vector of theta names (columns in df)
+#' @param rho.names		vector of rho names (columns in df)
+#' @param thin			thinning factor in case there are many rows in df
+#' @return	matrix containing the estimated rho (per column). The ith row corresponds to the ith theta in df.
+nabc.exprho.at.theta<- function(df, theta.names, rho.names, thin=1)
+{
+	require(locfit)
+	links.exp	<- sapply(rho.names,function(rho)
+					{
+						tmp		<- paste("locfit(",rho,'~',paste(theta.names,collapse=':',sep=''),", data=df,maxk=200)",sep='')
+						lnk.fit	<- eval(parse(text=tmp))
+						tmp		<- locfit:::preplot.locfit(lnk.fit, newdata= NULL, where="data", band = "none", tr = NULL, what = "coef", get.data = 0, f3d = 0)
+						tmp$fit
+					})	
+	colnames(links.exp)<- rho.names
+	if(!is.matrix(links.exp))	
+		links.exp<- as.matrix(links.exp)
+	links.exp
+}
+#------------------------------------------------------------------------------------------------------------------------
 nabc.get.locfit.links<- function(th.d, m, th.thin= 1, th.sep=100)
 {
 	require(locfit)
@@ -1295,7 +1318,7 @@ nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, a
 #'	x<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 #'	y<- rnorm(yn,ymu,sd=sqrt(ysigma2))
 #'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
-nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test")
+nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test", plot=0, legend.txt="")
 {
 	verbose<- 1
 	ans<- NABC.DEFAULT.ANS
@@ -1366,7 +1389,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 	}
 	else if(standardize==3)
 	{
-#cat(print.v(sim)); cat(print.v(obs))
+#cat(print.v(sim,print.char=0)); cat(print.v(obs,print.char=0))
 		obs.sd		<- ifelse(obs.n>length(obs),sd(sim[1:obs.n]),sd(obs))
 		s.of.lkl	<- obs.sd * sqrt( (obs.n-1)/(obs.n-3)/obs.n	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
 		sim.sd		<- sd(sim)
@@ -1430,6 +1453,25 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 	ans["link.mc.sim"]	<- 	sim.mean
 	ans["link.mc.obs"]	<- 	obs.mean
 	ans["rho.mc"]		<- 	sim.mean - obs.mean
+	
+	if(plot)
+	{
+		rho		<- seq(-2*tau.u,2*tau.u,length.out=1e3)
+		pw		<- nabc.mutost.pow(rho, sim.n-1, tau.u, tmp[5], alpha)			
+		pw		<- pw/(sum(pw)*diff(rho)[1])
+		su.lkl	<- NA
+		if(standardize==3)
+		{
+			su.lkl		<- dt(rho/obs.sd*sqrt(obs.n), obs.n-1)
+			su.lkl		<- su.lkl / (sum(su.lkl)*diff(rho)[1])
+		}	
+		plot(1,1,type='n',bty='n',xlim=range(rho),ylim=c(0,max(pw)*1.3),ylab="power density",xlab=expression(rho))			
+		lines(rho,pw,lty=2)
+		if(!any(is.na(su.lkl)))
+			lines(rho,su.lkl,lty=1)				
+		legend("topright",bty='n',legend=legend.txt)
+	}
+	
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------

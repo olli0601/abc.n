@@ -2237,7 +2237,7 @@ project.nABC.compareSEIRS<- function()
 		}									
 		if(!resume || inherits(readAttempt, "try-error"))
 		{
-			f.name<- c("abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.65","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v16")			
+			f.name<- c("abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.85","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v16")			
 			tmp<- paste("nABC.SEIIRScompare",f.name,sep='/')
 			
 			rho.names	<- c("MED.ANN.ATT.R","AMED.FD.ATT.R","MED.INC.ATT.R")
@@ -2321,7 +2321,6 @@ project.nABC.compareSEIRS<- function()
 		xtrue	<- c(0,0,0)		
 		xn		<- c(8,7,8)
 		xsd		<- c(0.000174923452646334, 0.116305220653568, 0.00219087066841343)
-		#xsd		<- c(0.000174923452646334, 0.030305220653568, 0.00219087066841343)
 		lapply(seq_along(xnames),function(j)
 						{
 							xname<- xnames[j]
@@ -2353,7 +2352,7 @@ project.nABC.compareSEIRS<- function()
 										print( hxs[[i]][["mean"]] )
 									})
 							x			<- seq(min(breaks),max(breaks), len=1e3)
-							std.of.lkl	<- xsd[j]*sqrt( (xn[j]-1)/xn[j] )
+							std.of.lkl	<- xsd[j]/sqrt( xn[j] )
 							su.lkl		<- dt(x / std.of.lkl, xn[j]-1)
 							su.lkl		<- su.lkl / (sum(su.lkl)*diff(x)[1])
 							lines(x,su.lkl)
@@ -2393,6 +2392,13 @@ project.nABC.compareSEIRS<- function()
 										abline(v=hxs[[i]][["mean"]],lty=3,col=my.fade.col(cols[i],0.75))
 										print( hxs[[i]][["mean"]] )
 									})
+							
+							x			<- seq(min(breaks),max(breaks), len=1e3)
+							std.of.lkl	<- xsd[j]/sqrt( xn[j] )
+							su.lkl		<- dt(x / std.of.lkl, xn[j]-1)
+							su.lkl		<- su.lkl / (sum(su.lkl)*diff(x)[1])
+							lines(x,su.lkl)
+							
 							#legend("topright",bty='n',border=NA,fill=c("gray30","gray50","gray70"),legend=c(expression(tau^'+'==0.01),expression(tau^'+'==0.02),expression(tau^'+'==0.05)))		
 							#stop()
 							dev.off()														
@@ -4938,9 +4944,9 @@ project.nABC.TOST<- function()
 		
 		xmu		<- 0.5
 		xsigma2	<- 0.1*0.1
-		N		<- 1e3
+		N		<- 5e5
 		stdize	<- 3
-		m		<- 1
+		m		<- NA
 		
 		if(exists("argv"))
 		{
@@ -4965,7 +4971,7 @@ project.nABC.TOST<- function()
 		print(N)
 		print(prior)
 		
-		resume	<- 0
+		resume	<- 1
 		if(!is.na(m))
 		{		
 			f.name<- paste(dir.name,"/nABC.mutost_unbiasedrepeat_",N,"_",xn,"_",yn,"_",stdize,"_",prior[1,1],"_",prior[1,2],"_",prior[2,1],"_",prior[2,2],"_",tau[1,2],"_m",m,".R",sep='')
@@ -4994,21 +5000,27 @@ project.nABC.TOST<- function()
 		{
 			#load data					
 			cat(paste("\nnABC.mutost",dir.name))
-			f.name<- paste(dir.name,"/nABC.mutost_unbiased_",N,"_",xn,"_",prior[1,1],"_",prior[1,2],"_",prior[2,1],"_",prior[2,2],"_",tau[1,2],".R",sep='')			
+			f.name<- paste(dir.name,"/nABC.mutost_unbiased_",N,"_",xn,"_",yn,"_",stdize,"_",prior[1,1],"_",prior[1,2],"_",prior[2,1],"_",prior[2,2],"_",tau[1,2],".R",sep='')	
 			options(show.error.messages = FALSE, warn=1)		
 			readAttempt<-try(suppressWarnings(load(f.name)))						
 			options(show.error.messages = TRUE)		
 			if(!resume || inherits(readAttempt, "try-error"))
-			{				
-				f.name<- list.files(dir.name, pattern=paste("^nABC.mutost_unbiasedrepeat_",sep=''), full.names = TRUE)
+			{		
+				match<- paste("nABC.mutost_unbiasedrepeat_",N,"_",xn,"_",yn,"_",stdize,"_",prior[1,1],"_",prior[1,2],"_",prior[2,1],"_",prior[2,2],"_",tau[1,2],"_m",sep='')
+				f.name<- list.files(dir.name, full.names = 0)								
+				f.name<- f.name[ which(regexpr(match,f.name,fixed=1)>0) ]
 				f.name.yn<- sort(sapply(strsplit(f.name,'_',fixed=1),function(x)	as.numeric(x[length(x)-2])		), index.return=1)
-				f.name<- f.name[f.name.yn$ix]				
+				f.name<- f.name[f.name.yn$ix]		
+				print(f.name)
+
 				cat(paste("\nnABC.mutost load data: ", length(f.name)))
 				ans<- lapply(seq_along(f.name),function(j)
 						{														
 							cat(paste("\nload",f.name[j]))
-							readAttempt<-try(suppressWarnings(load( f.name[j] )))
+							readAttempt<-try(suppressWarnings(load( paste(dir.name,f.name[j],sep='/') )))
 							if(inherits(readAttempt, "try-error"))	stop("error at unbiased")
+														
+							links.exp<- nabc.exprho.at.theta(data.frame(mu=ans[["data"]]["ymu",], meandiff=ans[["data"]]["rho.mc",]), c("mu"), c("meandiff"), thin=1)
 							#print(ans)
 							#print(any(is.na(ans[["data"]])))
 							#print(which(apply(ans[["data"]],2,function(x) any(is.na(x)))))
@@ -5017,8 +5029,28 @@ project.nABC.TOST<- function()
 							acc<- which( ans[["data"]]["error",]<=ans[["cir"]]  &  ans[["data"]]["error",]>=ans[["cil"]] )
 							print(length(acc)/ncol(ans[["data"]]))
 							print(length(acc))
-							hist<- project.nABC.movingavg.gethist(ans[["data"]]["ymu",acc], ans[["xmu"]], nbreaks= 50, width= 0.5, plot=1)
-							abline(v=ans[["xmu"]],col="red")
+							print(summary(ans[["data"]]["nsim",acc]))
+							#hist<- project.nABC.movingavg.gethist(ans[["data"]]["ymu",acc]-ans[["xmu"]], 0, nbreaks= 70, width= 0.5, plot=1)
+							#hist<- project.nABC.movingavg.gethist(ans[["data"]]["rho.mc",acc], 0, nbreaks= 70, width= 0.5, plot=1)
+							hist<- project.nABC.movingavg.gethist(links.exp[acc,1], 0, nbreaks= 70, width= 0.5, plot=1)
+							abline(v=0,col="red")
+							
+							x			<- seq(min(hist[["breaks"]]),max(hist[["breaks"]]),length.out=1e3)
+							std.of.lkl	<- sqrt( ans[["xsigma2"]]/xn )
+							su.lkl		<- dt(x / std.of.lkl, xn-1)
+							print(diff(x)[1])
+							su.lkl		<- su.lkl / (sum(su.lkl)*diff(x)[1])
+							lines(x,su.lkl,col="blue")
+							
+							yns		<- ans[["data"]]["nsim",acc][1:100]
+							tau.us	<- ans[["data"]]["tau.u",acc][1:100]
+							sTs		<- sqrt( ans[["data"]]["yvar",acc][1:100] / yns )
+							sapply(seq_along(yns),function(i)
+									{
+										pw		<- nabc.mutost.pow(x, yns[i]-1, tau.us[i], sTs[i], alpha)
+										lines(x, pw/(sum(pw)*diff(x)[1]), col="green")				
+									})
+							
 stop()
 							out["fx.tau.u",]<- c(tau.l, tau.u, rej[1], rej[2], length(acc.ok)/ncol(ans.ok[["data"]]), acc.h.ok[["mean"]],acc.h.ok[["hmode"]],acc.h.ok[["dmode"]],ans.ok[["xsigma2"]])
 							#determine tolerances sth TOST power is 0.95
@@ -5077,55 +5109,138 @@ stop()
 		stdize	<- 0
 		m		<- 1
 		resume	<- 1
-		if(1)
+		if(0)
+		{
+			yn		<- xn
+			xsigma2	<- 0.1*0.1
+			obs<- rnorm(xn,0.5,0.1)
+			obs<- (obs-mean(obs))/sd(obs)*sqrt(xsigma2)+xmu
+			sim<- rnorm(yn,0.6,0.03)
+			
+			obs.n		<- length(obs)
+			std.of.lkl	<- sqrt( var(obs)/obs.n )
+			s.of.lkl	<- sqrt( var(obs)/obs.n  * (obs.n-1)/(obs.n-3)	)
+			cat( paste("\n sim sd",sd(sim), sd(sim[1:900]), "\nand obs sd", sd(obs), sd(obs)/sqrt(xn), "\nand sulkl sd",s.of.lkl,s.of.lkl^2, "\n") )
+			
+			sim.sd		<- sd(sim) 			
+			mx.pws		<- seq(0.3,0.9,0.2)
+			alpha		<- 0.01
+			tau.u.ub	<- 0.1
+			
+			df			<- yn-1
+			s.of.T		<- sim.sd / sqrt(yn)			
+			out			<- sapply(mx.pws,function(mx.pw)
+					{
+						tmp			<- .Call("abcMuTOST_pwvar",c(mx.pw, df, s.of.T, tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-5, 100))
+						print(sqrt(tmp)[1])
+						tmp			<- nabc.mutost.onesample.tau.lowup.var( s.of.lkl, df, s.of.T, tau.u.ub, alpha, tol= s.of.lkl*s.of.lkl*1e-5 )
+						#tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5, debug=0)
+						#print(tmp)						
+						#sim.sd		<- sd(sim[1:900])
+						#tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5, debug=0)
+						#print(tmp)	
+						tmp						
+					})
+			colnames(out)<- mx.pws			
+			print(out)				
+			
+			prior		<- c(-0.1, 0.1)
+			x			<- seq(prior[1],prior[2],length.out=1e3)
+			su.lkl		<- dt(x / std.of.lkl, obs.n-1)
+			su.lkl		<- su.lkl / (sum(su.lkl)*diff(x)[1])
+			
+			ltys	<- seq_along(mx.pws)+1
+			plot(1,1,type='n',bty='n',xlim=range(x),ylim=range(c(su.lkl)))			
+			lines(x,su.lkl,col="red")
+			sapply(seq_along(mx.pws),function(j)
+					{						
+						tau.u		<- out[2,j]							
+						pw			<- nabc.mutost.pow(x, yn-1, tau.u, s.of.T, alpha)			
+						pw			<- pw/(sum(pw)*diff(x)[1])
+						lines(x,pw,col="green", lty=ltys[j])
+					})
+			legend("topright",lty=ltys,legend=mx.pws)			
+			stop()			
+		}
+		if(0)
 		{
 			yn		<- 1200
 			xsigma2	<- 0.1*0.1
 			obs<- rnorm(xn,0.5,0.1)
 			obs<- (obs-mean(obs))/sd(obs)*sqrt(xsigma2)+xmu
 			sim<- rnorm(yn,0.6,0.3)
-			cat( paste("\n sim and obs sd",sd(sim), sd(sim[1:900]), sd(obs), sd(obs)/sqrt(xn),"\n") )
-			
-			prior		<- c(-0.002, 0.002)			
+										
 			obs.n		<- length(obs)
 			std.of.lkl	<- sqrt( var(obs)/obs.n )
 			s.of.lkl	<- sqrt( var(obs)/obs.n  * (obs.n-1)/(obs.n-3)	)
-			print(s.of.lkl)
+			cat( paste("\n sim sd",sd(sim), sd(sim[1:900]), "\nand obs sd", sd(obs), sd(obs)/sqrt(xn), "\nand sulkl sd",s.of.lkl, "\n") )
+		
 			sim.sd		<- sd(sim) 			
-			mx.pw		<- 0.9
+			mx.pws		<- seq(0.3,0.9,0.2)
 			alpha		<- 0.01
 			tau.u.ub	<- 0.1
 			
 			df			<- yn-1
 			s.of.T		<- sim.sd / sqrt(xn)
-			tmp			<- .Call("abcMuTOST_pwvar",c(mx.pw, df, s.of.T, tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-5, 100))
-			print(sqrt(tmp)[1])
-			tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5, debug=0)
-			print(tmp)
 			
-			sim.sd		<- sd(sim[1:900])
-			tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5, debug=0)
-			print(tmp)
+			out			<- sapply(mx.pws,function(mx.pw)
+					{
+						tmp			<- .Call("abcMuTOST_pwvar",c(mx.pw, df, s.of.T, tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-5, 100))
+						print(sqrt(tmp)[1])
+						tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5, debug=0)
+						print(tmp)						
+						#sim.sd		<- sd(sim[1:900])
+						#tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5, debug=0)
+						#print(tmp)	
+						tmp						
+					})
+			colnames(out)<- mx.pws
+			print(out)						
+			prior		<- c(-0.1, 0.1)
+			x			<- seq(prior[1],prior[2],length.out=1e3)
+			su.lkl		<- dt(x / std.of.lkl, obs.n-1)
+			su.lkl		<- su.lkl / (sum(su.lkl)*diff(x)[1])
 			
-			stop()
-			
+			ltys	<- seq_along(mx.pws)+1
+			plot(1,1,type='n',bty='n',xlim=range(x),ylim=range(c(su.lkl)))			
+			lines(x,su.lkl,col="red")
+			sapply(seq_along(mx.pws),function(j)
+					{
+						yn			<- out[1,j]
+						tau.u		<- out[3,j]	
+						s.of.T		<- sim.sd / sqrt(yn)
+						pw			<- nabc.mutost.pow(x, yn-1, tau.u, s.of.T, alpha)			
+						pw			<- pw/(sum(pw)*diff(x)[1])
+						lines(x,pw,col="blue", lty=ltys[j])
+					})
+			legend("topright",lty=ltys,legend=mx.pws)			
+			stop()			
 		}
-		if(0)
+		if(1)
 		{
-			require(abc.n)			
+			require(abc.n)						
+			sim.MATT<- {tmp<-c(0.01137,0.01252,0.01234,0.01265,0.01299,0.01354,0.013,0.01261,0.0129,0.01288,0.01353,0.01257,0.01281,0.01308,0.01267,0.01326,0.0132,0.01263,0.01233,0.01315,0.01267,0.0129,0.01316,0.01272,0.01358,0.01329,0.01339,0.01317,0.01363,0.01314,0.01307,0.01305,0.01261,0.01274,0.01201,0.01269,0.01236,0.01208,0.01255,0.01251,0.01244,0.01235,0.01229,0.01253,0.01235,0.01252,0.01217,0.01282,0.01306,0.01376,0.01272,0.01261,0.01285,0.01276,0.01308,0.01317,0.0124,0.01237,0.01319,0.01277,0.01187,0.01201,0.01323,0.01277,0.01279,0.01302,0.0127,0.01226,0.01279,0.01297,0.01239,0.01301,0.01252,0.01199,0.01208,0.01352,0.01259,0.01296,0.01293,0.01206,0.01277,0.01373,0.01249,0.01349,0.01307,0.01289,0.01325,0.01275,0.01264,0.01264,0.01303,0.01297,0.01295,0.01358,0.01302,0.01251,0.01276,0.01252,0.01259,0.01255,0.01308,0.0134,0.01285,0.01322,0.01315,0.01242,0.01191,0.01232,0.01291,0.0128,0.01286,0.01249,0.01217,0.01197,0.01242,0.01281,0.01281,0.01319,0.01258,0.01262,0.01231,0.01179,0.01234,0.01264,0.01297,0.01227,0.01224,0.01258,0.01335,0.01312,0.01237,0.01273,0.01208,0.01232); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000", "46.000000", "48.000000", "50.000000", "52.000000", "54.000000", "56.000000", "58.000000", "60.000000", "62.000000", "64.000000", "66.000000", "68.000000", "70.000000", "72.000000", "74.000000", "76.000000", "78.000000", "80.000000", "82.000000", "84.000000", "86.000000", "88.000000", "90.000000", "92.000000", "94.000000", "96.000000", "98.000000", "100.000000", "102.000000", "104.000000", "106.000000", "108.000000", "110.000000", "112.000000", "114.000000", "116.000000", "118.000000", "120.000000", "122.000000", "124.000000", "126.000000", "128.000000", "130.000000", "132.000000", "134.000000", "136.000000", "138.000000", "140.000000", "142.000000", "144.000000", "146.000000", "148.000000", "150.000000", "152.000000", "154.000000", "156.000000", "158.000000", "160.000000", "162.000000", "164.000000", "166.000000", "168.000000", "170.000000", "172.000000", "174.000000", "176.000000", "178.000000", "180.000000", "182.000000", "184.000000", "186.000000", "188.000000", "190.000000", "192.000000", "194.000000", "196.000000", "198.000000", "200.000000", "202.000000", "204.000000", "206.000000", "208.000000", "210.000000", "212.000000", "214.000000", "216.000000", "218.000000", "220.000000", "222.000000", "224.000000", "226.000000", "228.000000", "230.000000", "232.000000", "234.000000", "236.000000", "238.000000", "240.000000", "242.000000", "244.000000", "246.000000", "248.000000", "250.000000", "252.000000", "254.000000", "256.000000", "258.000000", "260.000000", "262.000000", "264.000000", "266.000000", "268.000000", "270.000000", "272.000000", "274.000000", "276.000000", "278.000000", "280.000000", "282.000000", "284.000000", "286.000000", "288.000000", "290.000000", "292.000000", "294.000000", "296.000000"); tmp}
+			obs.MATT<- {tmp<-c(0.01293,0.01278,0.01286,0.01278,0.01261,0.01301,0.01297,0.01251); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000"); tmp}
+			args.MATT<- "ci.mutost.lag2.1/3/1/0.6/0.000275/0.01"
+
 			
-			
+			sim.XATT<- {tmp<-c(0.14297,0.15616,0.15479,0.15839,0.16218,0.17,0.16356,0.15811,0.16169,0.16159,0.1694,0.15749,0.16054,0.16382,0.15897,0.16622,0.16505,0.15826,0.15454,0.16447,0.15866,0.16123,0.16536,0.15973,0.16984,0.16674,0.1671,0.16478,0.17111,0.16481,0.16371,0.16394,0.1586,0.1593,0.15043,0.15943,0.15429,0.15176,0.15668,0.15663,0.15533,0.15523,0.15366,0.15716,0.15497,0.15621,0.15288,0.16063,0.16309,0.17283,0.15959,0.15785,0.16124,0.15931,0.16381,0.16459,0.15579,0.15509,0.1656,0.15995,0.14806,0.15048,0.16565,0.15987,0.16082,0.16268,0.15947,0.15367,0.16025,0.16221,0.15489,0.16309,0.15679,0.14967,0.15126,0.16893,0.1581,0.16146,0.16167,0.15089,0.15894,0.17155,0.15641,0.16948,0.16354,0.1607,0.16623,0.15938,0.15796,0.15779,0.16289,0.16218,0.16202,0.16997,0.16307,0.15672,0.15934,0.15679,0.15739,0.15693,0.16419,0.16751,0.16136,0.16516,0.16453,0.15561,0.14921,0.1538,0.16107,0.16034,0.16047,0.15664,0.1526,0.14949,0.15561,0.16052,0.16004,0.16493,0.15711,0.15808,0.15342,0.14787,0.15499,0.15802,0.16175,0.15347,0.15312,0.15764,0.16682,0.16406,0.15498,0.15887,0.15157,0.15432); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000","40.000000", "42.000000", "44.000000", "46.000000", "48.000000", "50.000000", "52.000000", "54.000000", "56.000000","58.000000", "60.000000", "62.000000", "64.000000", "66.000000", "68.000000", "70.000000", "72.000000", "74.000000", "76.000000", "78.000000", "80.000000", "82.000000", "84.000000", "86.000000", "88.000000", "90.000000", "92.000000", "94.000000", "96.000000", "98.000000", "100.000000", "102.000000", "104.000000", "106.000000", "108.000000", "110.000000", "112.000000", "114.000000", "116.000000", "118.000000", "120.000000", "122.000000", "124.000000", "126.000000", "128.000000", "130.000000", "132.000000", "134.000000", "136.000000", "138.000000", "140.000000", "142.000000", "144.000000", "146.000000", "148.000000", "150.000000", "152.000000", "154.000000", "156.000000", "158.000000", "160.000000", "162.000000", "164.000000", "166.000000", "168.000000", "170.000000", "172.000000", "174.000000", "176.000000", "178.000000", "180.000000", "182.000000", "184.000000", "186.000000", "188.000000", "190.000000", "192.000000", "194.000000", "196.000000", "198.000000", "200.000000", "202.000000", "204.000000", "206.000000", "208.000000", "210.000000", "212.000000", "214.000000", "216.000000", "218.000000", "220.000000", "222.000000", "224.000000", "226.000000", "228.000000", "230.000000", "232.000000", "234.000000", "236.000000", "238.000000", "240.000000", "242.000000", "244.000000", "246.000000", "248.000000", "250.000000", "252.000000", "254.000000", "256.000000", "258.000000", "260.000000", "262.000000", "264.000000", "266.000000", "268.000000", "270.000000", "272.000000", "274.000000", "276.000000", "278.000000", "280.000000", "282.000000", "284.000000", "286.000000", "288.000000", "290.000000", "292.000000", "294.000000", "296.000000"); tmp}
+			obs.XATT<- {tmp<-c(0.16205,0.15954,0.16123,0.15996,0.15775,0.1631,0.16217,0.15696); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000"); tmp}
+			args.XATT<- "ci.mutost.lag2.1/3/1/0.9/0.05/0.01"
 			sim8<- {tmp<-c(0.00023,2e-04,0.00012,9e-05,0.00017,0.00012,1e-04,0.00012,0.00019,0.00014,7e-05,1e-04,0.00014,5e-05,0.00017,0.00011,9e-05,0.00012,0.00019,0.00015,0.00017,1e-04,8e-05,0.00012,2e-04,1e-04,0.00014,0.00016,0.00016,9e-05,0.00012,0.00017,0.00018,0.00016,0.00024,0.00013,0.00019,9e-05,0.00019,0.00011); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000", "46.000000", "48.000000", "50.000000", "52.000000", "54.000000", "56.000000", "58.000000", "60.000000", "62.000000", "64.000000", "66.000000", "68.000000", "70.000000", "72.000000", "74.000000", "76.000000", "78.000000", "80.000000", "82.000000", "84.000000", "86.000000", "88.000000", "90.000000", "92.000000", "94.000000", "96.000000", "98.000000", "100.000000", "102.000000", "104.000000", "106.000000", "108.000000"); tmp}
-			sim8<- {tmp<-c(0.01462,0.01457,0.01451,0.01474,0.015,0.01499,0.01477,0.01474,0.01481,0.01476,0.01482,0.01497,0.01451,0.01437,0.01451,0.01461,0.01481,0.01442,0.01468,0.01464,0.0149,0.0148,0.01468,0.01486,0.01487,0.01492,0.01459,0.01454,0.0146,0.01484,0.01469,0.01477,0.01483,0.01448,0.01448,0.01464,0.01468,0.01471,0.01464,0.01456); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000", "46.000000", "48.000000", "50.000000", "52.000000", "54.000000", "56.000000", "58.000000", "60.000000", "62.000000", "64.000000", "66.000000", "68.000000", "70.000000", "72.000000", "74.000000", "76.000000", "78.000000", "80.000000", "82.000000", "84.000000", "86.000000", "88.000000", "90.000000", "92.000000", "94.000000", "96.000000", "98.000000", "100.000000", "102.000000", "104.000000", "106.000000", "108.000000"); tmp}
 			sim65<- {tmp<-c(0.01218,0.01267,0.01273,0.01309,0.01364,0.0138,0.01397,0.0132,0.0139,0.01374,0.01513,0.01515,0.01557,0.01579,0.01596,0.01565,0.01566,0.01589,0.01532,0.01556,0.01593,0.01583,0.01595,0.01538,0.01654,0.01614,0.01502,0.01547,0.01555,0.01546,0.01534,0.01557,0.01577,0.0158,0.01637,0.01558,0.01572,0.01557,0.01529,0.01504); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000", "46.000000", "48.000000", "50.000000", "52.000000", "54.000000", "56.000000", "58.000000", "60.000000", "62.000000", "64.000000", "66.000000", "68.000000", "70.000000", "72.000000", "74.000000", "76.000000", "78.000000", "80.000000", "82.000000", "84.000000", "86.000000", "88.000000", "90.000000", "92.000000", "94.000000", "96.000000", "98.000000", "100.000000", "102.000000", "104.000000", "106.000000", "108.000000"); tmp}
 			sim60<- {tmp<-c(0.01661,0.01632,0.01698,0.0163,0.01639,0.01621,0.01543,0.01598,0.0165,0.01654,0.01686,0.01647,0.01641,0.01697,0.01629,0.01614,0.01684,0.01642,0.01585,0.01625,0.01698,0.01626,0.01654,0.01615,0.01645,0.01658,0.01631,0.01634,0.01579,0.01614,0.0163,0.01633,0.01604,0.01608,0.01602,0.01574,0.01576,0.01599,0.01627,0.01635); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000", "46.000000", "48.000000", "50.000000", "52.000000", "54.000000", "56.000000", "58.000000", "60.000000", "62.000000", "64.000000", "66.000000", "68.000000", "70.000000", "72.000000", "74.000000", "76.000000", "78.000000", "80.000000", "82.000000", "84.000000", "86.000000", "88.000000", "90.000000", "92.000000", "94.000000", "96.000000", "98.000000", "100.000000", "102.000000", "104.000000", "106.000000", "108.000000"); tmp}
-			sim<- sim8
-			obs<- {tmp<-c(0.01293,0.01278,0.01286,0.01278,0.01261,0.01301,0.01297,0.01251); names(tmp)<- c("30.000000", "32.000000", "34.000000", "36.000000", "38.000000", "40.000000", "42.000000", "44.000000"); tmp}			
-			sim<- sim-mean(obs)
-			obs<- obs-mean(obs)			
-			print(range(sim))
-			print(range(obs))
-			cat( paste("\n sim and obs var",var(sim), var(obs),"\n") )
+			sim<- sim.XATT
+			obs<- obs.XATT
+			
+			#sim<- sim-mean(obs)
+			#obs<- obs-mean(obs)			
+			
+			args<- args.XATT
+			legend.txt<- "XATT"
+			tmp<- nabc.mutost.onesample(sim, obs, args= args, plot=1, legend.txt=legend.txt)
+			print(tmp)
+			stop()
 			
 			prior		<- c(-0.002, 0.002)			
 			obs.n		<- length(obs)

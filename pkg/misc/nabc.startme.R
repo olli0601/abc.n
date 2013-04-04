@@ -74,6 +74,31 @@ my.fade.col<-function(col,alpha=0.5)
 	return(rgb(col2rgb(col)[1]/255,col2rgb(col)[2]/255,col2rgb(col)[3]/255,alpha))
 }
 
+print.v<- function(x,cut=3,digits=4,prefix= "simu_",print.char= TRUE, as.R= TRUE)
+{
+	if(as.R)
+	{
+		tmp<- paste("c(",paste(c(x,recursive=T),collapse=',',sep=''),')',sep='')
+		if(!is.null(names(x)))
+			tmp<- paste("{tmp<-", tmp, "; names(tmp)<- ", paste('c("',paste(c(names(x),recursive=T),collapse='", "',sep=''),'")',sep=''), "; tmp}", sep= '', collapse= '')
+	}
+	else
+	{
+		if(!is.null(names(x)))
+		{
+			m<- matrix(NA,nrow=2,ncol=length(x))
+			m[1,]<- substr(names(x),1,cut)
+			m[2,]<- round( x, digits=digits )
+			if(cut==0)		m<- m[2,]
+			tmp<- gsub('.',',',paste(prefix,paste(as.vector(m), collapse='_',sep=''),sep=''),fixed=T)
+		}
+		else
+			tmp<- gsub('.',',',paste(prefix,paste(round( x, digits=digits ), collapse='_',sep=''),sep=''),fixed=T)
+	}
+	if(print.char) print(tmp)
+	tmp
+}
+
 plot.2D.dens<- function(x,y,xlab,ylab,xlim=NA,ylim=NA,nbin=NA,width.infl=2,n.hists=5,method="gauss", palette= "topo", persp.theta= -30, persp.phi= 30, zero.abline=TRUE, ...)
 {
 	if(!method%in%c("gauss","ash","persp"))	stop("plot.2D.dens: exception 1a")
