@@ -2227,7 +2227,7 @@ project.nABC.compareSEIRS<- function()
 	{
 		require(ash)
 		grace.after.annealing<- 1
-		resume<- 1
+		resume<- 0
 		if(resume)
 		{
 			f.name<- paste(d.name,"simu_allruns.R",sep='/')
@@ -2252,20 +2252,16 @@ project.nABC.compareSEIRS<- function()
 						mabc	<- ABCMU.MMCMC.init( x )
 						acc		<- ABC.MMCMC.get.acceptance(mabc, grace.after.annealing= grace.after.annealing)
 						samples	<- ABC.MMCMC.getsamples(mabc, grace.after.annealing= grace.after.annealing)
-						links	<- ABC.MMCMC.getsamples(mabc, only.nonconst=FALSE, grace.after.annealing= grace.after.annealing, what= "rho.mc")
-						
-						samples.j	<- do.call(rbind, samples)
-						links.j		<- do.call(rbind, links)
-						idx			<- c(1,diff(samples.j[,1]))!=0					
-						df			<- as.data.frame(cbind(samples.j[idx,theta.names], links.j[idx,rho.names]))
-						links.exp	<- sapply(rho.names,function(rho)
-								{
-									tmp		<- paste("locfit(",rho,'~',paste(theta.names,collapse=':',sep=''),", data=df,maxk=200)",sep='')
-									lnk.fit	<- eval(parse(text=tmp))
-									tmp		<- locfit:::preplot.locfit(lnk.fit, newdata= NULL, where="data", band = "none", tr = NULL, what = "coef", get.data = 0, f3d = 0)
-									tmp$fit
-								})					
-						replicate	<- c(diff(seq_len(nrow(samples.j))[idx]),1)											
+						links	<- ABC.MMCMC.getsamples(mabc, only.nonconst=FALSE, grace.after.annealing= grace.after.annealing, what= "rho.mc")						
+						allit		<- t(do.call(cbind, ABC.MMCMC.getalliterations(mabc, "rho.mc", theta.names, rho.names)))
+						if(any(is.na(allit)))
+							allit	<- allit[which(apply(!is.na(allit),1,all)),]						
+						links.exp	<- nabc.exprho.at.theta(as.data.frame(allit), theta.names, rho.names, thin=1)
+						#print(links.exp[1:10,])						
+						links.exp	<- links.exp[as.logical(allit[,2]),]
+						#print(links.exp[1:10,])
+						replicate	<- seq_len(nrow(allit))[ as.logical(allit[,2]) ]
+						replicate	<- c(diff(replicate),1)					
 						links.exp	<- apply(links.exp, 2, function(x) rep(x,replicate))
 						colnames(links.exp)<- rho.names
 												

@@ -582,16 +582,17 @@ nabc.chisqstretch<- function(sim, obs.mc, args=NA, verbose= FALSE, tau.l=1, tau.
 nabc.exprho.at.theta<- function(df, theta.names, rho.names, thin=1)
 {
 	require(locfit)
+	if(any(is.na(df)))	stop("unexpected NA in df")
 	links.exp	<- sapply(rho.names,function(rho)
 					{
-						tmp		<- paste("locfit(",rho,'~',paste(theta.names,collapse=':',sep=''),", data=df,maxk=200)",sep='')
+						tmp		<- paste("locfit(",rho,'~',paste(theta.names,collapse=':',sep=''),", data=df, maxk=400)",sep='')
 						lnk.fit	<- eval(parse(text=tmp))
 						tmp		<- locfit:::preplot.locfit(lnk.fit, newdata= NULL, where="data", band = "none", tr = NULL, what = "coef", get.data = 0, f3d = 0)
 						tmp$fit
 					})	
-	colnames(links.exp)<- rho.names
 	if(!is.matrix(links.exp))	
-		links.exp<- as.matrix(links.exp)
+		links.exp<- as.matrix(links.exp)			
+	colnames(links.exp)<- rho.names
 	links.exp
 }
 #------------------------------------------------------------------------------------------------------------------------
