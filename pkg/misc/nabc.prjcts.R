@@ -2227,7 +2227,7 @@ project.nABC.compareSEIRS<- function()
 	{
 		require(ash)
 		grace.after.annealing<- 1
-		resume<- 0
+		resume<- 1
 		if(resume)
 		{
 			f.name<- paste(d.name,"simu_allruns.R",sep='/')
@@ -2237,7 +2237,7 @@ project.nABC.compareSEIRS<- function()
 		}									
 		if(!resume || inherits(readAttempt, "try-error"))
 		{
-			f.name<- c("abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.85","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v16")			
+			f.name<- c("abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.2","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v16")			
 			tmp<- paste("nABC.SEIIRScompare",f.name,sep='/')
 			
 			rho.names	<- c("MED.ANN.ATT.R","AMED.FD.ATT.R","MED.INC.ATT.R")
@@ -2253,15 +2253,26 @@ project.nABC.compareSEIRS<- function()
 						acc		<- ABC.MMCMC.get.acceptance(mabc, grace.after.annealing= grace.after.annealing)
 						samples	<- ABC.MMCMC.getsamples(mabc, grace.after.annealing= grace.after.annealing)
 						links	<- ABC.MMCMC.getsamples(mabc, only.nonconst=FALSE, grace.after.annealing= grace.after.annealing, what= "rho.mc")						
-						allit		<- t(do.call(cbind, ABC.MMCMC.getalliterations(mabc, "rho.mc", theta.names, rho.names)))
+						
+						#df		<- do.call(rbind,samples)
+						#idx		<- c(TRUE,diff(df[,1])!=0)
+						#df		<- cbind(df[idx,],do.call(rbind,links)[idx,])
+						#print(df[1:20,])
+						tmp		<- nabc.exprho.at.theta(as.data.frame(df), theta.names, rho.names, thin=1)
+						#print(tmp[1:40,])
+						allit	<- t(do.call(cbind, ABC.MMCMC.getalliterations(mabc, "rho.mc", theta.names, rho.names,grace.after.annealing=grace.after.annealing)))
 						if(any(is.na(allit)))
-							allit	<- allit[which(apply(!is.na(allit),1,all)),]						
+							allit	<- allit[which(apply(!is.na(allit),1,all)),]
+						#tmp<- allit[as.logical(allit[,2]),]
+						#print(tmp[1:20,])						
 						links.exp	<- nabc.exprho.at.theta(as.data.frame(allit), theta.names, rho.names, thin=1)
 						#print(links.exp[1:10,])						
 						links.exp	<- links.exp[as.logical(allit[,2]),]
 						#print(links.exp[1:10,])
 						replicate	<- seq_len(nrow(allit))[ as.logical(allit[,2]) ]
-						replicate	<- c(diff(replicate),1)					
+						#print(replicate[1:100])
+						replicate	<- c(diff(replicate),1)
+						#print(replicate[1:100])
 						links.exp	<- apply(links.exp, 2, function(x) rep(x,replicate))
 						colnames(links.exp)<- rho.names
 												
@@ -2276,9 +2287,9 @@ project.nABC.compareSEIRS<- function()
 		
 		post	<- list(post[[1]],post[[2]])	
 		#cols	<- c("black","gray20","gray40")
-		cols	<- c("black","red","blue")
+		cols	<- c(my.fade.col("black",0.2),my.fade.col("black",0.6))
 		xnames	<- c("R0","durImm","repProb")
-		xlab	<- expression(R[0],1/nu,rho)
+		xlab	<- expression(R[0],1/nu,omega)
 		xtrue	<- c(3.5,10,0.08)
 		lapply(seq_along(xnames),function(j)
 						{
@@ -2300,15 +2311,22 @@ project.nABC.compareSEIRS<- function()
 							cat(paste("\nABC.StretchedF: write pdf to",f.name))
 							pdf(f.name,version="1.4",width=4,height=5)
 							par(mar=c(4,4,.5,.5))		
-							plot(1,1,type='n',xlim=range(sapply(xs,range)),ylim=range(sapply(seq_along(hxs),function(i) hxs[[i]][["density"]] )),ylab="density",xlab=xlab[j])
-							abline(v=xtrue[j],lty=1,col="red")	
+							if(j==1)
+								xlim<- range(c(3.8,sapply(xs,range)))
+							else
+								xlim<- range(sapply(xs,range))
+							plot(1,1,type='n',bty='n',xlim=xlim,ylim=range(sapply(seq_along(hxs),function(i) hxs[[i]][["density"]] )),ylab=expression("estimated "*pi[abc]*'('*theta*"|x)"),xlab=xlab[j])
+							abline(v=xtrue[j],lty=4)	
 							sapply(seq_along(post),function(i)
 									{			
-										plot(hxs[[i]],add=1,freq=0, border=NA, col=my.fade.col(cols[i],0.5))
-										abline(v=hxs[[i]][["dmode"]],lty=2,col=my.fade.col(cols[i],0.75))
-										abline(v=hxs[[i]][["mean"]],lty=3,col=my.fade.col(cols[i],0.75))
+										plot(hxs[[i]],add=1,freq=0, border=NA, col=cols[i])
+										#abline(v=hxs[[i]][["dmode"]],lty=2,col=my.fade.col(cols[i],0.75))
+										#abline(v=hxs[[i]][["mean"]],lty=3,col=my.fade.col(cols[i],0.75))
 									})
-							legend("topright",bty='n',border=NA,fill=c("gray30","gray50","gray70"),legend=c(expression(tau^'+'==0.01),expression(tau^'+'==0.02),expression(tau^'+'==0.05)))		
+							fill	<- c(cols[1],"transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent")
+							ltext	<- expression("calibrated","tolerances,","calibrated","m","calibrated","tolerances,","m=n","",theta[0])							
+							ltys	<- c(1,NA,NA,NA,1,NA,NA,NA,4)
+							legend("topright",bty='n',border=NA,fill=fill, lty=ltys,legend=ltext)																							
 							dev.off()														
 						})		
 				
@@ -2330,28 +2348,41 @@ project.nABC.compareSEIRS<- function()
 							hxs<- lapply(seq_along(xs),function(i)
 									{
 										project.nABC.movingavg.gethist(xs[[i]],theta=xtrue[j],breaks=breaks)
-									})	
+									})																						
+							x			<- seq(min(breaks),max(breaks), len=1e3)
+							std.of.lkl	<- xsd[j]/sqrt( xn[j] )
+							su.lkl		<- dt(x / std.of.lkl, xn[j]-1)
+							su.lkl		<- su.lkl / (sum(su.lkl)*diff(x)[1])
 							
-							print(sum(hxs[[1]][["density"]])*diff(breaks)[1])
 							
 							f.name<- paste(d.name,"/nABC.compareSEIRS_simu_linksexp_",xname,".pdf",sep='')
 							cat(paste("\nABC.StretchedF: write pdf to",f.name))
 							pdf(f.name,version="1.4",width=4,height=5)
 							par(mar=c(4,4,.5,.5))		
-							plot(1,1,type='n',xlim=range(breaks),ylim=range(sapply(seq_along(hxs),function(i) hxs[[i]][["density"]] )),ylab="density",xlab=xlab[j])
-							abline(v=xtrue[j],lty=1,col="red")	
+							if(j!=2)
+								xlim<- range(breaks)
+							else
+								xlim<- range(c(0.9,breaks))
+							plot(1,1,type='n',bty='n',xlim=xlim,ylim=range(c(su.lkl,sapply(seq_along(hxs),function(i) hxs[[i]][["density"]] ))),ylab="density",xlab=expression(tilde(rho)))
+							abline(v=xtrue[j],lty=4)	
 							sapply(seq_along(post),function(i)
 									{			
-										plot(hxs[[i]],add=1,freq=0, border=NA, col=my.fade.col(cols[i],0.5))
-										abline(v=hxs[[i]][["dmode"]],lty=2,col=my.fade.col(cols[i],0.75))
-										abline(v=hxs[[i]][["mean"]],lty=3,col=my.fade.col(cols[i],0.75))
-										print( hxs[[i]][["mean"]] )
+										plot(hxs[[i]],add=1,freq=0, border=NA, col=cols[i])
+										#abline(v=hxs[[i]][["dmode"]],lty=2,col=my.fade.col(cols[i],0.75))
+										#abline(v=hxs[[i]][["mean"]],lty=3,col=my.fade.col(cols[i],0.75))
+										#print( hxs[[i]][["mean"]] )
 									})
-							x			<- seq(min(breaks),max(breaks), len=1e3)
-							std.of.lkl	<- xsd[j]/sqrt( xn[j] )
-							su.lkl		<- dt(x / std.of.lkl, xn[j]-1)
-							su.lkl		<- su.lkl / (sum(su.lkl)*diff(x)[1])
-							lines(x,su.lkl)
+							lines(x,su.lkl, lty=3)
+							fill	<- c("transparent","transparent",cols[1],"transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent")
+							if(j==1)
+								ltext	<- expression(mu*"-ILI","","calibrated","tolerances,","calibrated","m","calibrated","tolerances,","m=n","","summary","likelihood","",rho^symbol("\x2a"))
+							else if(j==2)
+								ltext	<- expression(mu*"-fdILI","","calibrated","tolerances,","calibrated","m","calibrated","tolerances,","m=n","","summary","likelihood","",rho^symbol("\x2a"))
+							else if(j==3)
+								ltext	<- expression(mu*"-pop","","calibrated","tolerances,","calibrated","m","calibrated","tolerances,","m=n","","summary","likelihood","",rho^symbol("\x2a"))
+							
+							ltys	<- c(NA,NA,1,NA,NA,NA,1,NA,NA,NA,3,NA,NA,4)
+							legend("topright",bty='n',border=NA,fill=fill, lty=ltys,legend=ltext)
 							#legend("topright",bty='n',border=NA,fill=c("gray30","gray50","gray70"),legend=c(expression(tau^'+'==0.01),expression(tau^'+'==0.02),expression(tau^'+'==0.05)))		
 							#stop()
 							dev.off()														
@@ -2407,7 +2438,7 @@ project.nABC.StretchedChi2<- function()
 {	
 	my.mkdir(DATA,"nABC.StretchedChisq")
 	dir.name<- paste(DATA,"nABC.StretchedChisq",sep='/')
-	subprog<- 8
+	subprog<- 4
 	pdf.width<- 4
 	pdf.height<-5
 	
@@ -3459,7 +3490,7 @@ project.nABC.StretchedChi2<- function()
 		print( seq(tau.low,tau.up,by=0.001)[ which.max(pw) ] )
 		plot(seq(tau.low,tau.up,by=0.001),pw,type='l')
 		print(c(tau.low,rej))
-		stop()
+
 		
 		#plot height of power
 		yns<- c(10,30,60,100)
@@ -3495,7 +3526,7 @@ project.nABC.StretchedChi2<- function()
 					lines(rho,pw[[i]],lty=ltys[i])
 				})
 		
-		legend("topright",bty='n',lty=c(NA,NA,NA,ltys),legend=expression("calibrated",chi^2*"-test","","n=10","n=30","n=60","n=100"))
+		legend("topright",bty='n',lty=c(NA,NA,NA,ltys),legend=expression("calibrated",chi^2*"-test","","m=10","m=30","m=60","m=100"))
 		#sapply(seq_along(tau.ups),function(i)
 		#		{
 		#			rho<- seq(tau.low2[i],tau.ups[i],by=0.001)
@@ -3590,7 +3621,7 @@ project.nABC.StretchedChi2<- function()
 		lines(xl,yl, col=cols[4], lty=1)
 		#abline(v=1,lty=2)
 		
-		legend<- expression( f[n-1](T/tau^'-'), f[n-1](T/tau^'+'),'['*c^'-'*", "*c^'+'*"]",'['*tau^'-'*", "*tau^'+'*"]","")						
+		legend<- expression( f[m-1](T/tau^'-'), f[m-1](T/tau^'+'),'['*c^'-'*", "*c^'+'*"]",'['*tau^'-'*", "*tau^'+'*"]","")						
 		legend(x=1.38,y=0.01,lty=c(1,4,NA,NA,NA),fill=c(cols[3],cols[4],cols[1],cols[2],"transparent"),legend=legend, bty= 'n', border=NA)
 		dev.off()
 		

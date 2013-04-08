@@ -1319,7 +1319,7 @@ nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, a
 #'	x<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 #'	y<- rnorm(yn,ymu,sd=sqrt(ysigma2))
 #'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
-nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test", plot=0, legend.txt="")
+nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test", plot=0, legend.txt="")
 {
 	verbose<- 1
 	ans<- NABC.DEFAULT.ANS
@@ -1340,7 +1340,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 		else if(length(args)==6)
 		{
 			standardize	<- as.numeric( args[2] )
-			if(!standardize%in%c(2,3))	stop("standardize must be 2 or 3")
+			if(!standardize%in%c(2,3,4))	stop("standardize must be 2 or 3")
 			annealing	<- as.numeric( args[3] )
 			mx.pw		<- as.numeric( args[4] )
 			tau.u.ub	<- as.numeric( args[5] )
@@ -1350,8 +1350,8 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 			stop("nabc.mutost: error at 1c")
 		args<- args[1]
 	}
-	if(!standardize%in%c(0,1,2,3))	stop("incorrect standardize")		
-	if(standardize==1 && is.na(sd(obs)))	stop("cannot use standardize==1 when sd(obs) is undefined")
+	if(!standardize%in%c(0,1,2,3,4))	stop("incorrect standardize")		
+	if(standardize==1 && is.na(sd(obs)) && is.na(obs.sd))	stop("cannot use standardize==1 when sd(obs) is undefined and obs.sd missing")		
 	if(alpha<0 || alpha>1)		stop("incorrect alpha")
 	if(tau.u<0 || tau.l>0)		stop("incorrect tau.u or tau.l")
 	if(annealing<1)				stop("incorrect annealing parameter")
@@ -1367,9 +1367,10 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 	{
 		if(sim.n>obs.n)
 			sim.n	<- obs.n
+		obs.sd	<- ifelse(!is.na(sd(obs)),sd(obs),obs.sd)			 	
 		sim.mean<- mean(sim[seq.int(1,sim.n)])
 		sim.sd	<- sd(sim[seq.int(1,sim.n)])
-		sim		<- (sim[seq.int(1,sim.n)]-sim.mean)/sim.sd*sd(obs)+sim.mean					
+		sim		<- (sim[seq.int(1,sim.n)]-sim.mean)/sim.sd*obs.sd+sim.mean					
 	}
 	else if(standardize==2)
 	{	
@@ -1383,6 +1384,23 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, args= NA, verbose= FALSE, t
 		if(tmp[4]>0.09)	stop("tau.up not accurate")		
 		tau.l	<- tmp[1]*annealing
 		tau.u	<- tmp[2]*annealing	
+		if(verbose) 
+			cat(paste("\nstd is 2 and sim.n is",sim.n,"annealing is",annealing,mx.pw,tau.l,tau.u))		
+		#print(c(annealing,mx.pw,tau.l,tau.u))
+		#rho<- seq(tau.l,tau.u,length.out=1e3); y<- nabc.mutost.pow(rho, sim.n-1, tau.u, sim.sd/sqrt(sim.n), alpha); plot(rho,y,type='l')		
+	}
+	else if(standardize==4)
+	{	
+		#print(sim); 
+		#print(c(mx.pw,sim.n,sim.sd,alpha))
+		if(sim.n>obs.n)
+			sim.n	<- obs.n		
+		sim.mean<- mean(sim[seq.int(1,sim.n)])
+		sim.sd	<- sd(sim[seq.int(1,sim.n)])					
+		tmp		<- nabc.mutost.onesample.tau.lowup.pw(mx.pw, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha)
+		if(tmp[4]>0.09)	stop("tau.up not accurate")		
+		tau.l	<- max(tmp[1],-tau.u.ub)*annealing
+		tau.u	<- min(tmp[2],tau.u.ub)*annealing	
 		if(verbose) 
 			cat(paste("\nstd is 2 and sim.n is",sim.n,"annealing is",annealing,mx.pw,tau.l,tau.u))		
 		#print(c(annealing,mx.pw,tau.l,tau.u))
