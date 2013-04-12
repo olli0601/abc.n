@@ -1315,7 +1315,7 @@ nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, a
 #' \item{mx.pw}{Maximum power at the point of equality}
 #' \item{rho.mc}{mean(sim) - obs.mean}
 #' @examples tau.u<- 0.5; tau.l<- -tau.u; alpha<- 0.01; xn<- yn<- 60; xmu<- ymu<- 0.5; xsigma2<- ysigma2<- 2
-#'	args<- paste("mutost",1,tau.l,tau.u,alpha,sep='/')
+#'	args<- paste("mutost",1,tau.u,alpha,sep='/')
 #'	x<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 #'	y<- rnorm(yn,ymu,sd=sqrt(ysigma2))
 #'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
