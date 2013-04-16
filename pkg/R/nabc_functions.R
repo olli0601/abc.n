@@ -1472,6 +1472,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 	ans["link.mc.sim"]	<- 	sim.mean
 	ans["link.mc.obs"]	<- 	obs.mean
 	ans["rho.mc"]		<- 	sim.mean - obs.mean
+	ans["rho.pow"]		<-	nabc.mutost.pow(ans["rho.mc"], tmp[4], tau.u, tmp[5], alpha) 				
 	
 	if(plot)
 	{
