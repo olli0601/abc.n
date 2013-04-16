@@ -1038,12 +1038,12 @@ get.dist.mwu.equivalence<- function(sim, obs, args= NA, verbose= FALSE, alpha= 0
 #' @examples	prior.u<- 5; prior.l<- -prior.u; tau.u	<- 0.75; yn<- 60; ysigma2<- 1; alpha<- 0.01
 #' rho	<- seq(prior.l,prior.u,length.out=1e3)
 #' nabc.mutost.pow(rho, yn-1, tau.u, sqrt(ysigma2/yn), alpha)
-nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE)
+nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE,force= FALSE)
 { 
 	x<-	rho
 	if(length(x)<10)
 		x<- seq(-2*tau.u,2*tau.u,length.out=1e3)
-	if(length(rho)<10 && any(rho>2*tau.u))	stop("unexpected rho")
+	if(length(rho)<10 && any(rho>2*tau.u) & !force)	stop("unexpected rho")
 	
 	ncp	<- x/s.of.T	
 	#may not be a stable numerical approximation
@@ -1472,7 +1472,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 	ans["link.mc.sim"]	<- 	sim.mean
 	ans["link.mc.obs"]	<- 	obs.mean
 	ans["rho.mc"]		<- 	sim.mean - obs.mean
-	ans["rho.pow"]		<-	nabc.mutost.pow(ans["rho.mc"], tmp[4], tau.u, tmp[5], alpha) 				
+	ans["rho.pow"]		<-	nabc.mutost.pow(ans["rho.mc"], tmp[4], tau.u, tmp[5], alpha,force=T) 				
 	
 	if(plot)
 	{
