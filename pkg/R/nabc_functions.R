@@ -1034,6 +1034,7 @@ get.dist.mwu.equivalence<- function(sim, obs, args= NA, verbose= FALSE, alpha= 0
 #' @param s.of.T	standard deviation of the test statistic
 #' @param alpha		level of the equivalence test
 #' @param rtn.fun 	indicator if a function to compute the power should be returned. Defaults to 0.
+#' @param force		if TRUE, enforce power computation outside of acceptance region 
 #' @return approximate power of the exact test. this is approximate because the standard deviation of the normal model for the simulated summary values is not known.
 #' @examples	prior.u<- 5; prior.l<- -prior.u; tau.u	<- 0.75; yn<- 60; ysigma2<- 1; alpha<- 0.01
 #' rho	<- seq(prior.l,prior.u,length.out=1e3)
