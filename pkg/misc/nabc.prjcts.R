@@ -2223,7 +2223,77 @@ project.nABC.compareSEIRS<- function()
 		#dev.off()
 		
 	}
-	if(1)		#compare posterior histograms of simulated data
+	if(1)	#compare variable m
+	{
+		require(ash)
+		grace.after.annealing<- 1
+		resume<- 1
+		
+		d.name	<- "nABC.SEIIRScompare"
+		if(resume)
+		{
+			f.name<- paste(DATA,d.name,"simu_compareVariableM.R",sep='/')			
+			options(show.error.messages = FALSE, warn=1)		
+			readAttempt<-try(suppressWarnings(load(f.name)))						
+			options(show.error.messages = TRUE)
+		}									
+		if(!resume || inherits(readAttempt, "try-error"))
+		{			 						
+			match	<- c("abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_variablensimu_m")			
+			f.name	<- list.files(paste(DATA,d.name,sep='/'), full.names = 0)								
+			f.name	<- f.name[ which(regexpr(match,f.name,fixed=1)>0) ]						
+print(f.name)										
+			rho.names	<- c("MED.ANN.ATT.R","AMED.FD.ATT.R","MED.INC.ATT.R")
+			theta.names	<- c("R0","durImm","repProb")									
+			post<- lapply(f.name,function(x)
+						{							
+							cat(paste("\nprocess ABC run",paste(d.name,x,sep='/')))
+							abc.core<- ABC.load( paste(d.name,x,sep='/') )
+							mabc	<- ABCMU.MMCMC.init( paste(d.name,x,sep='/') )																					
+							acc		<- ABC.MMCMC.get.acceptance(mabc, grace.after.annealing= grace.after.annealing)
+							samples	<- ABC.MMCMC.getsamples(mabc, grace.after.annealing= grace.after.annealing)			#automatically exlude chains if not burned in
+							links	<- ABC.MMCMC.getsamples(mabc, only.nonconst=FALSE, grace.after.annealing= grace.after.annealing, what= "rho.mc")
+							samples	<- lapply(samples,function(x) x[,theta.names])
+							links	<- lapply(links,function(x) x[,rho.names])							
+							list(abc.core=abc.core,acc=acc,samples=samples, links=links)
+						})
+			f.name<- paste(DATA,d.name,"simu_compareVariableM.R",sep='/')
+			cat("\nsave runs to ",f.name)
+			save(post,file=f.name)
+		}
+		else
+			cat(paste("\nproject.nABC.compareSEIRS: resumed ",f.name))
+		
+			
+		#cols	<- c("black","gray20","gray40")
+		
+		#cols	<- c(my.fade.col("black",0.2),my.fade.col("black",0.4),my.fade.col("black",0.6),my.fade.col("black",0.8))
+		xnames	<- c("R0","durImm","repProb")
+		xlab	<- expression(R[0],1/nu,omega)
+		xtrue	<- c(3.5,10,0.08)
+		lapply(seq_along(post),function(i)
+				{
+					cat(paste("\nprocess post",i))
+					cols	<- sapply( rainbow(length(post[[i]][["samples"]])), function(x)	my.fade.col(x,0.6) )
+					lapply(seq_along(xnames),function(j)
+						{
+							xname	<- xnames[j]
+							xs		<- lapply(seq_along(post[[i]][["samples"]]),function(r){	post[[i]][["samples"]][[r]][,xname]		})	
+							print(range(xs))
+							tmp		<- max(abs(unlist(xs)-xtrue[j]))*1.1							
+							breaks	<- seq(from=-tmp+xtrue[j],to=tmp+xtrue[j],len=70)														
+							hxs		<- lapply(seq_along(xs),function(r){		project.nABC.movingavg.gethist(xs[[r]],theta=xtrue[j],breaks=breaks)		})
+							xlim	<- range(sapply(xs,range))
+							ylim	<- range(sapply(seq_along(hxs),function(r) hxs[[r]][["density"]] ))
+							plot(1,1,type='n',bty='n',xlim=xlim,ylim=ylim,ylab=expression("estimated "*pi[abc]*'('*theta*"|x)"),xlab=xlab[j])
+							abline(v=xtrue[j],lty=4)	
+							sapply(seq_along(hxs),function(r){		plot(hxs[[r]],add=1,freq=0, border=NA, col=cols[r])		})
+							stop()
+						})
+				})
+	
+	}
+	if(0)		#compare posterior histograms of simulated data
 	{
 		require(ash)
 		grace.after.annealing<- 1

@@ -1340,9 +1340,10 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 		else if(length(args)==6)
 		{
 			standardize	<- as.numeric( args[2] )
-			if(!standardize%in%c(2,3,4))	stop("standardize must be 2 or 3")
+			if(!standardize%in%c(2,3,4,5))	stop("standardize must be 2 or 3")			
 			annealing	<- as.numeric( args[3] )
-			mx.pw		<- as.numeric( args[4] )
+			mx.pw		<- ifelse(standardize!=5,	as.numeric( args[4] ), 	0.9)
+			obs.sd		<- ifelse(standardize!=5,	obs.sd,					as.numeric( args[4] ))
 			tau.u.ub	<- as.numeric( args[5] )
 			alpha		<- as.numeric( args[6] )
 		}
@@ -1351,7 +1352,8 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 		args<- args[1]
 	}
 	if(!standardize%in%c(0,1,2,3,4))	stop("incorrect standardize")		
-	if(standardize==1 && is.na(sd(obs)) && is.na(obs.sd))	stop("cannot use standardize==1 when sd(obs) is undefined and obs.sd missing")		
+	if(standardize==1 && is.na(sd(obs)) && is.na(obs.sd))	stop("cannot use standardize==1 when sd(obs) is undefined and obs.sd missing")
+	if(standardize==5 && is.na(obs.sd))	stop("cannot use standardize==5 when obs.sd missing")
 	if(alpha<0 || alpha>1)		stop("incorrect alpha")
 	if(tau.u<0 || tau.l>0)		stop("incorrect tau.u or tau.l")
 	if(annealing<1)				stop("incorrect annealing parameter")
@@ -1453,8 +1455,55 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 			tau.u	<- tmp[2]*annealing
 			if(verbose)
 				cat(paste("\nstd is 3, adj sim.n, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",s.of.pw,s.of.lkl))			
-		}	
-		
+		}		
+	}
+	else if(standardize==5)		#obs.sd is specified
+	{
+#cat(print.v(sim,print.char=0)); cat(print.v(obs,print.char=0))				
+		s.of.lkl	<- obs.sd * sqrt( (obs.n-1)/(obs.n-3)/obs.n	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
+		sim.sd		<- sd(sim)
+		suppressWarnings({
+					s.of.pw	<- sqrt( .Call("abcMuTOST_pwvar",c(mx.pw, obs.n, sim.sd/sqrt(obs.n), tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-5, 100))[1] )	#base case: sim.n=obs.n -- for simplicity use sim.sd
+				})
+		if(s.of.pw>=s.of.lkl)	#adjust sim.n
+		{
+#print(c(obs.n,s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub))
+			tmp		<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=2*tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5)		#for simplicity keep sim.sd fixed even if we use shorter 'sim' overall
+			if(abs(tmp[5]-mx.pw)>0.09)	stop("tau.up not accurate")
+			sim.n	<- tmp[1]
+			options(warn=1)
+			if(sim.n>length(sim))
+			{
+				warning(paste("not enough simulated summary values",sim.n,length(sim)))
+				sim.n<- length(sim)
+			}
+			if(sim.n<obs.n)
+			{
+				print(c(obs.n,s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub))
+				print.v(sim,print.char=0)
+				print.v(obs,print.char=0)
+				stop()
+			}
+			options(warn=2)
+			sim.mean<- mean(sim[1:sim.n])
+			tau.l	<- tmp[2]*annealing
+			tau.u	<- tmp[3]*annealing
+			if(verbose)
+				cat(paste("\nstd is 5, adj sim.n, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",s.of.pw,s.of.lkl))			
+		}
+		else					#adjust tau.u so that the variance of the summary likelihood is matched even if that means the max pw is > 0.9
+		{
+			if(sim.n>obs.n)
+				sim.n	<- obs.n
+			sim.mean<- mean(sim[seq.int(1,sim.n)])
+			sim.sd	<- sd(sim[seq.int(1,sim.n)])
+			tmp		<- nabc.mutost.onesample.tau.lowup.var(s.of.lkl, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-5)
+			if(tmp[4]>0.09)	stop("tau.up not accurate")		
+			tau.l	<- tmp[1]*annealing
+			tau.u	<- tmp[2]*annealing
+			if(verbose)
+				cat(paste("\nstd is 5, adj sim.n, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",s.of.pw,s.of.lkl))			
+		}		
 	}
 	tmp			<- c(	sqrt(sim.n)*(sim.mean-obs.mean-tau.l) / sim.sd,			#[1]	T-	test statistic for -tau (lower test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
 						sqrt(sim.n)*(sim.mean-obs.mean-tau.u) / sim.sd,			#[2]	T+	test statistic for tau (upper test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
