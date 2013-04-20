@@ -1340,8 +1340,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 		}
 		else if(length(args)==6)
 		{
-			standardize	<- as.numeric( args[2] )
-			print(standardize)
+			standardize	<- as.numeric( args[2] )		
 			if(!standardize%in%c(2,3,4,5))	stop("standardize must be 2-5 if 6 args specified")			
 			annealing	<- as.numeric( args[3] )
 			mx.pw		<- ifelse(standardize!=5,	as.numeric( args[4] ), 	0.9)
@@ -1353,7 +1352,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 			stop("nabc.mutost: error at 1c")
 		args<- args[1]
 	}
-	if(!standardize%in%c(0,1,2,3,4))	stop("incorrect standardize")		
+	if(!standardize%in%c(0,1,2,3,4,5))	stop("incorrect standardize")		
 	if(standardize==1 && is.na(sd(obs)) && is.na(obs.sd))	stop("cannot use standardize==1 when sd(obs) is undefined and obs.sd missing")
 	if(standardize==5 && is.na(obs.sd))	stop("cannot use standardize==5 when obs.sd missing")
 	if(alpha<0 || alpha>1)		stop("incorrect alpha")
