@@ -3,7 +3,7 @@
 \title{Compute power of the equivalence test for population means of normal summary values}
 \usage{
   nabc.mutost.pow(rho, df, tau.u, s.of.T, alpha,
-    rtn.fun = FALSE)
+    rtn.fun = FALSE, force = FALSE)
 }
 \arguments{
   \item{rho}{true difference in simulated and observed
@@ -20,6 +20,9 @@
 
   \item{rtn.fun}{indicator if a function to compute the
   power should be returned. Defaults to 0.}
+
+  \item{force}{if TRUE, enforce power computation outside
+  of acceptance region}
 }
 \value{
   approximate power of the exact test. this is approximate
