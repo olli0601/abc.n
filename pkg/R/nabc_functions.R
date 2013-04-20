@@ -3,7 +3,7 @@
 #' @useDynLib nabc
   
 #' @export
-NABC.DEFAULT.ANS<- {tmp<- c(0, 50, 1, NA, NA, NA, 0, 0, 0, 0, 0, 1, 1, 1, NA, NA); names(tmp)<- c("lkl", "error", "pval","link.mc.obs","link.mc.sim", "rho.mc", "cil", "cir","tl","tr","al","ar","pfam.pval","ts.pval","nsim","mx.pow"); tmp}
+NABC.DEFAULT.ANS<- {tmp<- c(0, 50, 1, NA, NA, NA, 0, 0, 0, 0, 0, 1, 1, 1, NA, NA, NA); names(tmp)<- c("lkl", "error", "pval","link.mc.obs","link.mc.sim", "rho.mc", "cil", "cir","tl","tr","al","ar","pfam.pval","ts.pval","nsim","mx.pow","rho.pow"); tmp}
 
 #------------------------------------------------------------------------------------------------------------------------
 #' Test if summary values are normally distributed
@@ -1034,16 +1034,17 @@ get.dist.mwu.equivalence<- function(sim, obs, args= NA, verbose= FALSE, alpha= 0
 #' @param s.of.T	standard deviation of the test statistic
 #' @param alpha		level of the equivalence test
 #' @param rtn.fun 	indicator if a function to compute the power should be returned. Defaults to 0.
+#' @param force		if TRUE, enforce power computation outside of acceptance region 
 #' @return approximate power of the exact test. this is approximate because the standard deviation of the normal model for the simulated summary values is not known.
 #' @examples	prior.u<- 5; prior.l<- -prior.u; tau.u	<- 0.75; yn<- 60; ysigma2<- 1; alpha<- 0.01
 #' rho	<- seq(prior.l,prior.u,length.out=1e3)
 #' nabc.mutost.pow(rho, yn-1, tau.u, sqrt(ysigma2/yn), alpha)
-nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE)
+nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE,force= FALSE)
 { 
 	x<-	rho
 	if(length(x)<10)
 		x<- seq(-2*tau.u,2*tau.u,length.out=1e3)
-	if(length(rho)<10 && any(rho>2*tau.u))	stop("unexpected rho")
+	if(length(rho)<10 && any(rho>2*tau.u) & !force)	stop("unexpected rho")
 	
 	ncp	<- x/s.of.T	
 	#may not be a stable numerical approximation
@@ -1315,13 +1316,13 @@ nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, a
 #' \item{mx.pw}{Maximum power at the point of equality}
 #' \item{rho.mc}{mean(sim) - obs.mean}
 #' @examples tau.u<- 0.5; tau.l<- -tau.u; alpha<- 0.01; xn<- yn<- 60; xmu<- ymu<- 0.5; xsigma2<- ysigma2<- 2
-#'	args<- paste("mutost",1,tau.l,tau.u,alpha,sep='/')
+#'	args<- paste("mutost",1,tau.u,alpha,sep='/')
 #'	x<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 #'	y<- rnorm(yn,ymu,sd=sqrt(ysigma2))
 #'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
 nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test", plot=0, legend.txt="")
 {
-	verbose<- 1
+	#verbose<- 1
 	ans<- NABC.DEFAULT.ANS
 	#compute two sample t-test on either z-scores or untransformed data points
 	if(any(is.na(sim)))			stop("nabc.mutost: error at 1a")
@@ -1521,6 +1522,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 	ans["link.mc.sim"]	<- 	sim.mean
 	ans["link.mc.obs"]	<- 	obs.mean
 	ans["rho.mc"]		<- 	sim.mean - obs.mean
+	ans["rho.pow"]		<-	nabc.mutost.pow(ans["rho.mc"], tmp[4], tau.u, tmp[5], alpha,force=T) 				
 	
 	if(plot)
 	{
