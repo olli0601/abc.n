@@ -1341,7 +1341,8 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 		else if(length(args)==6)
 		{
 			standardize	<- as.numeric( args[2] )
-			if(!standardize%in%c(2,3,4,5))	stop("standardize must be 2 or 3")			
+			print(standardize)
+			if(!standardize%in%c(2,3,4,5))	stop("standardize must be 2-5 if 6 args specified")			
 			annealing	<- as.numeric( args[3] )
 			mx.pw		<- ifelse(standardize!=5,	as.numeric( args[4] ), 	0.9)
 			obs.sd		<- ifelse(standardize!=5,	obs.sd,					as.numeric( args[4] ))
