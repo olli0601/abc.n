@@ -1322,7 +1322,7 @@ nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, a
 #'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
 nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test", plot=0, legend.txt="")
 {
-	#verbose<- 1
+	verbose<- 1
 	ans<- NABC.DEFAULT.ANS
 	#compute two sample t-test on either z-scores or untransformed data points
 	if(any(is.na(sim)))			stop("nabc.mutost: error at 1a")
