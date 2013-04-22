@@ -939,8 +939,8 @@ print(c(ax,sig2x))
 			sig2x	<- modes["xv",]/(1+project.nABC.movingavg.rho2a(modes["xa",])^2)
 			sig2map	<- modes["xv",]*(xn-1)/(xn)/(1+project.nABC.movingavg.rho2a(modes["xa",])^2)
 			sig2me	<- modes["xv",]*(xn-1)/(xn-4)/(1+project.nABC.movingavg.rho2a(modes["xa",])^2)
-			errmap	<- 	sqrt(	(modes["ya.dmode.sdacf",]-ax)^2	+	(modes["yv.dmode.sdacf",]-sig2map)^2	)
-			errme	<- 	sqrt(	(modes["ya.dmode.sdacf",]-ax)^2	+	(modes["yv.dmode.sdacf",]-sig2me)^2	)
+			errmap	<- 	(	abs(modes["ya.dmode.sdacf",]-ax)	+	abs(modes["yv.dmode.sdacf",]-sig2map)	)
+			errme	<- 	(	abs(modes["ya.dmode.sdacf",]-ax)	+	abs(modes["yv.dmode.sdacf",]-sig2me)	)
 			cat(paste("\n mean v1",mean(modes["xv",])))
 			cat(paste("\n mean v2",mean(modes["xa",])))
 			cat(paste("\n mean ax",mean(ax)))			
@@ -2292,7 +2292,10 @@ print(f.name)
 								abline(v=xtrue[j],lty=4)	
 								sapply(seq_along(hxs),function(r){		plot(hxs[[r]],add=1,freq=1, border=NA, col=cols[r])		})
 							}
-							
+							if(i==1)
+							{
+								print(c(sd(xs[[1]]),quantile(xs[[1]],c(0.025,0.5,0.975))))								
+							}
 							tmp<- as.matrix(sapply(seq_along(xs), function(k) 
 											{
 												c( mean(xs[[k]]), mean(xs[[k]])-xtrue[j], hxs[[k]][["dmode"]], hxs[[k]][["dmode"]]-xtrue[j], sd(xs[[k]]) ) 
@@ -2301,6 +2304,7 @@ print(f.name)
 							tmp
 						})
 					names(out)<- xnames
+					stop()
 					out
 				})
 		ans	<- sapply(seq_along(xnames),function(j)
