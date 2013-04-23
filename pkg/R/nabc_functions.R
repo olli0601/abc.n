@@ -1265,11 +1265,11 @@ nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, a
 	{
 		tmp			<- tmp-1
 		tau.up.ub	<- 2*tau.up.ub		#increase variance until larger than summary likelihood
-		rho			<- seq(-2*tau.up.ub,2*tau.up.ub,length.out=1e3)
+		rho			<- seq(-2*tau.up.ub,2*tau.up.ub,length.out=1024)
 		suppressWarnings({	#suppress numerical inaccuracy warnings
 			pw			<- .Call("abcMuTOST_pow", rho, df, tau.up.ub, s.of.T, alpha)
 		})
-		pw.cvar		<- sum(rho*rho*pw) / sum(pw)			#mean is 0				
+		pw.cvar		<- ifelse(	sum(pw)<EPS,	0, 	sum(rho*rho*pw) / sum(pw)	)	#mean is 0				
 	}
 	if(tmp==0)	stop("nabc.mutost.onesample.tau.lowup: could not find tau.up.ub")	
 	
@@ -1280,13 +1280,14 @@ nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, a
 	{
 		max.it		<- max.it-1
 		tau.u		<- (tau.up.lb + tau.up.ub)/2
-		rho			<- seq(-2*tau.u,2*tau.u,length.out=1e3)
+		rho			<- seq(-2*tau.u,2*tau.u,length.out=1024)
 		suppressWarnings({	#suppress numerical inaccuracy warnings
 			pw			<- .Call("abcMuTOST_pow", rho, df, tau.u, s.of.T, alpha)
+			#print(pw)
 		})
-		pw.cvar		<- sum(rho*rho*pw) / sum(pw)			#mean is 0						
+		pw.cvar		<- ifelse(	sum(pw)<EPS,	0,	sum(rho*rho*pw) / sum(pw)		)		#mean is 0
 		error		<- pw.cvar - s2.of.Sx
-#print(c(curr.mx.pw, tau.up, tau.up.lb, tau.up.ub, max.it))
+#print(c("H2",pw.cvar,s2.of.Sx,tau.u, error, max.it, tau.up.lb, tau.up.ub,round(tau.up.lb,d=10)!=round(tau.up.ub,d=10) ))
 		if(error<0)
 			tau.up.lb<- tau.u
 		else
@@ -1405,15 +1406,19 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 		tau.l	<- max(tmp[1],-tau.u.ub)*annealing
 		tau.u	<- min(tmp[2],tau.u.ub)*annealing	
 		if(verbose) 
-			cat(paste("\nstd is 2 and sim.n is",sim.n,"annealing is",annealing,mx.pw,tau.l,tau.u))		
+			cat(paste("\nstd is 4 and sim.n is",sim.n,"annealing is",annealing,mx.pw,tau.l,tau.u))		
 		#print(c(annealing,mx.pw,tau.l,tau.u))
 		#rho<- seq(tau.l,tau.u,length.out=1e3); y<- nabc.mutost.pow(rho, sim.n-1, tau.u, sim.sd/sqrt(sim.n), alpha); plot(rho,y,type='l')		
 	}
 	else if(standardize==3)
 	{
 #cat(print.v(sim,print.char=0)); cat(print.v(obs,print.char=0))
-		obs.sd		<- ifelse(obs.n>length(obs),sd(sim[1:obs.n]),sd(obs))
-		s.of.lkl	<- obs.sd * sqrt( (obs.n-1)/(obs.n-3)/obs.n	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
+		obs.sd		<- ifelse(obs.n>length(obs),sd(sim[1:obs.n]),sd(obs))	
+		#instead of the true std dev of the summary likelihood, decided to use the std dev of the summary likelihood truncated to reasonable mass
+		tmp			<- seq( -2*obs.sd/sqrt(obs.n),2*obs.sd/sqrt(obs.n), len=1024 )
+		su.lkl		<- dt(tmp/obs.sd*sqrt(obs.n), obs.n-1)
+		s.of.lkl	<- sqrt( sum( tmp*tmp*su.lkl ) / sum(su.lkl) )			
+		#s.of.lkl	<- obs.sd * sqrt( (obs.n-1)/(obs.n-3)/obs.n	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
 		sim.sd		<- sd(sim)
 		suppressWarnings({
 			s.of.pw	<- sqrt( .Call("abcMuTOST_pwvar",c(mx.pw, obs.n, sim.sd/sqrt(obs.n), tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-5, 100))[1] )	#base case: sim.n=obs.n -- for simplicity use sim.sd
@@ -1442,7 +1447,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 			tau.l	<- tmp[2]*annealing
 			tau.u	<- tmp[3]*annealing
 			if(verbose)
-				cat(paste("\nstd is 3, adj sim.n, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",s.of.pw,s.of.lkl))			
+				cat(paste("\nstd is 3, larger sim.n, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",s.of.pw,s.of.lkl))			
 		}
 		else					#adjust tau.u so that the variance of the summary likelihood is matched even if that means the max pw is > 0.9
 		{
@@ -1450,18 +1455,22 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 				sim.n	<- obs.n
 			sim.mean<- mean(sim[seq.int(1,sim.n)])
 			sim.sd	<- sd(sim[seq.int(1,sim.n)])
-			tmp		<- nabc.mutost.onesample.tau.lowup.var(s.of.lkl, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-5)
+			tmp		<- nabc.mutost.onesample.tau.lowup.var(s.of.lkl, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-8, debug=0)
+			print(tmp)
 			if(tmp[4]>0.09)	stop("tau.up not accurate")		
 			tau.l	<- tmp[1]*annealing
 			tau.u	<- tmp[2]*annealing
 			if(verbose)
-				cat(paste("\nstd is 3, adj sim.n, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",s.of.pw,s.of.lkl))			
+				cat(paste("\nstd is 3, broader mx.pw, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",sqrt(tmp[3]),s.of.lkl))
 		}		
 	}
 	else if(standardize==5)		#obs.sd is specified
 	{
-#cat(print.v(sim,print.char=0)); cat(print.v(obs,print.char=0))				
-		s.of.lkl	<- obs.sd * sqrt( (obs.n-1)/(obs.n-3)/obs.n	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
+#cat(print.v(sim,print.char=0)); cat(print.v(obs,print.char=0))
+		tmp			<- seq( -2*obs.sd/sqrt(obs.n),2*obs.sd/sqrt(obs.n), len=1024 )
+		su.lkl		<- dt(tmp/obs.sd*sqrt(obs.n), obs.n-1)
+		s.of.lkl	<- sqrt( sum( tmp*tmp*su.lkl ) / sum(su.lkl) )					
+		#s.of.lkl	<- obs.sd * sqrt( (obs.n-1)/(obs.n-3)/obs.n	)			#assuming empirical Bayes prior on sig2 with df0=n-1, S^2_0=S^2(x) / (n-1)
 		sim.sd		<- sd(sim)
 		suppressWarnings({
 					s.of.pw	<- sqrt( .Call("abcMuTOST_pwvar",c(mx.pw, obs.n, sim.sd/sqrt(obs.n), tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-5, 100))[1] )	#base case: sim.n=obs.n -- for simplicity use sim.sd
@@ -1503,7 +1512,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 			tau.l	<- tmp[1]*annealing
 			tau.u	<- tmp[2]*annealing
 			if(verbose)
-				cat(paste("\nstd is 5, adj sim.n, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",s.of.pw,s.of.lkl))			
+				cat(paste("\nstd is 5, broader mx.pw, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",sqrt(tmp[3]),s.of.lkl))
 		}		
 	}
 	tmp			<- c(	sqrt(sim.n)*(sim.mean-obs.mean-tau.l) / sim.sd,			#[1]	T-	test statistic for -tau (lower test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
@@ -1513,6 +1522,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 						sim.sd/sqrt(sim.n),										#[5]	estimate of the std dev of the test statistic is simply the std dev in the sample whose sample size is > 1 divided by that sample size
 						sim.sd )												#[6]  	standard deviation of the sample
 	tost.ans	<-	nabc.generic.tost(tmp, tau.l, tau.u, alpha, tost.distr="t")
+	#print("")
 	#print(tost.ans)
 	ans[c("error","cil","cir")]	<- c(tost.ans["p.error"], 0, alpha)
 	ans[c("tl","tr","nsim")]	<- c(tau.l,tau.u,sim.n)
@@ -1526,22 +1536,28 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 	
 	if(plot)
 	{
-		rho		<- seq(-2*tau.u,2*tau.u,length.out=1e3)
+		rho		<- seq(-4*tau.u,4*tau.u,length.out=1e3)
 		pw		<- nabc.mutost.pow(rho, sim.n-1, tau.u, tmp[5], alpha)			
 		pw		<- pw/(sum(pw)*diff(rho)[1])
+		ylim	<- range(pw)
 		su.lkl	<- NA
 		if(standardize==3)
 		{
 			su.lkl		<- dt(rho/obs.sd*sqrt(obs.n), obs.n-1)
 			su.lkl		<- su.lkl / (sum(su.lkl)*diff(rho)[1])
+			#print( sum(pw)*diff(rho)[1] )
+			#print( sqrt( sum( rho^2*pw ) / sum(pw) ) )
+			#print( sqrt( sum( rho^2*su.lkl ) / sum(su.lkl) )	) 
+			ylim		<- range(c(ylim,su.lkl))
 		}	
-		plot(1,1,type='n',bty='n',xlim=range(rho),ylim=c(0,max(pw)*1.3),ylab="power density",xlab=expression(rho))			
+		plot(1,1,type='n',bty='n',xlim=range(rho),ylim=ylim,ylab="power density",xlab=expression(rho))			
 		lines(rho,pw,lty=2)
 		if(!any(is.na(su.lkl)))
 			lines(rho,su.lkl,lty=1)				
 		legend("topright",bty='n',legend=legend.txt)
+		legend("topleft",bty='n',legend=c("power","sulkl"),lty=c(2,1))
 	}
-	
+	#print(ans)
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------

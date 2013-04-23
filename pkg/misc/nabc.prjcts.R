@@ -4999,7 +4999,7 @@ project.nABC.TOST<- function()
 	require(PowerTOST)	
 	my.mkdir(DATA,"nABC.mutost")
 	dir.name<- paste(DATA,"nABC.mutost",sep='/')
-	subprog<- 2
+	subprog<- 5
 	pdf.width<- 4
 	pdf.height<-5
 	
@@ -5254,7 +5254,7 @@ stop()
 		stdize	<- 0
 		m		<- 1
 		resume	<- 1
-		if(0)
+		if(1)
 		{
 			yn		<- xn
 			xsigma2	<- 0.1*0.1
@@ -5279,8 +5279,11 @@ stop()
 						tmp			<- .Call("abcMuTOST_pwvar",c(mx.pw, df, s.of.T, tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-5, 100))
 						print(sqrt(tmp)[1])
 						tmp			<- nabc.mutost.onesample.tau.lowup.var( s.of.lkl, df, s.of.T, tau.u.ub, alpha, tol= s.of.lkl*s.of.lkl*1e-5 )
+						print(tmp)
+						tmp			<- nabc.mutost.onesample.tau.lowup.var( s.of.lkl, df, s.of.T, tau.u.ub, alpha, tol= s.of.lkl*s.of.lkl*1e-5, debug=1 )
 						#tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5, debug=0)
-						#print(tmp)						
+						print(tmp)
+						stop()
 						#sim.sd		<- sd(sim[1:900])
 						#tmp			<- nabc.mutost.onesample.n.of.y(obs.n, s.of.lkl, mx.pw, sim.sd, alpha, tau.u.ub=tau.u.ub, tol= s.of.lkl*s.of.lkl*1e-5, debug=0)
 						#print(tmp)	
@@ -5300,8 +5303,10 @@ stop()
 			sapply(seq_along(mx.pws),function(j)
 					{						
 						tau.u		<- out[2,j]							
-						pw			<- nabc.mutost.pow(x, yn-1, tau.u, s.of.T, alpha)			
+						pw			<- nabc.mutost.pow(x, yn-1, tau.u, s.of.T, alpha)		
+						#print(x[ which(pw>0.95)[1] ] )
 						pw			<- pw/(sum(pw)*diff(x)[1])
+						#pw			<- pw/(sum(pw))
 						lines(x,pw,col="green", lty=ltys[j])
 					})
 			legend("topright",lty=ltys,legend=mx.pws)			

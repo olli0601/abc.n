@@ -187,7 +187,7 @@ static inline void abcMuTOST_taulowup_var(	const double &slkl, const double &df,
 	for(curr_pwv=0; 	n-- && curr_pwv<S2LKL; 		)
 	{
 		tau_ubd*=2;
-		oseq_nout(-tau_ubd, tau_ubd, NRHO, rho);
+		oseq_nout(-2*tau_ubd, 2*tau_ubd, NRHO, rho);
 		abcMuTOST_pow(NRHO, rho, df, tau_ubd, sT, alpha, pw);
 		if(oIsZero(NRHO,pw))//must increase tau_u to get non-zero power
 			curr_pwv= 0;
@@ -203,7 +203,7 @@ static inline void abcMuTOST_taulowup_var(	const double &slkl, const double &df,
 			)
 	{
 		tau_u= (tau_lbd+tau_ubd)/2;
-		oseq_nout(-tau_u, tau_u, NRHO, rho);
+		oseq_nout(-2*tau_u, 2*tau_u, NRHO, rho);
 		abcMuTOST_pow(NRHO, rho, df, tau_u, sT, alpha, pw);
 		if(oIsZero(NRHO,pw))//must increase tau_u to get non-zero power
 			curr_pwv= 0;
@@ -214,7 +214,7 @@ static inline void abcMuTOST_taulowup_var(	const double &slkl, const double &df,
 			tau_lbd= tau_u;
 		else
 			tau_ubd= tau_u;
-//std::cout<<"H2 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<error<<'\t'<<maxit<<'\t'<<tol<<'\t'<< (std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS)) <<std::endl;
+//std::cout<<"H2 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<error<<'\t'<<maxit<<'\t'<<tau_lbd<<'\t'<<tau_ubd<<'\t'<<tol<<'\t'<< (std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS)) <<std::endl;
 	}
 //oprinta(pw, NRHO, std::cout);
 	if(n<0)
