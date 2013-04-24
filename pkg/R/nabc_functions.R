@@ -1541,7 +1541,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 		pw		<- pw/(sum(pw)*diff(rho)[1])
 		ylim	<- range(pw)
 		su.lkl	<- NA
-		if(standardize==3)
+		if(standardize%in%c(3,5))
 		{
 			su.lkl		<- dt(rho/obs.sd*sqrt(obs.n), obs.n-1)
 			su.lkl		<- su.lkl / (sum(su.lkl)*diff(rho)[1])

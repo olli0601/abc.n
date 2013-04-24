@@ -2,8 +2,10 @@ abc.n
 =====
 test procedures for ABC based on n summary values
 
-to build this package:
+to clone this R package from the git repository:
+* if there are issues like "Permission denied (publickey)" , try git clone http://github.com/olli0601/abc.n.git
 
+to build this R package:
 * R CMD build pkg: builds the package (generates an archive called foo.tar.gz).
 * R CMD build pkg --compact-vignettes --resave-data: same, making the package as small as possible.
 * R CMD check abc.n_1.0-0.gz --as-cran: runs package quality checks similar to the checks made by CRAN; must be passed without error/warning before.
