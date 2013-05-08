@@ -1,2 +1,6 @@
 
 pkg/.DS_Store
+.RData
+.Rapp.history
+*.tar.gz
+*.Rout
