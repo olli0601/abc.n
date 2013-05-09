@@ -1230,32 +1230,26 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the number of simulated summary values and the equivalence region for the test of location equivalence by minimising the Kullback-Leibler divergence between the power function and the summary likelihood.
-#' @export
-#' @param n.of.x	number of observed summary values
-#' @param s.of.Sx	standard deviation in the observed summary likelihood
-#' @param mx.pw		maximum power at the point of reference (rho.star).
-#' @param s.of.y 	standard deviation in the simulated summary values
-#' @param alpha		level of the equivalence test
-#' @param tau.up.ub	guess on an upper bound on the upper tolerance of the equivalence region
-#' @param tol		this algorithm stops when the actual variation in the ABC approximation to the summary likelihood is less than 'tol' from 's.of.Sx*s.of.Sx'
+#' @inheritParams KL_divergence_mutost_tau.u
+#' @param plot if \code{TRUE}, the summary likelihood and abc approximation are plotted
 #' @param max.it 	this algorithm stops prematurely when the number of iterations to calibrate the number of simulated data points exceeds 'max.it'
 #' @param debug		Flag if C implementation is used.
-#' @return	vector of length 6
-#' 	\item{1}{number of simulated summary values}
-#' 	\item{2}{lower tolerance of the equivalence region}		
-#' 	\item{3}{upper tolerance of the equivalence region}
-#' 	\item{4}{actual variation of the power}
-#' 	\item{5}{actual maximum power associated with the equivalence region}
-#' 	\item{6}{error ie abs(actual variation - variation in the observed summary likelihood)}
+#' @return	vector of length 4
+#' 	\item{n.of.y}{number of simulated summary values}
+#' 	\item{KL_div}{the Kullback Leibler divergence}		
+#' 	\item{tau.u}{upper tolerance of the equivalence region}
+#' 	\item{pw.cmx}{actual maximum power associated with the equivalence region}
+#' @export
+#' @import stats
 #' @examples prior.u<- 2; prior.l<- -prior.u; tau.u<- 0.75; xn<- yn<- 60; xmu<- 0.5; xsigma2<- ysigma2<- 2; alpha<- 0.01
 #'	rho<- seq(prior.l,prior.u,length.out=1e3)
 #' 	#summary likelihood 		
 #'	y<-	dnorm(rho,0,sqrt(xsigma2/xn))
 #'	y<- y / diff(pnorm(c(prior.l,prior.u),0,sqrt(xsigma2/xn)))
 #' 	#abc approximation to summary likelihood based on equivalence test 
-#'	tmp	<- nabc.mutost.onesample.n.of.y(xn, sqrt(xsigma2/xn), 0.9, sqrt(ysigma2), alpha, tau.u.ub=2*tau.u )
-#'	yn	<- tmp[1]
-#'	tau.u	<- tmp[3]						
+#'	tmp	<- nabc.mutost.onesample.n.of.y.KL(xn, sqrt(xsigma2/xn), yn, sqrt(ysigma2),0.9, alpha, tau.u.ub=2*tau.u,plot=T)
+#'	yn	<- tmp["yn"]
+#'	tau.u	<- tmp["tau.u"]						
 #'	y2<- nabc.mutost.pow(rho, yn-1, tau.u, sqrt(ysigma2/yn), alpha)
 #'	rho2<- rho[which(y2!=0)]
 #'	y2<- y2[which(y2!=0)]
@@ -1265,67 +1259,44 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 #'	lines(rho,y,col="red")
 #'	lines(rho2,y2,col="blue")			
 #'	abline(v=0,col="red")			
-nabc.mutost.onesample.n.of.y.KL<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, tau.u.ub=2, tol= 1e-5, max.it=100, debug=0)
+nabc.mutost.onesample.n.of.y.KL<- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, tau.u.ub=2, max.it=100, debug=0,plot=F)
 {
-	if(!debug)
-	{
-		suppressWarnings({	#suppress numerical inaccuracy warnings
-					ans<- .Call("abcMuTOST_nsim",c(n.of.x, s.of.Sx, mx.pw, s.of.y, tau.u.ub, alpha, 0, tol, max.it))
-				})
-		return(ans)
-	}
+		
+	KL.of.yn<- KL_divergence_mutost_tau.u(n.of.x,s.of.x,n.of.y,s.of.y, mx.pw, tau.u.ub, alpha)["KL_div"]
+	KL.of.yn_m1<- KL_divergence_mutost_tau.u(n.of.x,s.of.x,n.of.y-1,s.of.y, mx.pw, tau.u.ub, alpha)["KL_div"]
 	
-	s2.of.Sx	<- s.of.Sx*s.of.Sx
-	pw.cvar		<- 2*s2.of.Sx
-	curr.mx.pw	<- 0
-	yn.ub		<- round( n.of.x/2 )
-	curr.it		<- max.it
-	tau.u		<- tau.u.ub
-	while(pw.cvar>s2.of.Sx && curr.it>0)
-	{
+	decrease_n.of.y<-(KL.of.yn_m1<KL.of.yn)
+	
+	if(decrease_n.of.y){
+		#optimize between 1 and n.of.y
+		#TODO: find a lower bound in a similar way as below
+		yn.lb<-1
+		yn.ub<-n.of.y
+	}else{
+		#find upper bound for optimize
+		yn.lb<-n.of.y
+		curr.it		<- max.it
+		yn.ub		<- 2*n.of.y
+		KL.of.yn_ub<- KL_divergence_mutost_tau.u(n.of.x,s.of.x, yn.ub,  s.of.y, mx.pw, tau.u.ub, alpha)["KL_div"]
+		while(KL.of.yn_ub<KL.of.yn && curr.it>0)
+		{
 		curr.it	<- curr.it-1
+		KL.of.yn<-KL.of.yn_ub
 		yn.ub	<- 2*yn.ub
-#print(c(mx.pw,yn.ub))			
-		tmp		<- nabc.mutost.onesample.tau.lowup.pw(mx.pw, yn.ub-1, s.of.y/sqrt(yn.ub), 2*tau.u, alpha, debug=0)
-#print(c("OK ",tmp))		
-		tau.u	<- tmp[2]
-		pw.cmx	<- tmp[3]
-		rho		<- seq(-2*tau.u,2*tau.u,length.out=1e3)
-		#pw.fun	<- nabc.mutost.pow(rho, yn.ub-1, tau.u, s.of.y/sqrt(yn.ub), alpha, rtn.fun=1)
-		suppressWarnings({	#suppress numerical inaccuracy warnings
-			pw		<- .Call("abcMuTOST_pow", rho, yn.ub-1, tau.u, s.of.y/sqrt(yn.ub), alpha)
-		})	
-		#pw.cvar	<- sum(rho*rho*pw.fun(rho)) / sum(pw.fun(rho))			#mean is 0
-		pw.cvar	<- sum(rho*rho*pw) / sum(pw)			#mean is 0	
-#print(c(yn.ub, tau.u, pw.cvar, s2.of.Sx, pw.cmx ))		
-	}
-	if(curr.it==0)	stop("nabc.mutost.onesample.n.of.y: could not find upper bound for yn")	
-#print(c(yn.ub, tau.u, pw.cvar, s2.of.Sx, pw.cmx ))
-	yn.lb	<- n.of.x
-	error	<- 1	
-	while(abs(error)>tol && (yn.lb+1)!=yn.ub && max.it>0)
-	{
-		max.it	<- max.it-1
-		yn		<- round( (yn.lb + yn.ub)/2 )		
-		tmp		<- nabc.mutost.onesample.tau.lowup.pw(mx.pw, yn-1, s.of.y/sqrt(yn), 2*tau.u, alpha, debug=0)
-		tau.u	<- tmp[2]
-		pw.cmx	<- tmp[3]
-		rho		<- seq(-2*tau.u,2*tau.u,length.out=1e3)
-		suppressWarnings({
-			pw		<- .Call("abcMuTOST_pow", rho, yn-1, tau.u, s.of.y/sqrt(yn), alpha)
-		})
-		#pw.fun	<- nabc.mutost.pow(rho, yn-1, tau.u, s.of.y/sqrt(yn), alpha, rtn.fun=1)
-		#pw.cvar	<- sum(rho*rho*pw.fun(rho)) / sum(pw.fun(rho))
-		pw.cvar	<- sum(rho*rho*pw) / sum(pw)
-		error	<- pw.cvar - s2.of.Sx
-#print(c(pw.cvar, yn, yn.lb, yn.ub, max.it))
-		if(error<0)
-			yn.ub<- yn
-		else
-			yn.lb<- yn
-#print(c(abs(error), (yn.lb+1)!=yn.ub) )	
-	}
-	c(yn,-tau.u,tau.u,pw.cvar,pw.cmx,abs(error), max.it)
+		KL.of.yn_ub	<- KL_divergence_mutost_tau.u(n.of.x,s.of.x, yn.ub,  s.of.y, mx.pw, tau.u.ub, alpha)["KL_div"]
+		}
+		
+		if(curr.it==0)	stop("nabc.mutost.onesample.n.of.y.KL: could not find upper bound for yn")	
+	}	
+	
+	if(debug){cairo_pdf("KL_optimization.pdf",onefile=T)}	
+	tmp<-optimize(KL_optimize,interval=c(yn.lb, yn.ub),n.of.x,s.of.x,s.of.y, mx.pw, tau.u.ub, alpha,plot=debug)
+	if(debug){dev.off()}	
+	yn<-floor(tmp$minimum)
+	
+	tmp<- KL_divergence_mutost_tau.u(n.of.x,s.of.x,yn,s.of.y, mx.pw, tau.u.ub, alpha,plot=plot)
+
+	return(c(n.of.y=yn,tmp))	
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the equivalence region for the test of location equivalence for given variance of the summary likelihood

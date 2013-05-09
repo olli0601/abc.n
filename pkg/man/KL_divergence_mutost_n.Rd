@@ -2,12 +2,14 @@
 \alias{KL_divergence_mutost_n}
 \title{Compute Kullback-Leibler divergence between the summary likelihood and the power function of mutost after calibration of tau.u}
 \usage{
-  KL_divergence_mutost_n(n.of.x, n.of.y, mx.pw, s.of.y,
-    tau.u.ub, alpha, debug = 0)
+  KL_divergence_mutost_n(n.of.x, s.of.x, n.of.y = n.of.x,
+    s.of.y, mx.pw, tau.u.ub, alpha, debug = 0, plot = F)
 }
 \arguments{
   \item{tau.u.ub}{guess on an upper bound on the upper
   tolerance of the equivalence region}
+
+  \item{plot}{whether to plot the two distributions.}
 
   \item{debug}{Flag if C implementation is used.}
 
@@ -26,6 +28,6 @@
   calibration of tau.u
 }
 \examples{
-KL_divergence_mutost_n(n.of.x=20,n.of.y=30, mx.pw=0.9, s.of.y=5, tau.u.ub=6, alpha=0.01, debug = 0)
+KL_divergence_mutost_n(n.of.x=20,s.of.x=0.5,n.of.y=20, mx.pw=0.9, s.of.y=0.5, tau.u.ub=2, alpha=0.01, debug = 0)
 }
 

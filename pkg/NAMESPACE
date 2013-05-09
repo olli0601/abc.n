@@ -1,6 +1,7 @@
 export(KL_divergence_1D)
 export(KL_divergence_1D_mutost)
-export(KL_divergence_mutost_n)
+export(KL_divergence_mutost_tau.u)
+export(KL_optimize)
 export(NABC.DEFAULT.ANS)
 export(nabc.acf.equivalence)
 export(nabc.acf.equivalence.abctol)
