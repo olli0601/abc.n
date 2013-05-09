@@ -19,14 +19,19 @@ integrand_KL_divergence_1D<-function(x,P_dist,Q_dist,P_arg,Q_arg){
 #' @inheritParams KL_divergence_1D_mutost
 integrand_KL_divergence_1D_mutost <- function(rho, n.of.x, s.of.x, n.of.y, s.of.y, tau.u, alpha, lkl_norm = 1, pow_norm = 1, lkl_support, pow_support) {
 
-	ssn<-s.of.x/sqrt(n.of.x)
+	ssn <- s.of.x/sqrt(n.of.x)
 	P_rho <- dt(rho/ssn, df = n.of.x - 1)/ssn/lkl_norm
-	P_rho[rho<lkl_support[1] | rho>lkl_support[2]]<-0
-	
+	P_rho[rho < lkl_support[1] | rho > lkl_support[2]] <- 0
+
 	suppressWarnings({ #suppress numerical inaccuracy warnings
 		Q_rho <- .Call("abcMuTOST_pow", rho, n.of.y - 1, tau.u, s.of.y/sqrt(n.of.y), alpha)/pow_norm
 	})
-	Q_rho[rho<pow_support[1] | rho>pow_support[2]]<-0
+	Q_rho[rho < pow_support[1] | rho > pow_support[2]] <- 0
+
+	if (all(Q_rho == 0, na.rm = T)) {
+		#warning("power is 0 everywhere!")
+		return(rep(1, length(Q_rho)))
+	}
 
 	ans <- log(P_rho/Q_rho) * P_rho
 
@@ -64,17 +69,18 @@ KL_divergence_1D<-function(P_dist,Q_dist,P_arg,Q_arg,lower,upper){
 
 #' Compute the Kullback-Leibler divergence D(P||Q) where P is the summary likelihood and Q is the mutost power.
 #' @inheritParams KL_divergence_mutost
-#' @param tau.u	upper tolerance of the equivalence region
-#' @param lkl_norm constant for normalization for the truncated summary likelihood (default to 1)
-#' @param pow_norm constant for normalization for the truncated power (default to 1)
+#' @param tau.u	upper tolerance of the equivalence region.
+#' @param pow_norm constant for normalization for the truncated power. Default=1.
 #' @param lower lower bound for integration. Can be infinite.
 #' @param upper upper bound for integration. Can be infinite.
 #' @export 
 #' @import stats
 #'
-KL_divergence_1D_mutost <- function(n.of.x, s.of.x, n.of.y, s.of.y, tau.u, alpha, lkl_norm = 1, pow_norm = 1, lkl_support, pow_support, lower, upper) {
+KL_divergence_1D_mutost <- function(n.of.x, s.of.x, n.of.y, s.of.y, tau.u, alpha, lkl_norm = 1, pow_norm = 1, lkl_support, pow_support, lower, 
+	upper) {
 
-	KL_d <- integrate(integrand_KL_divergence_1D_mutost, lower, upper, n.of.x, s.of.x, n.of.y, s.of.y, tau.u, alpha, lkl_norm, pow_norm, lkl_support, pow_support)
+	KL_d <- integrate(integrand_KL_divergence_1D_mutost, lower, upper, n.of.x, s.of.x, n.of.y, s.of.y, tau.u, alpha, lkl_norm, pow_norm, lkl_support, 
+		pow_support)
 
 	if (KL_d$message != "OK") {
 		warning(KL_d$message)
@@ -93,6 +99,8 @@ KL_divergence_1D_mutost <- function(n.of.x, s.of.x, n.of.y, s.of.y, tau.u, alpha
 #' @param calibrate.tau.u if \code{TRUE} the upper tolerance of the equivalence region (\code{tau.u}) is calibrated so that power at the point of reference is equal to \code{mx.pw}
 #' @param tau.u	upper tolerance of the equivalence region. If \code{calibrate.tau.u==TRUE}, it's just a guess on an upper bound on the upper tolerance of the equivalence region.
 #' @param alpha level of the equivalence test
+#' @param lkl_norm normalization constant for truncated summary likelihood. Default=1
+#' @param lkl_support support of truncated summary likelihood. Default=c(-Inf,Inf).
 #' @param debug flag if C implementation is used
 #' @param plot whether to plot the two distributions
 #' @return	vector of length 3
@@ -101,68 +109,90 @@ KL_divergence_1D_mutost <- function(n.of.x, s.of.x, n.of.y, s.of.y, tau.u, alpha
 #' 	\item{pw.cmx}{actual maximum power associated with the equivalence region}
 #' @note If \code{calibrate.tau.u==TRUE}
 #' @export
+#' @import ggplot2 reshape2
 #' @examples
+#' 
 #' KL_divergence_mutost(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
-#' tau.u.ub=1, alpha=0.01,plot=T)
+#' calibrate.tau.u=T, tau.u=1, alpha=0.01, lkl_normplot=T)
 #'
-KL_divergence_mutost <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, calibrate.tau.u=F,tau.u, alpha, lkl_norm, lkl_support, debug = 0, plot = F) {
+KL_divergence_mutost <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, calibrate.tau.u = F, tau.u, alpha, lkl_norm = 1, lkl_support = c(-Inf, 
+	Inf), debug = 0, plot = F) {
 
-	if(calibrate.tau.u){
+	if (calibrate.tau.u) {
 		#calibrate tau.u constrained on yn, alpha and mx.pw	
-		tmp <- nabc.mutost.onesample.tau.lowup.pw(mx.pw, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha, debug)
+		tmp <- nabc.mutost.onesample.tau.lowup.pw(mx.pw, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha)
 		tau.u <- tmp[2]
 		pw.cmx <- tmp[3]
-		if(abs(pw.cmx-mx.pw)>0.09)	stop("tau.up not accurate")
+		if (abs(pw.cmx - mx.pw) > 0.09) 
+			stop("tau.up not accurate")
 	}
 
 	#truncate pow to [-2*tau.u,2*tau.u] and compute pow_norm
-	pow_support<- c(-2*tau.u,2*tau.u)
+	pow_support <- c(-2 * tau.u, 2 * tau.u)
 	rho <- seq(pow_support[1], pow_support[2], length.out = 1000)
 	suppressWarnings({ #suppress numerical inaccuracy warnings
 		pow <- .Call("abcMuTOST_pow", rho, n.of.y - 1, tau.u, s.of.y/sqrt(n.of.y), alpha)
 	})
 	pow_norm <- sum(pow) * diff(rho)[1]
-	pow<-pow/pow_norm
-	
-	integral_range<-range(c(lkl_support,pow_support))	
-	
-	KL_div <- KL_divergence_1D_mutost(n.of.x, s.of.x, n.of.y, s.of.y, tau.u, alpha, lkl_norm = lkl_norm, pow_norm = pow_norm, lkl_support= lkl_support, pow_support= pow_support, lower = integral_range[1], 
-		upper = integral_range[2])
+	pow <- pow/pow_norm
+
+	integral_range <- range(c(lkl_support, pow_support))
+
+	KL_div <- KL_divergence_1D_mutost(n.of.x, s.of.x, n.of.y, s.of.y, tau.u, alpha, lkl_norm = lkl_norm, pow_norm = pow_norm, lkl_support = lkl_support, 
+		pow_support = pow_support, lower = integral_range[1], upper = integral_range[2])
 
 	if (plot) {
-		ssn<-s.of.x/sqrt(n.of.x)
-		rho_lkl<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
+		ssn <- s.of.x/sqrt(n.of.x)
+		rho_lkl <- seq(lkl_support[1], lkl_support[2], length.out = 1000)
 		lkl <- dt(rho_lkl/ssn, n.of.x - 1)/ssn/lkl_norm
-		plot(rho_lkl, lkl, t = "l")
-		lines(rho, pow, col = "red")
-		title(main = paste("n.of.y=", n.of.y,"\ntau.u=",tau.u ,"\nKL=", KL_div))
+		df_lkl <- data.frame(x = rho_lkl, no = lkl*lkl_norm ,yes = lkl)
+		df_lkl$distribution <- "summary likelihood"
+		df_pow <- data.frame(x = rho, no = pow*pow_norm ,yes = pow)
+		df_pow$distribution <- "ABC power"
+		df <- rbind(df_pow, df_lkl)
+		gdf<-melt(df,id.vars=c("x","distribution"))
+		p <- ggplot(data = gdf, aes(x = x, y = value, colour = distribution,linetype=variable))
+		p<-p+geom_vline(xintercept=c(-tau.u,tau.u),linetype="dotted")
+		p<-p+geom_hline(yintercept= mx.pw,linetype="dotted")
+		p<-p+ geom_line()
+		p<-p+scale_linetype("truncated?")
+		p<-p+xlab(expression(rho))+ylab("")
+		p <- p + ggtitle(paste("n.of.y=", n.of.y, "\ntau.u=", tau.u, "\nKL=", KL_div))
+		print(p)
 	}
 
-	pw.cmx <- ifelse(calibrate.tau.u,pw.cmx,.Call("abcMuTOST_pow", rho=0, n.of.y - 1, tau.u, s.of.y/sqrt(n.of.y), alpha))
-	
-	ans <- c(KL_div = KL_div, tau.u = tau.u, pw.cmx= pw.cmx)
+	pw.cmx <- ifelse(calibrate.tau.u, pw.cmx, .Call("abcMuTOST_pow", rho = 0, n.of.y - 1, tau.u, s.of.y/sqrt(n.of.y), alpha)/pow_norm)
+
+	ans <- c(KL_div = KL_div, tau.u = tau.u, pw.cmx = pw.cmx)
 	return(ans)
 }
 
 #' A wrapper to minimize \code{KL_divergence_mutost} over n.of.y using the function \code{optimize}
 #' @inheritParams KL_divergence_mutost
 #' @export
-KL_divergence_mutost_optimize_n.of.y <- function(n.of.y, n.of.x, s.of.x, s.of.y, mx.pw, calibrate.tau.u,tau.u , alpha, lkl_norm, lkl_support, debug = 0, plot = F) {
-	
-	if(plot){print(n.of.y)}
-	
+KL_divergence_mutost_optimize_n.of.y <- function(n.of.y, n.of.x, s.of.x, s.of.y, mx.pw, calibrate.tau.u, tau.u, alpha, lkl_norm, lkl_support, 
+	debug = 0, plot = F) {
+
+	if (plot) {
+		print(n.of.y)
+	}
+
 	n.of.y <- round(n.of.y)
-	tmp <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, calibrate.tau.u,tau.u , alpha,lkl_norm, lkl_support, debug, plot)
+	tmp <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, calibrate.tau.u, tau.u, alpha, lkl_norm, lkl_support, debug, plot)
 	return(tmp["KL_div"])
 }
 
 #' A wrapper to minimize \code{KL_divergence_mutost} over tau.u using the function \code{optimize}
 #' @inheritParams KL_divergence_mutost
 #' @export
-KL_divergence_mutost_optimize_tau.u <- function(tau.u , n.of.x, s.of.x, n.of.y,s.of.y, mx.pw, calibrate.tau.u=F, alpha, lkl_norm, lkl_support, debug = 0, plot = F) {
-	
-	if(plot){print(tau.u)}
-	tmp <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, calibrate.tau.u=F,tau.u , alpha,lkl_norm, lkl_support, debug, plot)
+KL_divergence_mutost_optimize_tau.u <- function(tau.u, n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, calibrate.tau.u = F, alpha, lkl_norm, lkl_support, 
+	debug = 0, plot = F) {
+
+	if (plot) {
+		print(tau.u)
+	}
+
+	tmp <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, calibrate.tau.u = F, tau.u, alpha, lkl_norm, lkl_support, debug, plot)
 	return(tmp["KL_div"])
 }
 

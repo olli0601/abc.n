@@ -7,13 +7,10 @@
     pow_support, lower, upper)
 }
 \arguments{
-  \item{tau.u}{upper tolerance of the equivalence region}
-
-  \item{lkl_norm}{constant for normalization for the
-  truncated summary likelihood (default to 1)}
+  \item{tau.u}{upper tolerance of the equivalence region.}
 
   \item{pow_norm}{constant for normalization for the
-  truncated power (default to 1)}
+  truncated power. Default=1.}
 
   \item{lower}{lower bound for integration. Can be
   infinite.}
@@ -32,6 +29,12 @@
   values}
 
   \item{alpha}{level of the equivalence test}
+
+  \item{lkl_norm}{normalization constant for truncated
+  summary likelihood. Default=1}
+
+  \item{lkl_support}{support of truncated summary
+  likelihood. Default=c(-Inf,Inf).}
 }
 \description{
   Compute the Kullback-Leibler divergence D(P||Q) where P

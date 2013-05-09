@@ -3,8 +3,8 @@
 \title{Compute Kullback-Leibler divergence between the summary likelihood and the power function of mutost after calibration of tau.u}
 \usage{
   KL_divergence_mutost(n.of.x, s.of.x, n.of.y, s.of.y,
-    mx.pw, calibrate.tau.u = F, tau.u, alpha, lkl_norm,
-    lkl_support, debug = 0, plot = F)
+    mx.pw, calibrate.tau.u = F, tau.u, alpha, lkl_norm = 1,
+    lkl_support = c(-Inf, Inf), debug = 0, plot = F)
 }
 \arguments{
   \item{n.of.x}{number of observed summary values}
@@ -32,6 +32,12 @@
 
   \item{alpha}{level of the equivalence test}
 
+  \item{lkl_norm}{normalization constant for truncated
+  summary likelihood. Default=1}
+
+  \item{lkl_support}{support of truncated summary
+  likelihood. Default=c(-Inf,Inf).}
+
   \item{debug}{flag if C implementation is used}
 
   \item{plot}{whether to plot the two distributions}
@@ -52,6 +58,6 @@
 }
 \examples{
 KL_divergence_mutost(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
-tau.u.ub=1, alpha=0.01,plot=T)
+calibrate.tau.u=T, tau.u=1, alpha=0.01, lkl_normplot=T)
 }
 

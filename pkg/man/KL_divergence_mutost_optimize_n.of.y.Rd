@@ -32,6 +32,12 @@
 
   \item{alpha}{level of the equivalence test}
 
+  \item{lkl_norm}{normalization constant for truncated
+  summary likelihood. Default=1}
+
+  \item{lkl_support}{support of truncated summary
+  likelihood. Default=c(-Inf,Inf).}
+
   \item{debug}{flag if C implementation is used}
 
   \item{plot}{whether to plot the two distributions}

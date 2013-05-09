@@ -10,13 +10,10 @@
   \item{rho}{value at which integrand is evaluated. Can be
   a vector.}
 
-  \item{tau.u}{upper tolerance of the equivalence region}
-
-  \item{lkl_norm}{constant for normalization for the
-  truncated summary likelihood (default to 1)}
+  \item{tau.u}{upper tolerance of the equivalence region.}
 
   \item{pow_norm}{constant for normalization for the
-  truncated power (default to 1)}
+  truncated power. Default=1.}
 }
 \description{
   Integrand of the Kullback-Leibler divergence for mutost
