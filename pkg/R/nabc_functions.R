@@ -1461,7 +1461,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 			tau.l	<- tmp[1]*annealing
 			tau.u	<- tmp[2]*annealing
 			if(verbose)
-				cat(paste("\nstd is 3, broader mx.pw, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",sqrt(tmp[3]),s.of.lkl))
+				cat(paste("\nstd is 3, broader mx.pw, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/pwmatched/lkl",s.of.pw,sqrt(tmp[3]),s.of.lkl))
 		}		
 	}
 	else if(standardize==5)		#obs.sd is specified

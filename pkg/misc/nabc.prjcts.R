@@ -645,7 +645,7 @@ project.nABC.movingavg<- function()
 {
 	my.mkdir(DATA,"nABC.movingavg_mode")
 	dir.name<- paste(DATA,"nABC.movingavg_mode",sep='/')
-	subprog<- 1
+	subprog<- 3
 	resume<- 1
 	pdf.width<- 4
 	pdf.height<-5
@@ -1857,7 +1857,7 @@ stop()
 		lines(a,nu2, lty=ltys[1], col=cols[1])
 		lines(a,rho2, lty=ltys[2], col=cols[2])
 		lines(a,jac, lty=ltys[3], col=cols[3])
-		abline(v=0, col=my.fade.col("black",0.2))
+		abline(v=0.1, col=my.fade.col("black",0.2))
 		legend("bottomright",bty='n',border=NA,lty=c(ltys[1],ltys[2],ltys[3]),fill=c(cols[1],cols[2],cols[3]),legend= expression(nu[2],rho[2],"|"*partialdiff*"L|"))
 		dev.off()
 	}
