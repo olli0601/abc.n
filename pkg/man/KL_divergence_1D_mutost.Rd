@@ -3,7 +3,8 @@
 \title{Compute the Kullback-Leibler divergence D(P||Q) where P is the summary likelihood and Q is the mutost power.}
 \usage{
   KL_divergence_1D_mutost(n.of.x, s.of.x, n.of.y, s.of.y,
-    tau.u, alpha, lkl_norm = 1, pow_norm = 1, lower, upper)
+    tau.u, alpha, lkl_norm = 1, pow_norm = 1, lkl_support,
+    pow_support, lower, upper)
 }
 \arguments{
   \item{tau.u}{upper tolerance of the equivalence region}

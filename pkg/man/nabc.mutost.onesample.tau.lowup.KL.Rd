@@ -1,10 +1,10 @@
-\name{nabc.mutost.onesample.n.of.y.KL}
-\alias{nabc.mutost.onesample.n.of.y.KL}
+\name{nabc.mutost.onesample.tau.lowup.KL}
+\alias{nabc.mutost.onesample.tau.lowup.KL}
 \title{Calibrate the number of simulated summary values and the equivalence region for the test of location equivalence by minimising the Kullback-Leibler divergence between the power function and the summary likelihood.}
 \usage{
-  nabc.mutost.onesample.n.of.y.KL(n.of.x, s.of.x, n.of.y,
-    s.of.y, mx.pw, alpha, tau.u.ub = 2, max.it = 100,
-    debug = 0, plot = F)
+  nabc.mutost.onesample.tau.lowup.KL(n.of.x, s.of.x,
+    n.of.y, s.of.y, mx.pw, alpha, tau.u.ub, debug = 0,
+    plot = F)
 }
 \arguments{
   \item{plot}{if \code{TRUE}, the summary likelihood and

@@ -4,7 +4,7 @@
 \usage{
   integrand_KL_divergence_1D_mutost(rho, n.of.x, s.of.x,
     n.of.y, s.of.y, tau.u, alpha, lkl_norm = 1,
-    pow_norm = 1)
+    pow_norm = 1, lkl_support, pow_support)
 }
 \arguments{
   \item{rho}{value at which integrand is evaluated. Can be

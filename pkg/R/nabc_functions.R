@@ -1230,7 +1230,7 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the number of simulated summary values and the equivalence region for the test of location equivalence by minimising the Kullback-Leibler divergence between the power function and the summary likelihood.
-#' @inheritParams KL_divergence_mutost_tau.u
+#' @inheritParams KL_divergence_mutost
 #' @param plot if \code{TRUE}, the summary likelihood and abc approximation are plotted
 #' @param max.it 	this algorithm stops prematurely when the number of iterations to calibrate the number of simulated data points exceeds 'max.it'
 #' @param debug		Flag if C implementation is used.
@@ -1241,62 +1241,149 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 #' 	\item{pw.cmx}{actual maximum power associated with the equivalence region}
 #' @export
 #' @import stats
-#' @examples prior.u<- 2; prior.l<- -prior.u; tau.u<- 0.75; xn<- yn<- 60; xmu<- 0.5; xsigma2<- ysigma2<- 2; alpha<- 0.01
-#'	rho<- seq(prior.l,prior.u,length.out=1e3)
-#' 	#summary likelihood 		
-#'	y<-	dnorm(rho,0,sqrt(xsigma2/xn))
-#'	y<- y / diff(pnorm(c(prior.l,prior.u),0,sqrt(xsigma2/xn)))
-#' 	#abc approximation to summary likelihood based on equivalence test 
-#'	tmp	<- nabc.mutost.onesample.n.of.y.KL(xn, sqrt(xsigma2/xn), yn, sqrt(ysigma2),0.9, alpha, tau.u.ub=2*tau.u,plot=T)
-#'	yn	<- tmp["yn"]
-#'	tau.u	<- tmp["tau.u"]						
-#'	y2<- nabc.mutost.pow(rho, yn-1, tau.u, sqrt(ysigma2/yn), alpha)
-#'	rho2<- rho[which(y2!=0)]
-#'	y2<- y2[which(y2!=0)]
-#'	y2<- y2/sum(diff(rho2)*y2[-1])	
-#'	#plot summary likelihood and abc approximation thereof
-#'	plot(1,1,type='n',xlim=range(rho),ylim=range(c(y,y2)),xlab=expression(rho))
-#'	lines(rho,y,col="red")
-#'	lines(rho2,y2,col="blue")			
-#'	abline(v=0,col="red")			
-nabc.mutost.onesample.n.of.y.KL<- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, tau.u.ub=2, max.it=100, debug=0,plot=F)
-{
-		
-	KL.of.yn<- KL_divergence_mutost_tau.u(n.of.x,s.of.x,n.of.y,s.of.y, mx.pw, tau.u.ub, alpha)["KL_div"]
-	KL.of.yn_m1<- KL_divergence_mutost_tau.u(n.of.x,s.of.x,n.of.y-1,s.of.y, mx.pw, tau.u.ub, alpha)["KL_div"]
+#' @examples 
+#' prior.u<- 2; prior.l<- -prior.u; tau.u<- 0.75; xn<- yn<- 60; xmu<- 0.5;
+#' xsigma2<- ysigma2<- 2; alpha<- 0.01
+#' rho<- seq(prior.l,prior.u,length.out=1e3)
+#' #summary likelihood 		
+#' y<-dnorm(rho,0,sqrt(xsigma2/xn))
+#' y<- y / diff(pnorm(c(prior.l,prior.u),0,sqrt(xsigma2/xn)))
+#' #abc approximation to summary likelihood based on equivalence test 
+#' tmp <- nabc.mutost.onesample.n.of.y.KL(xn, sqrt(xsigma2/xn), yn,
+#' sqrt(ysigma2),0.9, alpha, tau.u.ub=2*tau.u,plot=T)
+#' yn <- tmp["n.of.y"]
+#' tau.u	<- tmp["tau.u"]						
+#' y2<- nabc.mutost.pow(rho, yn-1, tau.u, sqrt(ysigma2/yn), alpha)
+#' rho2<- rho[which(y2!=0)]
+#' y2<- y2[which(y2!=0)]
+#' y2<- y2/sum(diff(rho2)*y2[-1])	
+#' #plot summary likelihood and abc approximation thereof
+#' plot(1,1,type='n',xlim=range(rho),ylim=range(c(y,y2)),xlab=expression(rho))
+#' lines(rho,y,col="red")
+#' lines(rho2,y2,col="blue")			
+#' abline(v=0,col="red")			
+nabc.mutost.onesample.n.of.y.KL <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, tau.u.ub = 2, max.it = 100, debug = 0, plot = F) {
+
+	#compute the support and the normalization constant of the truncated summary likelihood
+	#we choose the support as the boundary of the 0.99 quantile
+	ssn<-s.of.x/sqrt(n.of.x)
+	lkl_norm<-0.99
+	tmp<-(1-lkl_norm)/2
+	lkl_support<-ssn*qt(c(tmp,1-tmp),n.of.x-1)
 	
-	decrease_n.of.y<-(KL.of.yn_m1<KL.of.yn)
+	if (debug) {
+		cairo_pdf("KL_initial.pdf", onefile = T)
+	}
+	KL.of.yn <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y , s.of.y, mx.pw, calibrate.tau.u=T,tau.u= tau.u.ub, alpha, lkl_norm, lkl_support,plot=debug)["KL_div"]
+	if (debug) {
+		dev.off()
+	}
 	
-	if(decrease_n.of.y){
+	KL.of.yn_m1 <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y - 1, s.of.y, mx.pw, calibrate.tau.u=T,tau.u= tau.u.ub, alpha, lkl_norm, lkl_support)["KL_div"]
+	
+	decrease_n.of.y <- as.logical(KL.of.yn_m1 < KL.of.yn)
+
+	if (decrease_n.of.y) {
 		#optimize between 1 and n.of.y
 		#TODO: find a lower bound in a similar way as below
-		yn.lb<-1
-		yn.ub<-n.of.y
-	}else{
+		yn.lb <- 1
+		yn.ub <- n.of.y
+	} else {
 		#find upper bound for optimize
-		yn.lb<-n.of.y
-		curr.it		<- max.it
-		yn.ub		<- 2*n.of.y
-		KL.of.yn_ub<- KL_divergence_mutost_tau.u(n.of.x,s.of.x, yn.ub,  s.of.y, mx.pw, tau.u.ub, alpha)["KL_div"]
-		while(KL.of.yn_ub<KL.of.yn && curr.it>0)
-		{
-		curr.it	<- curr.it-1
-		KL.of.yn<-KL.of.yn_ub
-		yn.ub	<- 2*yn.ub
-		KL.of.yn_ub	<- KL_divergence_mutost_tau.u(n.of.x,s.of.x, yn.ub,  s.of.y, mx.pw, tau.u.ub, alpha)["KL_div"]
-		}
+		yn.lb <- n.of.y
+		curr.it <- max.it
+		yn.ub <- 2 * n.of.y
 		
-		if(curr.it==0)	stop("nabc.mutost.onesample.n.of.y.KL: could not find upper bound for yn")	
-	}	
-	
-	if(debug){cairo_pdf("KL_optimization.pdf",onefile=T)}	
-	tmp<-optimize(KL_optimize,interval=c(yn.lb, yn.ub),n.of.x,s.of.x,s.of.y, mx.pw, tau.u.ub, alpha,plot=debug)
-	if(debug){dev.off()}	
-	yn<-floor(tmp$minimum)
-	
-	tmp<- KL_divergence_mutost_tau.u(n.of.x,s.of.x,yn,s.of.y, mx.pw, tau.u.ub, alpha,plot=plot)
+		KL.of.yn_ub <- KL_divergence_mutost(n.of.x, s.of.x, yn.ub, s.of.y, mx.pw, calibrate.tau.u=T,tau.u= tau.u.ub, alpha, lkl_norm, lkl_support)["KL_div"]
+		
+		while (KL.of.yn_ub < KL.of.yn && curr.it > 0) {
+			curr.it <- curr.it - 1
+			KL.of.yn <- KL.of.yn_ub
+			yn.ub <- 2 * yn.ub
+			KL.of.yn_ub <- KL_divergence_mutost(n.of.x, s.of.x, yn.ub, s.of.y, mx.pw, calibrate.tau.u=T,tau.u= tau.u.ub, alpha, lkl_norm, lkl_support)["KL_div"]
+		}
 
-	return(c(n.of.y=yn,tmp))	
+		if (curr.it == 0) 
+			stop("nabc.mutost.onesample.n.of.y.KL: could not find upper bound for yn")
+	}
+
+	if (debug) {
+		cairo_pdf("KL_optimization.pdf", onefile = T)
+	}
+	tmp <- optimize(KL_divergence_mutost_optimize_n.of.y, interval = c(yn.lb, yn.ub), n.of.x, s.of.x, s.of.y, mx.pw, calibrate.tau.u=T,tau.u= tau.u.ub, alpha, lkl_norm, lkl_support, plot = debug,tol=1)
+	if (debug) {
+		dev.off()
+	}
+	yn <- round(tmp$minimum)
+
+	tmp <- KL_divergence_mutost(n.of.x, s.of.x, yn, s.of.y, mx.pw, calibrate.tau.u=T,tau.u= tau.u.ub, alpha, lkl_norm, lkl_support, plot = plot)
+
+	return(c(n.of.y = yn, tmp))
+}
+#------------------------------------------------------------------------------------------------------------------------
+#' Calibrate the number of simulated summary values and the equivalence region for the test of location equivalence by minimising the Kullback-Leibler divergence between the power function and the summary likelihood.
+#' @inheritParams KL_divergence_mutost
+#' @param plot if \code{TRUE}, the summary likelihood and abc approximation are plotted
+#' @param max.it 	this algorithm stops prematurely when the number of iterations to calibrate the number of simulated data points exceeds 'max.it'
+#' @param debug		Flag if C implementation is used.
+#' @return	vector of length 4
+#' 	\item{n.of.y}{number of simulated summary values}
+#' 	\item{KL_div}{the Kullback Leibler divergence}		
+#' 	\item{tau.u}{upper tolerance of the equivalence region}
+#' 	\item{pw.cmx}{actual maximum power associated with the equivalence region}
+#' @export
+#' @import stats
+#' @examples 
+#' prior.u<- 2; prior.l<- -prior.u; tau.u<- 0.75; xn<- yn<- 60; xmu<- 0.5;
+#' xsigma2<- ysigma2<- 2; alpha<- 0.01
+#' rho<- seq(prior.l,prior.u,length.out=1e3)
+#' #summary likelihood 		
+#' y<-dnorm(rho,0,sqrt(xsigma2/xn))
+#' y<- y / diff(pnorm(c(prior.l,prior.u),0,sqrt(xsigma2/xn)))
+#' #abc approximation to summary likelihood based on equivalence test 
+#' tmp <- nabc.mutost.onesample.n.of.y.KL(xn, sqrt(xsigma2/xn), yn,
+#' sqrt(ysigma2),0.9, alpha, tau.u.ub=2*tau.u,plot=T)
+#' yn <- tmp["n.of.y"]
+#' tau.u	<- tmp["tau.u"]						
+#' y2<- nabc.mutost.pow(rho, yn-1, tau.u, sqrt(ysigma2/yn), alpha)
+#' rho2<- rho[which(y2!=0)]
+#' y2<- y2[which(y2!=0)]
+#' y2<- y2/sum(diff(rho2)*y2[-1])	
+#' #plot summary likelihood and abc approximation thereof
+#' plot(1,1,type='n',xlim=range(rho),ylim=range(c(y,y2)),xlab=expression(rho))
+#' lines(rho,y,col="red")
+#' lines(rho2,y2,col="blue")			
+#' abline(v=0,col="red")			
+nabc.mutost.onesample.tau.lowup.KL <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, tau.u.ub, debug = 0, plot = F) {
+
+	#compute the support and the normalization constant of the truncated summary likelihood
+	#we choose the support as the boundary of the 0.99 quantile
+	ssn<-s.of.x/sqrt(n.of.x)
+	lkl_norm<-0.99
+	tmp<-(1-lkl_norm)/2
+	lkl_support<-ssn*qt(c(tmp,1-tmp),n.of.x-1)
+	
+	#minimize KL_tau.u between [0,tau.u.ub]  
+	if (debug) {
+		cairo_pdf("KL_initial.pdf", onefile = T)
+	}
+	KL.of.tau.u <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y , s.of.y, mx.pw, calibrate.tau.u=F,tau.u=tau.u.ub, alpha, lkl_norm, lkl_support,plot=debug)["KL_div"]
+	if (debug) {
+		dev.off()
+	}
+	
+	if (debug) {
+		cairo_pdf("KL_optimization.pdf", onefile = T)
+	}
+	tmp <- optimize(KL_divergence_mutost_optimize_tau.u, interval = c(0, tau.u.ub), n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, calibrate.tau.u=F, alpha, lkl_norm, lkl_support, plot = debug)
+	if (debug) {
+		dev.off()
+	}
+	tau.u <- tmp$minimum
+
+	tmp <- KL_divergence_mutost(n.of.x, s.of.x, yn, s.of.y, mx.pw, calibrate.tau.u=F,tau.u, alpha, lkl_norm, lkl_support, plot = plot)
+
+	return(c(n.of.y = yn, tmp))
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the equivalence region for the test of location equivalence for given variance of the summary likelihood
@@ -1585,6 +1672,59 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 				cat(paste("\nstd is 5, broader mx.pw, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",sqrt(tmp[3]),s.of.lkl))
 		}		
 	}
+	else if(standardize==6)
+	{
+	#variables I need:
+	n.of.x=length(obs)
+	s.of.x=sd(obs)
+	n.of.y=length(sim)
+	s.of.y=sd(sim)
+	
+	#compute the support and the normalization constant of the truncated summary likelihood
+	#we choose the support as the boundary of the 0.99 quantile
+	ssn<-s.of.x/sqrt(n.of.x)
+	lkl_norm<-0.99
+	tmp<-(1-lkl_norm)/2
+	lkl_support<-ssn*qt(c(tmp,1-tmp),n.of.x-1)		
+		
+	#check if KL decreases when we reduce the number of simulations by one (we use the maximum number of simulations available as a starting point)
+	tmp<- KL_divergence_mutost(n.of.x, s.of.x, n.of.y , s.of.y, mx.pw, calibrate.tau.u=T,tau.u=tau.u.ub, alpha, lkl_norm, lkl_support)
+	KL.sim.n<-tmp["KL_div"]
+	KL.sim.n_m1<- KL_divergence_mutost(n.of.x, s.of.x, n.of.y-1 , s.of.y, mx.pw, calibrate.tau.u=T,tau.u=tau.u.ub, alpha, lkl_norm, lkl_support)["KL_div"]
+
+	decrease_n.of.y <- as.logical(KL.sim.n_m1 < KL.sim.n)
+	
+	if(decrease_n.of.y){ 
+		#reduce sim.n so that the KL.div between the summary likelihood and the power is minimised
+		tmp <- nabc.mutost.onesample.n.of.y.KL(n.of.x , s.of.x , n.of.y, s.of.y , mx.pw, alpha)
+		if(abs(tmp["pw.cmx"]-mx.pw)>0.09)	stop("tau.up not accurate")
+		sim.n<-tmp["n.of.y"]
+		sim.mean<- mean(sim[1:sim.n])
+		tau.u	<- tmp["tau.u"]*annealing
+		tau.l	<- -tau.u
+
+	}else{
+		#reduce tau.u so that the KL.div between the summary likelihood and the power is minimised even if that means the max pw is > mx.pw
+		#use the tau.u calibrated for sim.n as starting value
+		tau.u.ub<-tmp["tau.u"]
+	}
+				
+		if(0)					#adjust tau.u so that the variance of the summary likelihood is matched even if that means the max pw is > 0.9
+		{
+			if(sim.n>obs.n)
+				sim.n	<- obs.n
+			sim.mean<- mean(sim[seq.int(1,sim.n)])
+			sim.sd	<- sd(sim[seq.int(1,sim.n)])
+			tmp		<- nabc.mutost.onesample.tau.lowup.var(s.of.lkl, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha, 0, tol= s.of.lkl*s.of.lkl*1e-8, debug=0)
+			print(tmp)
+			if(tmp[4]>0.09)	stop("tau.up not accurate")		
+			tau.l	<- tmp[1]*annealing
+			tau.u	<- tmp[2]*annealing
+			if(verbose)
+				cat(paste("\nstd is 3, broader mx.pw, and sim.n obs.n is",sim.n,obs.n,"sd sim/obs",sim.sd,obs.sd,"sd pw/lkl",sqrt(tmp[3]),s.of.lkl))
+		}		
+	}
+
 	tmp			<- c(	sqrt(sim.n)*(sim.mean-obs.mean-tau.l) / sim.sd,			#[1]	T-	test statistic for -tau (lower test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
 						sqrt(sim.n)*(sim.mean-obs.mean-tau.u) / sim.sd,			#[2]	T+	test statistic for tau (upper test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
 						sqrt(sim.n)*(sim.mean-obs.mean) / sim.sd,				#[3]	T	test statistic for equality; estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
