@@ -2653,8 +2653,9 @@ project.nABC.StretchedChi2<- function()
 		
 		xmu<- 0
 		xsigma2<- 1
+		for_mle=1
 		
-		tmp<- nabc.chisqstretch.tau.lowup(0.9, 2, yn-1, alpha, for.mle=1)
+		tmp<- nabc.chisqstretch.tau.lowup(0.9, 2, yn-1, alpha, for.mle= for_mle)
 		tau.l	<- tmp[1]
 		tau.u	<- tmp[2]
 		cil		<- tmp[5]
@@ -2664,8 +2665,9 @@ project.nABC.StretchedChi2<- function()
 		x		<- rnorm(xn,xmu,sd=sqrt(xsigma2))	
 		a		<- (xn-2)/2	 
 		b		<- var(x)*(xn-1)/2
+
 		var.lkl	<- b*b/((a-1)*(a-1)*(a-2))				
-		tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.lkl), 0.9, alpha, tau.u.ub=2, for.mle=1)
+		tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.lkl), 0.9, alpha, tau.u.ub=2, for.mle= for_mle)
 		yn		<- tmp[1]
 		tau.l	<- tmp[2]
 		tau.u	<- tmp[3]

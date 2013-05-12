@@ -1,10 +1,10 @@
-\name{KL_divergence_mutost}
-\alias{KL_divergence_mutost}
-\title{Compute Kullback-Leibler divergence between the summary likelihood and the power function of mutost}
+\name{KL_divergence_chisqstretch}
+\alias{KL_divergence_chisqstretch}
+\title{Compute Kullback-Leibler divergence between the summary likelihood and the power function of chisqstretch}
 \usage{
-  KL_divergence_mutost(n.of.x, s.of.x, n.of.y, s.of.y,
-    mx.pw, alpha, calibrate.tau.u = F, tau.u,
-    pow_scale = 1.5, debug = 0, plot = F)
+  KL_divergence_chisqstretch(n.of.x, s.of.x, n.of.y,
+    s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u,
+    for.mle = 0, pow_scale = 2, debug = 0, plot = F)
 }
 \arguments{
   \item{n.of.x}{number of observed summary values}
@@ -32,9 +32,13 @@
   upper bound on the upper tolerance of the equivalence
   region.}
 
+  \item{for.mle}{calibrate so that the mode of the power is
+  at the MLE}
+
   \item{pow_scale}{scale for the support of the
   standardized power. The power is truncated between
-  \code{pow_scale*[-tau.u,tau.u]} and then standardized.}
+  \code{[tau.l/pow_scale,tau.u*pow_scale]} and then
+  standardized.}
 
   \item{debug}{flag if C implementation is used}
 
@@ -48,7 +52,13 @@
 }
 \description{
   Compute Kullback-Leibler divergence between the summary
-  likelihood and the power function of mutost
+  likelihood and the power function of chisqstretch
+}
+\note{
+  Whatever the value of \code{calibrate.tau.u}, the lower
+  tolerance of the equivalence region (\code{tau.l}) is
+  always numerically calibrated using
+  \link{nabc.chisqstretch.tau.low}.
 }
 \examples{
 KL_divergence_mutost(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
