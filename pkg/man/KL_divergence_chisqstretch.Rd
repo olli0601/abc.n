@@ -3,8 +3,8 @@
 \title{Compute Kullback-Leibler divergence between the summary likelihood and the power function of chisqstretch}
 \usage{
   KL_divergence_chisqstretch(n.of.x, s.of.x, n.of.y,
-    s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u,
-    for.mle = 0, pow_scale = 2, debug = 0, plot = F)
+    s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1,
+    for.mle = 0, pow_scale = 1.5, debug = 0, plot = F)
 }
 \arguments{
   \item{n.of.x}{number of observed summary values}
@@ -28,9 +28,9 @@
   \code{mx.pw}}
 
   \item{tau.u}{upper tolerance of the equivalence region.
-  If \code{calibrate.tau.u==TRUE}, it's just a guess on an
-  upper bound on the upper tolerance of the equivalence
-  region.}
+  If \code{calibrate.tau.u==TRUE}, \code{tau.u} is just a
+  guess on an upper bound on the upper tolerance of the
+  equivalence region.}
 
   \item{for.mle}{calibrate so that the mode of the power is
   at the MLE}
@@ -45,10 +45,12 @@
   \item{plot}{whether to plot the two distributions}
 }
 \value{
-  vector of length 3 \item{KL_div}{the Kullback Leibler
-  divergence} \item{tau.u}{upper tolerance of the
-  equivalence region} \item{pw.cmx}{actual maximum power
-  associated with the equivalence region}
+  vector of length 6 \item{KL_div}{the Kullback Leibler
+  divergence} \item{tau.l}{lower tolerance of the
+  equivalence region} \item{tau.u}{upper tolerance of the
+  equivalence region} \item{c.l}{lower ABC tolerance}
+  \item{c.u}{upper ABC tolerance} \item{pw.cmx}{actual
+  maximum power associated with the equivalence region}
 }
 \description{
   Compute Kullback-Leibler divergence between the summary
@@ -61,7 +63,7 @@
   \link{nabc.chisqstretch.tau.low}.
 }
 \examples{
-KL_divergence_mutost(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
+KL_divergence_chisqstretch(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
 alpha=0.01, calibrate.tau.u=T, tau.u=1, plot=T)
 }
 

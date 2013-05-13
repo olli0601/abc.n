@@ -2653,7 +2653,7 @@ project.nABC.StretchedChi2<- function()
 		
 		xmu<- 0
 		xsigma2<- 1
-		for_mle=1
+		for_mle=0
 		
 		tmp<- nabc.chisqstretch.tau.lowup(0.9, 2, yn-1, alpha, for.mle= for_mle)
 		tau.l	<- tmp[1]

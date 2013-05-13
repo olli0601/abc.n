@@ -1,9 +1,9 @@
 xn <- 60
 yn <- xn
 xmean <- 2
-xsigma <- 2
+xsigma <- 1
 ymean <- 2
-ysigma <- 1
+ysigma <- 0.5
 
 obs <- rnorm(xn, xmean, xsigma)
 obs <- (obs - mean(obs))/sd(obs) * xsigma + xmean
@@ -17,10 +17,12 @@ mx.pw <- 0.9
 alpha <- 0.01
 tau.u.ub <- 2
 
-#compute the Kullback-Leibler divergence between the summary likelihood and the power; and plot. 
+## test of location equivalence for normally distributed variables (muTOST)
+#compute the Kullback-Leibler divergence between the summary likelihood and the standardized power; and plot. 
 tmp <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub, 
 	plot = T)
+print(tmp)
 
 #adjust tau.u to minimize the Kullback-Leibler divergence, and plot result.
-nabc.mutost.onesample.tau.lowup.KL(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, tau.u.lb = tmp["tau.u"], 
-	plot = T)
+nabc.adjust.tau.lowup.KLdiv("KL_divergence_mutost", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, 
+	s.of.y = s.of.y, mx.pw = mx.pw, alpha = alpha), tau.u.lb = tmp["tau.u"], plot = T)

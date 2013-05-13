@@ -1,8 +1,9 @@
 
 #' Compute the density of the (possible truncated) power of the equivalence test for population dispersion of normal summary values
-#' @inheritParams KL_divergence_mutost
-#' @inheritParams nabc.chisqstretch.pow
 #' @param rho vector of quantile
+#' @param scale	scaling of T apart from rho, either n-1 for unbiased ABC or n for exact MAP
+#' @param df	degrees of freedom
+#' @param c.l,c.u lower and upper ABC tolerance
 #' @param norm normalization constant for the truncated power function.
 #' @param support vector of dimension 2. Support of the truncated power function.
 #' @param log logical; if \code{TRUE}, densities d are given as log(d). 
@@ -10,14 +11,14 @@
 #' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived (numerically) from the other.
 #' @export
 #' 	
-dchisqstretch_pow <- function(rho, scale, df, cl, cu, norm=1, support=c(0,Inf), log=FALSE){
+dchisqstretch_pow <- function(rho, scale, df, c.l, c.u, norm=1, support=c(0,Inf), log=FALSE){
 	
 	ans<-rho
 	in_support<- (rho >= support[1] & rho <= support[2])
 	ans[!in_support] <- 0
 	
 	if(any(in_support)){			
-		ans[in_support] <- (pchisq( cu/rho[in_support]*scale, df ) - pchisq( cl/rho[in_support]*scale, df))/norm
+		ans[in_support] <- (pchisq( c.u/rho[in_support]*scale, df ) - pchisq( c.l/rho[in_support]*scale, df))/norm
 	}
 	
 	if(log){
@@ -36,6 +37,7 @@ dchisqstretch_pow <- function(rho, scale, df, cl, cu, norm=1, support=c(0,Inf), 
 #' @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
 #' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived from the other. 
 #' \code{support=qigamma(c(1-norm,1+norm)/2,(n.of.x-2)/2,s.of.x^2*(n.of.x-1)/2)} and \code{norm=diff(pigamma(support,(n.of.x-2)/2,s.of.x^2*(n.of.x-1)/2)}.
+#' @import pscl
 #' @export	
 #'
 dchisqstretch_lkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(0,Inf), log=FALSE) {
@@ -136,28 +138,34 @@ dMuTOST_lkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), log
 #' @param mx.pw maximum power at the point of reference (rho.star=0) (only when \code{calibrate.tau.u==TRUE}).
 #' @param alpha level of the equivalence test
 #' @param calibrate.tau.u if \code{TRUE} the upper tolerance of the equivalence region (\code{tau.u}) is calibrated so that power at the point of reference is equal to \code{mx.pw}
-#' @param tau.u	upper tolerance of the equivalence region. If \code{calibrate.tau.u==TRUE}, it's just a guess on an upper bound on the upper tolerance of the equivalence region.
+#' @param tau.u	upper tolerance of the equivalence region. If \code{calibrate.tau.u==TRUE}, \code{tau.u} is just a guess on an upper bound on the upper tolerance of the equivalence region.
 #' @param for.mle	calibrate so that the mode of the power is at the MLE
 #' @param pow_scale scale for the support of the standardized power. The power is truncated between \code{[tau.l/pow_scale,tau.u*pow_scale]} and then standardized.
 #' @param debug flag if C implementation is used
 #' @param plot whether to plot the two distributions
-#' @return	vector of length 3
-#' 	\item{KL_div}{the Kullback Leibler divergence}		
+#' @return	vector of length 6
+#' 	\item{KL_div}{the Kullback Leibler divergence}	
+#' 	\item{tau.l}{lower tolerance of the equivalence region}	
 #' 	\item{tau.u}{upper tolerance of the equivalence region}
+#' 	\item{c.l}{lower ABC tolerance}	
+#' 	\item{c.u}{upper ABC tolerance}	
 #' 	\item{pw.cmx}{actual maximum power associated with the equivalence region}
 #' @note Whatever the value of \code{calibrate.tau.u}, the lower tolerance of the equivalence region (\code{tau.l}) is always numerically calibrated using \link{nabc.chisqstretch.tau.low}.
 #' @export
-#' @import ggplot2 reshape2
+#' @import ggplot2 reshape2 pscl
 #' @examples
 #' 
-#' KL_divergence_mutost(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
+#' KL_divergence_chisqstretch(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
 #' alpha=0.01, calibrate.tau.u=T, tau.u=1, plot=T)
 #'
-KL_divergence_chisqstretch <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u, for.mle=0, pow_scale=2, debug = 0, plot = F) {
+KL_divergence_chisqstretch <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u=1, for.mle=0, pow_scale=1.5, debug = 0, plot = F) {
+
+	scale	<- ifelse(for.mle, n.of.y, n.of.y-1)		
+	df <- n.of.y-1
 
 	if (calibrate.tau.u) {
 		#calibrate tau.u constrained on yn, alpha and mx.pw	
-		tmp		<- nabc.chisqstretch.tau.lowup(mx.pw, tau.u, n.of.y-1, alpha, for.mle=for.mle )
+		tmp		<- nabc.chisqstretch.tau.lowup(mx.pw, tau.u, df, alpha, for.mle=for.mle )
 		tau.l	<- tmp[1]
 		tau.u	<- tmp[2]
 		pw.cmx	<- tmp[3]
@@ -167,14 +175,15 @@ KL_divergence_chisqstretch <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, al
 			stop("tau.up not accurate")
 			
 	}else{
-		#find tau.l, c.l and c.u 
+		tau.l <- nabc.chisqstretch.tau.low(tau.u, df, alpha, for.mle= for.mle) 
+		rej<- .Call("abcScaledChiSq",	c(scale,df,tau.l,tau.u,alpha,1e-10,100,0.05))
+		c.l <- rej[1]
+		c.u <- rej[2]
 	}
 
 	#truncate pow and compute pow_norm	
 	pow_support <- c(tau.l/pow_scale, tau.u*pow_scale) 
 	rho <- seq(pow_support[1], pow_support[2], length.out = 1000)
-	scale	<- ifelse(for.mle, n.of.y, n.of.y-1)		
-	df <- n.of.y-1
 	pow		<- nabc.chisqstretch.pow(rho, scale, df, c.l, c.u)
 	pow_norm <- sum(pow) * diff(rho)[1]
 	pow <- pow/pow_norm
@@ -183,12 +192,12 @@ KL_divergence_chisqstretch <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, al
 	alpha<- (n.of.x-2)/2	 
 	beta<- s.of.x^2*(n.of.x-1)/2
 	lkl_support<-pow_support
-	lkl_norm<-diff(pigamma(support,alpha,beta))
+	lkl_norm<-diff(pigamma(lkl_support,alpha,beta))
 
 	integral_range<-pow_support	
 		
 	lkl_arg<-list(n.of.x= n.of.x, s.of.x= s.of.x, norm = lkl_norm, support = lkl_support)
-	pow_arg<-list(scale = scale, df = df, cl=cl, cu=cu, norm=pow_norm, support=pow_support)
+	pow_arg<-list(scale = scale, df = df, c.l=c.l, c.u=c.u, norm=pow_norm, support=pow_support)
 
 	tmp <- integrate(integrand_KL_divergence_1D, lower = integral_range[1], upper = integral_range[2], dP=dchisqstretch_lkl,dQ=dchisqstretch_pow,P_arg=lkl_arg,Q_arg=pow_arg)
 
@@ -208,12 +217,12 @@ KL_divergence_chisqstretch <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, al
 		df <- rbind(df_pow, df_lkl)
 		gdf<-melt(df,id.vars=c("x","distribution"))
 		p <- ggplot(data = gdf, aes(x = x, y = value, colour = distribution,linetype=variable))
-		p<-p+geom_vline(xintercept=c(-tau.u,tau.u),linetype="dotted")
+		p<-p+geom_vline(xintercept=c(tau.l,tau.u),linetype="dotted")
 		p<-p+geom_hline(yintercept= mx.pw,linetype="dotted")
 		p<-p+ geom_line()
 		p<-p+scale_linetype("truncated?")
 		p<-p+xlab(expression(rho))+ylab("")
-		p <- p + ggtitle(paste("n.of.y=", n.of.y, "\ntau.u=", tau.u, "\ntau.l=", tau.l,"\nKL=", KL_div))
+		p <- p + ggtitle(paste("n.of.y=", n.of.y, "\ntau.l=", tau.l,"\ntau.u=", tau.u,"\nKL=", KL_div))
 		print(p)
 	}
 
@@ -246,7 +255,7 @@ KL_divergence_chisqstretch <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, al
 #' KL_divergence_mutost(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
 #' alpha=0.01, calibrate.tau.u=T, tau.u=1, plot=T)
 #'
-KL_divergence_mutost <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u, pow_scale=1.5, debug = 0, plot = F) {
+KL_divergence_mutost <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u=1, pow_scale=1.5, debug = 0, plot = F) {
 
 	if (calibrate.tau.u) {
 		#calibrate tau.u constrained on yn, alpha and mx.pw	

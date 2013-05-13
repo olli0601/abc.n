@@ -1229,206 +1229,6 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 	c(yn,-tau.u,tau.u,pw.cvar,pw.cmx,abs(error), max.it)
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Calibrate the number of simulated summary values and the equivalence region for the test of location equivalence by minimising the Kullback-Leibler divergence between the power function and the summary likelihood.
-#' @inheritParams KL_divergence_mutost
-#' @param tau.u.ub	guess on an upper bound on the upper tolerance of the equivalence region
-#' @param plot if \code{TRUE}, the summary likelihood and abc approximation are plotted
-#' @param max.it 	this algorithm stops prematurely when the number of iterations to calibrate the number of simulated data points exceeds 'max.it'
-#' @param debug		Flag if C implementation is used.
-#' @return	vector of length 4
-#' 	\item{n.of.y}{number of simulated summary values}
-#' 	\item{KL_div}{the Kullback Leibler divergence}		
-#' 	\item{tau.u}{upper tolerance of the equivalence region}
-#' 	\item{pw.cmx}{actual maximum power associated with the equivalence region}
-#' @export
-#' @import stats
-#' @example example/Ex.nabc.mutost.onesample.n.of.y.KL.R
-#' 
-nabc.mutost.onesample.n.of.y.KL <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, tau.u.ub = 2, max.it = 100, debug = 0, plot = F) {
-	
-	if (debug) {
-		cairo_pdf("KL_initial.pdf", onefile = T)
-	}
-	KL.of.yn <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y , s.of.y, mx.pw, alpha, calibrate.tau.u=T,tau.u= tau.u.ub,plot=debug)["KL_div"]
-	if (debug) {
-		dev.off()
-	}
-	
-	KL.of.yn_m1 <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y - 1, s.of.y, mx.pw, alpha, calibrate.tau.u=T,tau.u= tau.u.ub)["KL_div"]
-	
-	decrease_n.of.y <- as.logical(KL.of.yn_m1 < KL.of.yn)
-
-	if (decrease_n.of.y) {
-		#optimize between 1 and n.of.y
-		#TODO: find a lower bound in a similar way as below
-		yn.lb <- 1
-		yn.ub <- n.of.y
-	} else {
-		#find upper bound for optimize
-		yn.lb <- n.of.y
-		curr.it <- max.it
-		yn.ub <- 2 * n.of.y
-		
-		KL.of.yn_ub <- KL_divergence_mutost(n.of.x, s.of.x, yn.ub, s.of.y, mx.pw, alpha, calibrate.tau.u=T,tau.u= tau.u.ub)["KL_div"]
-		
-		while (KL.of.yn_ub < KL.of.yn && curr.it > 0) {
-			curr.it <- curr.it - 1
-			KL.of.yn <- KL.of.yn_ub
-			yn.ub <- 2 * yn.ub
-			KL.of.yn_ub <- KL_divergence_mutost(n.of.x, s.of.x, yn.ub, s.of.y, mx.pw, alpha, calibrate.tau.u=T,tau.u= tau.u.ub)["KL_div"]
-		}
-
-		if (curr.it == 0) 
-			stop("nabc.mutost.onesample.n.of.y.KL: could not find upper bound for yn")
-	}
-
-	if (debug) {
-		cairo_pdf("KL_optimization.pdf", onefile = T)
-	}
-	
-	args<- list(n.of.x = n.of.x, s.of.x = s.of.x, s.of.y = s.of.y, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, tau.u= tau.u.ub, plot = debug)
-	tmp <- optimize(KL_divergence_optimize_1D, interval = c(yn.lb, yn.ub), x_name="n.of.y", is_integer=T, KL_divergence="KL_divergence_mutost", args=args,tol=1)
-
-	if (debug) {
-		dev.off()
-	}
-	yn <- round(tmp$minimum)
-
-	tmp <- KL_divergence_mutost(n.of.x, s.of.x, yn, s.of.y, mx.pw, alpha, calibrate.tau.u=T,tau.u= tau.u.ub, plot = plot)
-
-	return(c(n.of.y = yn, tmp))
-}
-#------------------------------------------------------------------------------------------------------------------------
-#' Calibrate the number of simulated summary values and the equivalence region for the test of location equivalence by minimising the Kullback-Leibler divergence between the power function and the summary likelihood.
-#' @inheritParams KL_divergence_mutost
-#' @param tau.u.ub	guess on an upper bound on the upper tolerance of the equivalence region
-#' @param plot if \code{TRUE}, the summary likelihood and abc approximation are plotted
-#' @param max.it 	this algorithm stops prematurely when the number of iterations to calibrate the number of simulated data points exceeds 'max.it'
-#' @param debug		Flag if C implementation is used.
-#' @return	vector of length 4
-#' 	\item{n.of.y}{number of simulated summary values}
-#' 	\item{KL_div}{the Kullback Leibler divergence}		
-#' 	\item{tau.u}{upper tolerance of the equivalence region}
-#' 	\item{pw.cmx}{actual maximum power associated with the equivalence region}
-#' @export
-#' @import stats
-#' @example example/Ex.nabc.mutost.onesample.n.of.y.KL.R
-#' 
-nabc.chisqstretch.n.of.y.KL <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, tau.u.ub = 2, for.mle = 0, max.it = 100, debug = 0, plot = F) {
-	
-	if (debug) {
-		cairo_pdf("KL_initial.pdf", onefile = T)
-	}
-	KL.of.yn <- KL_divergence_chisqstretch(n.of.x, s.of.x, n.of.y , s.of.y, mx.pw, alpha, calibrate.tau.u=T,tau.u= tau.u.ub,for.mle = for.mle, plot=debug)["KL_div"]
-	if (debug) {
-		dev.off()
-	}
-	
-	KL.of.yn_m1 <- KL_divergence_chisqstretch(n.of.x, s.of.x, n.of.y - 1, s.of.y, mx.pw, alpha, calibrate.tau.u=T,tau.u= tau.u.ub,for.mle = for.mle)["KL_div"]
-	
-	decrease_n.of.y <- as.logical(KL.of.yn_m1 < KL.of.yn)
-
-	if (decrease_n.of.y) {
-		#optimize between 1 and n.of.y
-		#TODO: find a lower bound in a similar way as below
-		yn.lb <- 1
-		yn.ub <- n.of.y
-	} else {
-		#find upper bound for optimize
-		yn.lb <- n.of.y
-		curr.it <- max.it
-		yn.ub <- 2 * n.of.y
-		
-		KL.of.yn_ub <- KL_divergence_chisqstretch(n.of.x, s.of.x, yn.ub, s.of.y, mx.pw, alpha, calibrate.tau.u=T,tau.u= tau.u.ub,for.mle = for.mle)["KL_div"]
-		
-		while (KL.of.yn_ub < KL.of.yn && curr.it > 0) {
-			curr.it <- curr.it - 1
-			KL.of.yn <- KL.of.yn_ub
-			yn.ub <- 2 * yn.ub
-			KL.of.yn_ub <- KL_divergence_chisqstretch(n.of.x, s.of.x, yn.ub, s.of.y, mx.pw, alpha, calibrate.tau.u=T,tau.u= tau.u.ub,for.mle = for.mle)["KL_div"]
-		}
-
-		if (curr.it == 0) 
-			stop("nabc.mutost.onesample.n.of.y.KL: could not find upper bound for yn")
-	}
-
-	if (debug) {
-		cairo_pdf("KL_optimization.pdf", onefile = T)
-	}
-	
-	args<- list(n.of.x = n.of.x, s.of.x = s.of.x, s.of.y = s.of.y, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, tau.u= tau.u.ub, for.mle = for.mle, plot = debug)
-	tmp <- optimize(KL_divergence_optimize_1D, interval = c(yn.lb, yn.ub), x_name="n.of.y", is_integer=T, KL_divergence="KL_divergence_chisqstretch", args=args,tol=1)
-
-	if (debug) {
-		dev.off()
-	}
-	yn <- round(tmp$minimum)
-
-	tmp <- KL_divergence_chisqstretch(n.of.x, s.of.x, yn, s.of.y, mx.pw, alpha, calibrate.tau.u=T,tau.u= tau.u.ub, for.mle = for.mle, plot = plot)
-
-	return(c(n.of.y = yn, tmp))
-}
-
-#------------------------------------------------------------------------------------------------------------------------
-#' Calibrate the equivalence region for the test of location equivalence by minimising the Kullback-Leibler divergence between the power function and the summary likelihood.
-#' @inheritParams KL_divergence_mutost
-#' @param tau.u.lb	guess on an lower bound on the upper tolerance of the equivalence region
-#' @param plot if \code{TRUE}, the summary likelihood and abc approximation are plotted
-#' @param max.it 	this algorithm stops prematurely when the number of iterations to calibrate the number of simulated data points exceeds 'max.it'
-#' @param debug		Flag if C implementation is used.
-#' @return	vector of length 4
-#' 	\item{n.of.y}{number of simulated summary values}
-#' 	\item{KL_div}{the Kullback Leibler divergence}		
-#' 	\item{tau.u}{upper tolerance of the equivalence region}
-#' 	\item{pw.cmx}{actual maximum power associated with the equivalence region}
-#' @export
-#' @import stats
-#' @example example/Ex.nabc.mutost.onesample.tau.lowup.KL.R
-#'
-nabc.mutost.onesample.tau.lowup.KL <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, tau.u.lb=1, max.it=100,debug = 0, plot = F) {
-	
-	if(!tau.u.lb){stop("tau.u.lb must be >0")}
-	
-	if (debug) {
-		cairo_pdf("KL_initial.pdf", onefile = T)
-	}
-	KL.of.tau.u <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y , s.of.y, mx.pw, alpha, calibrate.tau.u=F,tau.u=tau.u.lb,plot=debug)["KL_div"]
-	if (debug) {
-		dev.off()
-	}
-	
-	#to find tau.u.ub increase tau.u until the KL increases too
-	tau.u.ub < 2*tau.u.lb
-	curr.it <- max.it
-		
-	KL.of.tau.u.ub <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u=F, tau.u.ub)["KL_div"]
-		
-	while (KL.of.tau.u.ub < KL.of.tau.u && curr.it > 0) {
-			curr.it <- curr.it - 1
-			KL.of.tau.u <- KL.of.tau.u.ub
-			tau.u.ub <- 2 * tau.u.ub
-			KL.of.tau.u.ub <- KL_divergence_mutost(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u=F, tau.u.ub)["KL_div"]
-	}
-
-	if (curr.it == 0) 
-		stop("nabc.mutost.onesample.tau.lowup.KL: could not find upper bound for tau.u")
-
-	#minimize KL_tau.u between [tau.u.lb - tau.u.ub]	
-	if (debug) {
-		cairo_pdf("KL_optimization.pdf", onefile = T)
-	}
-	args<-list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y =n.of.y, s.of.y = s.of.y, mx.pw =mx.pw, alpha = alpha, calibrate.tau.u=F, plot = debug)
-	tmp <- optimize(KL_divergence_optimize_1D, interval = c(tau.u.lb,tau.u.ub), x_name="tau.u" ,KL_divergence="KL_divergence_mutost", args = args)
-	if (debug) {
-		dev.off()
-	}
-	tau.u <- tmp$minimum
-
-	tmp <- KL_divergence_mutost(n.of.x, s.of.x, yn, s.of.y, mx.pw, alpha,calibrate.tau.u=F,tau.u, plot = plot)
-
-	return(c(n.of.y = n.of.y, tmp))
-}
-#------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the equivalence region for the test of location equivalence for given variance of the summary likelihood
 #' @export
 #' @param s.of.Sx	standard deviation of the summary likelihood
@@ -1735,7 +1535,9 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 
 	if (increase_n.of.y) {
 		#increase sim.n so that the KL.div between the summary likelihood and the power is minimised
-		tmp <- nabc.mutost.onesample.n.of.y.KL(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha)
+		tmp <- nabc.adjust.n.of.y.KLdiv("KL_divergence_mutost", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, s.of.y = s.of.y, 
+	mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, tau.u = tau.u.ub))
+
 		if (abs(tmp["pw.cmx"] - mx.pw) > 0.09) 
 			stop("tau.up not accurate")
 		sim.n <- tmp["n.of.y"]
@@ -1773,7 +1575,8 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 		sim.mean <- mean(sim[1:sim.n])
 		sim.sd <- sd(sim[1:sim.n])
 
-		tmp <- nabc.mutost.onesample.tau.lowup.KL(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, tau.u.lb)
+		tmp <- nabc.adjust.tau.lowup.KLdiv("KL_divergence_mutost", args=list(n.of.x= n.of.x, s.of.x= s.of.x, n.of.y=n.of.y, s.of.y=s.of.y, mx.pw=mx.pw, alpha=alpha), tau.u.lb= tau.u.lb)
+
 		if (abs(tmp["pw.cmx"] - mx.pw) > 0.09) 
 			stop("tau.up not accurate")
 
@@ -1997,6 +1800,145 @@ nabc.mutost<- function(sim, obs, args= NA, verbose= FALSE, alpha= 0, tau.u= 0, t
 	}
 	ans
 }
+#------------------------------------------------------------------------------------------------------------------------
+#' Calibrate the number of simulated summary values and the equivalence region for a specified test of equivalence by minimising the Kullback-Leibler divergence from the standardized power function to the summary likelihood.
+#' @param KL_divergence character, name of the function to compute the KL divergence for the test of equivalence. This function must have at least two arguments: \code{n.of.y}, the number of simulated summaries, and \code{plot}, which flag some plotting options. 
+#' @param args list of argument to be passed to \code{KL_divergence}. 
+#' @param max.it this algorithm stops prematurely when the number of iterations to calibrate the number of simulated data points exceeds 'max.it'
+#' @param debug flag if C implementation is used.
+#' @param plot if \code{TRUE}, plot the result of minimization. Only if implemented in \code{KL_divergence}.
+#' @return	vector of variable length. The first value is \code{n.of.y}: the adjusted number of simulated summaries. The rest is returned from \code{KL_divergence}.
+#' @export
+#' @import stats
+#' @example example/Ex.nabc.adjust.n.of.y.KL.R
+#' 
+nabc.adjust.n.of.y.KLdiv <- function(KL_divergence, args, max.it = 100, debug = 0, plot = F) {
+
+	args$plot <- debug
+	args$calibrate.tau.u <- T
+
+	if (debug) {
+		cairo_pdf("KL_initial.pdf", onefile = T)
+	}	
+	KL.of.yn <- do.call(KL_divergence, args)["KL_div"]
+	if (debug) {
+		dev.off()
+	}
+
+	args$n.of.y <- n.of.y - 1
+	args$plot <- F
+	KL.of.yn_m1 <- do.call(KL_divergence, args)["KL_div"]
+
+	decrease_n.of.y <- as.logical(KL.of.yn_m1 < KL.of.yn)
+
+	if (decrease_n.of.y) {
+		#optimize between 1 and n.of.y
+		yn.lb <- 1
+		yn.ub <- n.of.y
+	} else {
+		#find upper bound for optimize
+		yn.lb <- n.of.y
+		curr.it <- max.it
+		yn.ub <- 2 * n.of.y
+
+		args$n.of.y <- yn.ub
+		KL.of.yn_ub <- do.call(KL_divergence, args)["KL_div"]
+
+		while (KL.of.yn_ub < KL.of.yn && curr.it > 0) {
+			curr.it <- curr.it - 1
+			KL.of.yn <- KL.of.yn_ub
+			yn.ub <- 2 * yn.ub
+			args$n.of.y <- yn.ub
+			KL.of.yn_ub <- do.call(KL_divergence, args)["KL_div"]
+		}
+
+		if (curr.it == 0) 
+			stop("nabc.adjust.n.of.y.KLdiv: could not find upper bound for yn")
+	}
+
+	if (debug) {
+		cairo_pdf("KL_optimization.pdf", onefile = T)
+	}
+	args$plot <- debug
+	args <- args[-which(names(args) == "n.of.y")]
+	tmp <- optimize(KL_divergence_optimize_1D, interval = c(yn.lb, yn.ub), x_name = "n.of.y", is_integer = T, KL_divergence = KL_divergence, 
+		args = args, verbose = debug, tol = 1)
+
+	if (debug) {
+		dev.off()
+	}
+	yn <- round(tmp$minimum)
+
+	args$n.of.y <- yn
+	args$plot <- plot
+	tmp <- do.call(KL_divergence, args)
+
+	return(c(n.of.y = yn, tmp))
+}
+#------------------------------------------------------------------------------------------------------------------------
+#' Calibrate the equivalence region for a specified test of equivalence by minimising the Kullback-Leibler divergence between the power function and the summary likelihood.
+#' @param KL_divergence character, name of the function to compute the KL divergence for the test of equivalence. This function must have at least two arguments: \code{tau.u}, the upper tolerance of the equivalence region, and \code{plot}, which flag some plotting options. 
+#' @inheritParams nabc.adjust.n.of.y.KLdiv
+#' @param tau.u.lb	guess on an lower bound on the upper tolerance of the equivalence region
+#' @return	vector of variable length. The first value is \code{n.of.y}: the number of simulated summaries. The rest is returned from \code{KL_divergence}.
+#' @note This procedure is not relevant for the test of dispersion equivalence for normally distributed variables (chisqstretch).
+#' @export
+#' @import stats
+#' @example example/Ex.nabc.adjust.tau.lowup.KL.R
+#'
+nabc.adjust.tau.lowup.KLdiv <- function(KL_divergence, args, tau.u.lb=1, max.it=100,debug = 0, plot = F) {
+	
+	if(!tau.u.lb){stop("tau.u.lb must be >0")}
+	
+	args$calibrate.tau.u <- F
+	args$tau.u <- tau.u.lb
+	args$plot <- debug
+	if (debug) {
+		cairo_pdf("KL_initial.pdf", onefile = T)
+	}
+	KL.of.tau.u <- do.call(KL_divergence, args)["KL_div"]
+	if (debug) {
+		dev.off()
+	}
+	
+	#to find tau.u.ub increase tau.u until the KL increases too
+	tau.u.ub < 2*tau.u.lb
+	curr.it <- max.it
+	
+	args$tau.u <- tau.u.ub
+	args$plot <- F
+	KL.of.tau.u.ub <- do.call(KL_divergence, args)["KL_div"]
+		
+	while (KL.of.tau.u.ub < KL.of.tau.u && curr.it > 0) {
+			curr.it <- curr.it - 1
+			KL.of.tau.u <- KL.of.tau.u.ub
+			tau.u.ub <- 2 * tau.u.ub
+			args$tau.u <- tau.u.ub
+			KL.of.tau.u.ub <- do.call(KL_divergence, args)["KL_div"]
+	}
+
+	if (curr.it == 0) 
+		stop("nabc.adjust.tau.lowup.KL: could not find upper bound for tau.u")
+
+	#minimize KL_tau.u between [tau.u.lb - tau.u.ub]	
+	if (debug) {
+		cairo_pdf("KL_optimization.pdf", onefile = T)
+	}
+	args$plot <- debug
+	args <- args[-which(names(args) == "tau.u")]
+	tmp <- optimize(KL_divergence_optimize_1D, interval = c(tau.u.lb,tau.u.ub), x_name="tau.u" ,KL_divergence= KL_divergence, args = args, verbose = debug)
+	if (debug) {
+		dev.off()
+	}
+	tau.u <- tmp$minimum
+	args$tau.u <- tau.u
+	args$plot <- plot	
+	tmp <- do.call(KL_divergence, args)
+
+	return(c(n.of.y = n.of.y, tmp))
+}
+
+
 #---------------------------------------------------------------------------------------------------------------------------
 nABC.getlevelset.2d<- function(df, lnk.name, theta.names, rho.eq=0, rho.eq.sep=100, rho.eq.q= 0.075, theta.sep= 100, method="quantile",plot=0, verbose=0)
 {

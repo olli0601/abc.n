@@ -3,7 +3,7 @@
 \title{Compute Kullback-Leibler divergence between the summary likelihood and the power function of mutost}
 \usage{
   KL_divergence_mutost(n.of.x, s.of.x, n.of.y, s.of.y,
-    mx.pw, alpha, calibrate.tau.u = F, tau.u,
+    mx.pw, alpha, calibrate.tau.u = F, tau.u = 1,
     pow_scale = 1.5, debug = 0, plot = F)
 }
 \arguments{
