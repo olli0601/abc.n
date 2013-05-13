@@ -60,7 +60,7 @@ nabc.kl.optimize<- function(x_value, x_name, is_integer=FALSE, KL_divergence, ar
 #' @note This procedure is not relevant for the test of dispersion equivalence for normally distributed variables (chisqstretch).
 #' @export
 #' @import stats
-#' @example example/Ex.nabc.adjust.tau.lowup.KL.R
+#' @example inst/examples/ex.nabc.adjust.tau.lowup.KL.R
 #'
 nabc.calibrate.tau.nomxpw.yesKL <- function(KL_divergence, args, tau.u.lb=1, max.it=100,debug = 0, plot = F) {
 	
@@ -124,7 +124,7 @@ nabc.calibrate.tau.nomxpw.yesKL <- function(KL_divergence, args, tau.u.lb=1, max
 #' @return	vector of variable length. The first value is \code{n.of.y}: the adjusted number of simulated summaries. The rest is returned from \code{KL_divergence}.
 #' @export
 #' @import stats
-#' @example example/Ex.nabc.adjust.n.of.y.KL.R
+#' @example inst/examples/ex.nabc.adjust.n.of.y.KL.R
 #' 
 nabc.calibrate.m.and.tau.yesmxpw.yesKL <- function(KL_divergence, args, max.it = 100, debug = 0, plot = F) 
 {	
