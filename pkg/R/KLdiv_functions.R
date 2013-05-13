@@ -6,7 +6,7 @@
 #' @param P_arg,Q_arg list of arguments for \code{dP} and \code{dQ}
 #' @export
 #'
-abcn.kl.integrand<-function(x,dP,dQ,P_arg,Q_arg)
+nabc.kl.integrand<-function(x,dP,dQ,P_arg,Q_arg)
 {
 	#this function must accept x as a vector	
 	log_P_x	<- do.call(dP,c(list(x,log=T),P_arg))				
@@ -35,7 +35,7 @@ abcn.kl.integrand<-function(x,dP,dQ,P_arg,Q_arg)
 #' @param verbose logical, if \code{TRUE}, print warnings.
 #' @return the minimized Kullback-Leibler divergence (scalar).
 #' @export
-abcn.kl.optimize<- function(x_value, x_name, is_integer=FALSE, KL_divergence, args, verbose=FALSE) 
+nabc.kl.optimize<- function(x_value, x_name, is_integer=FALSE, KL_divergence, args, verbose=FALSE) 
 {
 	if (verbose)	print(x_value)
 	if(is_integer)
@@ -102,7 +102,7 @@ nabc.calibrate.tau.nomxpw.yesKL <- function(KL_divergence, args, tau.u.lb=1, max
 	}
 	args$plot <- debug
 	args <- args[-which(names(args) == "tau.u")]
-	tmp <- optimize(abcn.kl.optimize, interval = c(tau.u.lb,tau.u.ub), x_name="tau.u" ,KL_divergence= KL_divergence, args = args, verbose = debug)
+	tmp <- optimize(nabc.kl.optimize, interval = c(tau.u.lb,tau.u.ub), x_name="tau.u" ,KL_divergence= KL_divergence, args = args, verbose = debug)
 	if (debug) {
 		dev.off()
 	}
@@ -140,7 +140,7 @@ nabc.calibrate.m.and.tau.yesmxpw.yesKL <- function(KL_divergence, args, max.it =
 	{
 		dev.off()
 	}
-	
+	n.of.y				<- args$n.of.y 
 	args$n.of.y 		<- n.of.y - 1
 	args$plot 			<- F
 	KL.of.yn_m1 		<- do.call(KL_divergence, args)["KL_div"]
@@ -180,7 +180,7 @@ nabc.calibrate.m.and.tau.yesmxpw.yesKL <- function(KL_divergence, args, max.it =
 	}
 	args$plot 	<- debug
 	args 		<- args[-which(names(args) == "n.of.y")]
-	tmp 		<- optimize(abcn.kl.optimize, interval = c(yn.lb, yn.ub), x_name = "n.of.y", is_integer = T, KL_divergence = KL_divergence, args = args, verbose = debug, tol = 1)	
+	tmp 		<- optimize(nabc.kl.optimize, interval = c(yn.lb, yn.ub), x_name = "n.of.y", is_integer = T, KL_divergence = KL_divergence, args = args, verbose = debug, tol = 1)	
 	if (debug) 
 	{
 		dev.off()

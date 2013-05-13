@@ -2556,7 +2556,7 @@ project.nABC.StretchedChi2<- function()
 {	
 	my.mkdir(DATA,"nABC.StretchedChisq")
 	dir.name<- paste(DATA,"nABC.StretchedChisq",sep='/')
-	subprog<- 4
+	subprog<- 8
 	pdf.width<- 4
 	pdf.height<-5
 	
@@ -3113,7 +3113,7 @@ project.nABC.StretchedChi2<- function()
 		prior.l<- 0.2
 		N<- 1e6
 		
-		resume<- 1
+		resume<- 0
 		if(!is.na(m))
 		{		
 			f.name<- paste(dir.name,"/nABC.Chisq_mle_yn_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
@@ -3123,14 +3123,25 @@ project.nABC.StretchedChi2<- function()
 			options(show.error.messages = TRUE)						
 			if(!resume || inherits(readAttempt, "try-error"))
 			{
-				x		<- rnorm(xn,xmu,sd=sqrt(xsigma2))	
+				x		<- rnorm(xn,xmu,sd=sqrt(xsigma2))
+				#x 		<- (x - mean(x))/sd(x) * sqrt(xsigma2) + xmu
 				a		<- (xn-2)/2	 
 				b		<- var(x)*(xn-1)/2
-				var.lkl	<- b*b/((a-1)*(a-1)*(a-2))				
-				tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.lkl), 0.9, alpha, tau.u.ub=tau.u, for.mle=1)
+				var.lkl	<- b*b/((a-1)*(a-1)*(a-2))		
+				
+				tmp		<- nabc.calibrate.m.and.tau.yesmxpw.yesKL("nabc.chisqstretch.kl", args = list(	n.of.x = xn, s.of.x = sd(x), n.of.y = xn, 
+																										s.of.y = NA, mx.pw = 0.9, alpha = alpha, 
+																										calibrate.tau.u = T, for.mle=1, tau.u = tau.u), plot = F)
+				print(tmp)
 				yn		<- tmp[1]
-				tau.l	<- tmp[2]
-				tau.u	<- tmp[3]
+				tau.l	<- tmp[3]
+				tau.u	<- tmp[4]								
+				#tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.lkl), 0.9, alpha, tau.u.ub=tau.u, for.mle=1)
+				#print(tmp)
+				#stop()
+				#yn		<- tmp[1]
+				#tau.l	<- tmp[2]
+				#tau.u	<- tmp[3]
 				f.name	<- paste(dir.name,"/nABC.Chisq_mle_yn_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')
 				ans.ok	<- project.nABC.StretchedChi2.fix.x.uprior.ysig2(N,tau.l,tau.u,prior.l,prior.u,alpha,x,yn,ymu, for.mle=for.mle)
 				cat(paste("\nnABC.Chisq: save ",f.name))

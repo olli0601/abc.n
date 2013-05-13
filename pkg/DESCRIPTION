@@ -12,3 +12,6 @@ LazyLoad: yes
 Collate:
     'nabc_functions.R'
     'KLdiv_functions.R'
+    'nabc_chisqstretch.R'
+    'nabc_corrnorm.R'
+    'nabc_mutost.R'

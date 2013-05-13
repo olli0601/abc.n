@@ -49,7 +49,7 @@ nabc.chisqstretch.pow<- function(rho, scale, df, cl, cu)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Compute the density of the (possibly truncated) summary likelihood for population dispersion of normal summary values
-#' @inheritParams abcn.mutost.kl
+#' @inheritParams nabc.mutost.kl
 #' @param rho vector of quantile
 #' @param norm scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
 #' @param support vector of dimension 2, support of the truncated summary likelihood.
@@ -105,6 +105,7 @@ nabc.chisqstretch.sulkl<- function(rho, n.of.x, s.of.x, norm = 1, support= c(0,I
 #'
 nabc.chisqstretch.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u=1, for.mle=0, pow_scale=1.5, debug = 0, plot = F) 
 {
+	require(pscl)	
 	scale	<- ifelse(for.mle, n.of.y, n.of.y-1)		
 	df 		<- n.of.y-1
 	
@@ -143,7 +144,7 @@ nabc.chisqstretch.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, c
 	integral_range	<- pow_support			
 	lkl_arg			<- list(n.of.x= n.of.x, s.of.x= s.of.x, norm = lkl_norm, support = lkl_support)
 	pow_arg			<- list(scale = scale, df = df, c.l=c.l, c.u=c.u, norm=pow_norm, support=pow_support)	
-	tmp 			<- integrate(abcn.kl.integrand, lower = integral_range[1], upper = integral_range[2], dP=nabc.chisqstretch.sulkl,dQ=dchisqstretch_pow,P_arg=lkl_arg,Q_arg=pow_arg)
+	tmp 			<- integrate(nabc.kl.integrand, lower = integral_range[1], upper = integral_range[2], dP=nabc.chisqstretch.sulkl,dQ=dchisqstretch_pow,P_arg=lkl_arg,Q_arg=pow_arg)
 	KL_div			<- tmp$value
 	if (tmp$message != "OK") 
 	{
@@ -151,6 +152,8 @@ nabc.chisqstretch.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, c
 	}
 	if (plot) 
 	{
+		require(reshape)
+		require(ggplot2)
 		rho_lkl 			<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
 		lkl					<- nabc.chisqstretch.sulkl(rho_lkl, n.of.x, s.of.x, lkl_norm, lkl_support)
 		df_lkl 				<- data.frame(x = rho_lkl, no = lkl*lkl_norm ,yes = lkl)

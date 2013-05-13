@@ -1,6 +1,6 @@
 
 #' Compute the density of the (possible truncated) power of the equivalence test for population means of normal summary values
-#' @inheritParams abcn.mutost.kl
+#' @inheritParams nabc.mutost.kl
 #' @inheritParams nabc.mutost.pow
 #' @param rho vector of quantile
 #' @param norm normalization constant for the truncated power function.
@@ -102,7 +102,7 @@ nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE,force= 
 		return( pw.fun(rho) )
 }
 #' Compute the density of the (possibly truncated) summary likelihood for population means of normal summary values
-#' @inheritParams abcn.mutost.kl
+#' @inheritParams nabc.mutost.kl
 #' @param rho vector of quantile
 #' @param norm scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
 #' @param support vector of dimension 2, support of the truncated summary likelihood.
@@ -112,7 +112,7 @@ nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE,force= 
 #' \code{support=s.of.x/sqrt(n.of.x)*qt(c(1-norm,1+norm)/2,n.of.x-1)} and \code{norm=diff(pt(support/(s.of.x/sqrt(n.of.x)),n.of.x-1))}.
 #' @export	
 #'
-abcn.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), log=FALSE) 
+nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), log=FALSE) 
 {
 	ssn				<- s.of.x/sqrt(n.of.x)
 	df 				<- n.of.x - 1
@@ -150,11 +150,11 @@ abcn.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf
 #' @import ggplot2 reshape2
 #' @examples
 #' 
-#' abcn.mutost.kl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
+#' nabc.mutost.kl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
 #' alpha=0.01, calibrate.tau.u=T, tau.u=1, plot=T)
 #'
 #------------------------------------------------------------------------------------------------------------------------
-abcn.mutost.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u=1, pow_scale=1.5, debug = 0, plot = F) 
+nabc.mutost.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u=1, pow_scale=1.5, debug = 0, plot = F) 
 {
 	if (calibrate.tau.u) 
 	{
@@ -183,7 +183,7 @@ abcn.mutost.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibra
 	lkl_arg			<- list(n.of.x= n.of.x, s.of.x= s.of.x, norm = lkl_norm, support = lkl_support)
 	pow_arg			<- list(df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u= tau.u, alpha= alpha, norm=pow_norm, support=pow_support)
 	
-	tmp 			<- integrate(abcn.kl.integrand, lower = integral_range[1], upper = integral_range[2], dP=abcn.mutost.sulkl,dQ=dMuTOST_pow,P_arg=lkl_arg,Q_arg=pow_arg)
+	tmp 			<- integrate(nabc.kl.integrand, lower = integral_range[1], upper = integral_range[2], dP=nabc.mutost.sulkl,dQ=dMuTOST_pow,P_arg=lkl_arg,Q_arg=pow_arg)
 	KL_div			<- tmp$value
 	
 	if (tmp$message != "OK") 
@@ -192,8 +192,10 @@ abcn.mutost.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibra
 	}
 	if (plot) 
 	{
+		require(reshape)
+		require(ggplot2)
 		rho_lkl 			<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
-		lkl					<- abcn.mutost.sulkl(rho_lkl, n.of.x, s.of.x, lkl_norm, lkl_support)
+		lkl					<- nabc.mutost.sulkl(rho_lkl, n.of.x, s.of.x, lkl_norm, lkl_support)
 		df_lkl 				<- data.frame(x = rho_lkl, no = lkl*lkl_norm ,yes = lkl)
 		df_lkl$distribution	<- "summary likelihood"
 		df_pow 				<- data.frame(x = rho, no = pow*pow_norm ,yes = pow)
@@ -679,14 +681,14 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 		#we start from the case n.of.y=n.of.x (but - for simplicity? - we use sd(sim))	
 		#check if KL decreases when the number of simulations increases by one
 		#this should be equivalent to check that s.of.pow > s.of.lkl
-		KL.sim.n <- abcn.mutost.kl(n.of.x, s.of.x, n.of.x, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub)
-		KL.sim.n_p1 <- abcn.mutost.kl(n.of.x, s.of.x, n.of.x + 1, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub)
+		KL.sim.n <- nabc.mutost.kl(n.of.x, s.of.x, n.of.x, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub)
+		KL.sim.n_p1 <- nabc.mutost.kl(n.of.x, s.of.x, n.of.x + 1, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub)
 		
 		increase_n.of.y <- as.logical(KL.sim.n_p1["KL_div"] < KL.sim.n["KL_div"])
 		
 		if (increase_n.of.y) {
 			#increase sim.n so that the KL.div between the summary likelihood and the power is minimised
-			tmp <- nabc.calibrate.m.and.tau.yesmxpw.yesKL("abcn.mutost.kl", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, s.of.y = s.of.y, 
+			tmp <- nabc.calibrate.m.and.tau.yesmxpw.yesKL("nabc.mutost.kl", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, s.of.y = s.of.y, 
 							mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, tau.u = tau.u.ub))
 			
 			if (abs(tmp["pw.cmx"] - mx.pw) > 0.09) 
@@ -726,7 +728,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 			sim.mean <- mean(sim[1:sim.n])
 			sim.sd <- sd(sim[1:sim.n])
 			
-			tmp <- nabc.calibrate.tau.nomxpw.yesKL("abcn.mutost.kl", args=list(n.of.x= n.of.x, s.of.x= s.of.x, n.of.y=n.of.y, s.of.y=s.of.y, mx.pw=mx.pw, alpha=alpha), tau.u.lb= tau.u.lb)
+			tmp <- nabc.calibrate.tau.nomxpw.yesKL("nabc.mutost.kl", args=list(n.of.x= n.of.x, s.of.x= s.of.x, n.of.y=n.of.y, s.of.y=s.of.y, mx.pw=mx.pw, alpha=alpha), tau.u.lb= tau.u.lb)
 			
 			if (abs(tmp["pw.cmx"] - mx.pw) > 0.09) 
 				stop("tau.up not accurate")
