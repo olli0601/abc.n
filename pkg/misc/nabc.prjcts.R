@@ -419,13 +419,13 @@ project.nABC.movingavg.estimateTheta0<- function(m, theta.names,links.names )
 	verbose<- 1
 	lsets<- lapply(links.names,function(x)
 			{
-				#nABC.getlevelset.2d(m, x, theta.names, rho.eq=0, rho.eq.sep=35, rho.eq.q=0.05, theta.sep=250, plot=0, method="quantile", verbose=verbose)
-				nABC.getlevelset.2d(m, x, theta.names, rho.eq=0, rho.eq.sep=15, rho.eq.q=0.005, theta.sep=250, plot=1, method="fixed", verbose=verbose)
+				#nabc.getlevelset.2d(m, x, theta.names, rho.eq=0, rho.eq.sep=35, rho.eq.q=0.05, theta.sep=250, plot=0, method="quantile", verbose=verbose)
+				nabc.getlevelset.2d(m, x, theta.names, rho.eq=0, rho.eq.sep=15, rho.eq.q=0.005, theta.sep=250, plot=1, method="fixed", verbose=verbose)
 			})
 	names(lsets)<- links.names
 	#print(lsets)
 	stop()
-	theta.intersection<- nABC.getlevelsetintersection.2d(lsets,theta.names, 50, plot=0, verbose=verbose)				
+	theta.intersection<- nabc.getlevelsetintersection.2d(lsets,theta.names, 50, plot=0, verbose=verbose)				
 	cat(paste("\nfinal number of theta in intersection",ncol(theta.intersection),"\n"))
 	apply(theta.intersection,1,mean)
 }
