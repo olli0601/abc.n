@@ -66,12 +66,12 @@ tau.u.ub <- 2
 
 ## test of location equivalence for normally distributed variables (muTOST)
 #compute the Kullback-Leibler divergence between the summary likelihood and the standardized power; and plot. 
-tmp <- abcn.mutost.kl(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub, 
+tmp <- nabc.mutost.kl(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub, 
 	plot = T)
 print(tmp)
 
 #adjust tau.u to minimize the Kullback-Leibler divergence, and plot result.
-nabc.calibrate.tau.nomxpw.yesKL("abcn.mutost.kl", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, 
+nabc.calibrate.tau.nomxpw.yesKL("nabc.mutost.kl", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, 
 	s.of.y = s.of.y, mx.pw = mx.pw, alpha = alpha), tau.u.lb = tmp["tau.u"], plot = T)
 }
 

@@ -1,8 +1,8 @@
-\name{abcn.mutost.sulkl}
-\alias{abcn.mutost.sulkl}
+\name{nabc.mutost.sulkl}
+\alias{nabc.mutost.sulkl}
 \title{Compute the density of the (possibly truncated) summary likelihood for population means of normal summary values}
 \usage{
-  abcn.mutost.sulkl(rho, n.of.x, s.of.x, norm = 1,
+  nabc.mutost.sulkl(rho, n.of.x, s.of.x, norm = 1,
     support = c(-Inf, Inf), log = FALSE)
 }
 \arguments{

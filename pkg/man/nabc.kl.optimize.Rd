@@ -1,8 +1,8 @@
-\name{abcn.kl.optimize}
-\alias{abcn.kl.optimize}
+\name{nabc.kl.optimize}
+\alias{nabc.kl.optimize}
 \title{A wrapper to minimize \code{KL_divergence} over the parameter \code{x_name} using the function \link{optimize}}
 \usage{
-  abcn.kl.optimize(x_value, x_name, is_integer = FALSE,
+  nabc.kl.optimize(x_value, x_name, is_integer = FALSE,
     KL_divergence, args, verbose = FALSE)
 }
 \arguments{
