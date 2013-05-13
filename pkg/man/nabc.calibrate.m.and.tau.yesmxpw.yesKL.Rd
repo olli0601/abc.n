@@ -1,9 +1,9 @@
-\name{nabc.adjust.n.of.y.KLdiv}
-\alias{nabc.adjust.n.of.y.KLdiv}
+\name{nabc.calibrate.m.and.tau.yesmxpw.yesKL}
+\alias{nabc.calibrate.m.and.tau.yesmxpw.yesKL}
 \title{Calibrate the number of simulated summary values and the equivalence region for a specified test of equivalence by minimising the Kullback-Leibler divergence from the standardized power function to the summary likelihood.}
 \usage{
-  nabc.adjust.n.of.y.KLdiv(KL_divergence, args,
-    max.it = 100, debug = 0, plot = F)
+  nabc.calibrate.m.and.tau.yesmxpw.yesKL(KL_divergence,
+    args, max.it = 100, debug = 0, plot = F)
 }
 \arguments{
   \item{KL_divergence}{character, name of the function to
@@ -59,18 +59,18 @@ tau.u.ub <- 2
 
 ## example 1: test of location equivalence for normally distributed variables (muTOST)
 #compute the Kullback-Leibler divergence between the summary likelihood and the standardized power; and plot. 
-KL_divergence_mutost(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub, plot = T)
+abcn.mutost.kl(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub, plot = T)
 
 #adjust n.of.y to minimize the Kullback-Leibler divergence, and plot result.
-nabc.adjust.n.of.y.KLdiv("KL_divergence_mutost", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, s.of.y = s.of.y, 
+nabc.calibrate.m.and.tau.yesmxpw.yesKL("abcn.mutost.kl", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, s.of.y = s.of.y, 
 	mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, tau.u = tau.u.ub), plot = T)
 
 ## example 2: test of dispersion equivalence for normally distributed variables (chisqstretch)
 #compute the Kullback-Leibler divergence between the summary likelihood and the standardized power; and plot. 
-KL_divergence_chisqstretch(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub, plot = T)
+nabc.chisqstretch.kl(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub, plot = T)
 
 #adjust n.of.y to minimize the Kullback-Leibler divergence, and plot result.
-nabc.adjust.n.of.y.KLdiv("KL_divergence_chisqstretch", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, 
+nabc.calibrate.m.and.tau.yesmxpw.yesKL("nabc.chisqstretch.kl", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, 
 	s.of.y = s.of.y, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, tau.u = tau.u.ub), plot = T)
 
 

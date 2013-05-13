@@ -1,10 +1,10 @@
-\name{KL_divergence_mutost}
-\alias{KL_divergence_mutost}
+\name{abcn.mutost.kl}
+\alias{abcn.mutost.kl}
 \title{Compute Kullback-Leibler divergence between the summary likelihood and the power function of mutost}
 \usage{
-  KL_divergence_mutost(n.of.x, s.of.x, n.of.y, s.of.y,
-    mx.pw, alpha, calibrate.tau.u = F, tau.u = 1,
-    pow_scale = 1.5, debug = 0, plot = F)
+  abcn.mutost.kl(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw,
+    alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5,
+    debug = 0, plot = F)
 }
 \arguments{
   \item{n.of.x}{number of observed summary values}
@@ -51,7 +51,7 @@
   likelihood and the power function of mutost
 }
 \examples{
-KL_divergence_mutost(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
+abcn.mutost.kl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
 alpha=0.01, calibrate.tau.u=T, tau.u=1, plot=T)
 }
 

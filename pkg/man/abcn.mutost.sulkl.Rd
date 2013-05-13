@@ -1,9 +1,9 @@
-\name{dchisqstretch_lkl}
-\alias{dchisqstretch_lkl}
-\title{Compute the density of the (possibly truncated) summary likelihood for population dispersion of normal summary values}
+\name{abcn.mutost.sulkl}
+\alias{abcn.mutost.sulkl}
+\title{Compute the density of the (possibly truncated) summary likelihood for population means of normal summary values}
 \usage{
-  dchisqstretch_lkl(rho, n.of.x, s.of.x, norm = 1,
-    support = c(0, Inf), log = FALSE)
+  abcn.mutost.sulkl(rho, n.of.x, s.of.x, norm = 1,
+    support = c(-Inf, Inf), log = FALSE)
 }
 \arguments{
   \item{rho}{vector of quantile}
@@ -24,16 +24,15 @@
 }
 \description{
   Compute the density of the (possibly truncated) summary
-  likelihood for population dispersion of normal summary
-  values
+  likelihood for population means of normal summary values
 }
 \note{
   The summary likelihood can be truncated to \code{support}
   and then standardized with \code{norm}. For computational
   efficiency, both \code{norm} and \code{support} must be
   provided although each one can be derived from the other.
-  \code{support=qigamma(c(1-norm,1+norm)/2,(n.of.x-2)/2,s.of.x^2*(n.of.x-1)/2)}
+  \code{support=s.of.x/sqrt(n.of.x)*qt(c(1-norm,1+norm)/2,n.of.x-1)}
   and
-  \code{norm=diff(pigamma(support,(n.of.x-2)/2,s.of.x^2*(n.of.x-1)/2)}.
+  \code{norm=diff(pt(support/(s.of.x/sqrt(n.of.x)),n.of.x-1))}.
 }
 

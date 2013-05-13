@@ -1,8 +1,8 @@
-\name{integrand_KL_divergence_1D}
-\alias{integrand_KL_divergence_1D}
+\name{abcn.kl.integrand}
+\alias{abcn.kl.integrand}
 \title{Integrand of the Kullback-Leibler divergence D(P||Q) for generic distributions}
 \usage{
-  integrand_KL_divergence_1D(x, dP, dQ, P_arg, Q_arg)
+  abcn.kl.integrand(x, dP, dQ, P_arg, Q_arg)
 }
 \arguments{
   \item{x}{value at which integrand is evaluated. Can be a

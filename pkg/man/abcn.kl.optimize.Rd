@@ -1,10 +1,9 @@
-\name{KL_divergence_optimize_1D}
-\alias{KL_divergence_optimize_1D}
+\name{abcn.kl.optimize}
+\alias{abcn.kl.optimize}
 \title{A wrapper to minimize \code{KL_divergence} over the parameter \code{x_name} using the function \link{optimize}}
 \usage{
-  KL_divergence_optimize_1D(x_value, x_name,
-    is_integer = FALSE, KL_divergence, args,
-    verbose = FALSE)
+  abcn.kl.optimize(x_value, x_name, is_integer = FALSE,
+    KL_divergence, args, verbose = FALSE)
 }
 \arguments{
   \item{x_value}{value tested.}
