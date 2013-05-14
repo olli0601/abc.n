@@ -2223,7 +2223,7 @@ project.nABC.compareSEIRS<- function()
 		#dev.off()
 		
 	}
-	if(1)	#compare variable m
+	if(0)	#compare variable m
 	{
 		require(ash)
 		grace.after.annealing<- 1
@@ -2272,7 +2272,7 @@ print(f.name)
 		xnames	<- c("R0","durImm","repProb")
 		xlab	<- expression(R[0],1/nu,omega)
 		xtrue	<- c(3.5,10,0.08)
-		plot	<- 0
+		plot	<- 1
 		post.su	<- lapply(seq_along(post),function(i)
 				{
 					cat(paste("\nprocess post",i))
@@ -2341,7 +2341,7 @@ print(f.name)
 		print("MAE: map")
 		print(summary(ans))
 	}
-	if(0)		#compare posterior histograms of simulated data
+	if(1)		#compare posterior histograms of simulated data
 	{
 		require(ash)
 		grace.after.annealing<- 1
@@ -2503,9 +2503,15 @@ print(f.name)
 							legend("topright",bty='n',border=NA,fill=fill, lty=ltys,legend=ltext)
 							#legend("topright",bty='n',border=NA,fill=c("gray30","gray50","gray70"),legend=c(expression(tau^'+'==0.01),expression(tau^'+'==0.02),expression(tau^'+'==0.05)))		
 							#stop()
-							dev.off()														
+							dev.off()		
+							
+							n.of.x<- ifelse(xname=="AMED.FD.ATT.R",7,8)
+							tmp<- nabc.calibrate.m.and.tau.yesmxpw.yesKL("nabc.mutost.kl", args = list(n.of.x = n.of.x, s.of.x = xsd[j], n.of.y = 30, s.of.y = xsd[j], mx.pw = 0.9, alpha = 0.01, calibrate.tau.u = T, tau.u = 1))
+							cat(paste("\nKL divergence for",xname,"with calibrated m is ",tmp[2]))
+							tmp<- nabc.mutost.kl(n.of.x, xsd[j], n.of.x, xsd[j], 0.9, 0.01, calibrate.tau.u = T, tau.u=1, plot=F)
+							cat(paste("\nKL divergence for ",xname," and m=n ",tmp[1]))
 						})		
-				
+				stop()
 		xnames	<- c("MED.ANN.ATT.R","AMED.FD.ATT.R","MED.INC.ATT.R")
 		xlab	<- expression("MED.ANN.ATT.R","AMED.FD.ATT.R","MED.INC.ATT.R")
 		xtrue	<- c(0,0,0)				
@@ -3113,7 +3119,7 @@ project.nABC.StretchedChi2<- function()
 		prior.l<- 0.2
 		N<- 1e6
 		
-		resume<- 0
+		resume<- 1
 		if(!is.na(m))
 		{		
 			f.name<- paste(dir.name,"/nABC.Chisq_mle_yn_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
@@ -3125,10 +3131,9 @@ project.nABC.StretchedChi2<- function()
 			{
 				x		<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 				#x 		<- (x - mean(x))/sd(x) * sqrt(xsigma2) + xmu
-				a		<- (xn-2)/2	 
-				b		<- var(x)*(xn-1)/2
-				var.lkl	<- b*b/((a-1)*(a-1)*(a-2))		
-				
+				#a		<- (xn-2)/2	 
+				#b		<- var(x)*(xn-1)/2
+				#var.lkl	<- b*b/((a-1)*(a-1)*(a-2))														
 				tmp		<- nabc.calibrate.m.and.tau.yesmxpw.yesKL("nabc.chisqstretch.kl", args = list(	n.of.x = xn, s.of.x = sd(x), n.of.y = xn, 
 																										s.of.y = NA, mx.pw = 0.9, alpha = alpha, 
 																										calibrate.tau.u = T, for.mle=1, tau.u = tau.u), plot = F)
@@ -3225,20 +3230,24 @@ project.nABC.StretchedChi2<- function()
 								plot(acc.h.ok, col=cols[1],border=NA,main='',add=1,freq=0)
 								a		<- (xn-2)/2	 
 								b		<- ans.ok[["xsigma2"]]*(xn)/2
-								var.lkl	<- b*b/((a-1)*(a-1)*(a-2))				
-								tmp		<- nabc.chisqstretch.n.of.y(xn, sqrt(var.lkl), 0.9, alpha, tau.u.ub=2, for.mle=1)								
+								var.lkl	<- b*b/((a-1)*(a-1)*(a-2))		
+								
+								s.of.x	<- sqrt( ans.ok[["xsigma2"]]/(xn-1)*xn )								
+								tmp		<- nabc.calibrate.m.and.tau.yesmxpw.yesKL("nabc.chisqstretch.kl", args = list(	n.of.x = xn, s.of.x = s.of.x, n.of.y = xn, 
+																														s.of.y = NA, mx.pw = 0.9, alpha = alpha, 
+																														calibrate.tau.u = T, for.mle=1, tau.u = 2), plot = F)																			
 								print(tmp)
 								
 								yn		<- round(tmp[1]*3/100)*100
-								print(yn)
 								tmp		<- nabc.chisqstretch.tau.lowup(0.9, 2, yn-1, alpha, for.mle=1)
+								tmp		<- nabc.chisqstretch.kl(xn, s.of.x, yn, NA, 0.9, alpha, calibrate.tau.u = F, tau.u = tmp[2], plot = F)
 								print(tmp)
-															
+								
 								x<- seq(prior.l,prior.u,0.001)
 								y<- densigamma(x,a,b) / diff(pigamma(c(prior.l,prior.u),a,b))							
 								lines(x,y,col=cols[3],lty=ltys[4])
 								abline(v=ans.ok[["xsigma2"]],col=cols[3],lty=ltys[3])								
-								legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,NA,ltys[2],NA,NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.562", tau^'+'*"=1.845","m=91","calibrated","tolerances",tau^'-'*"=0.726",tau^'+'*"=1.392","m=300","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))								
+								legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,NA,ltys[2],NA,NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.572", tau^'+'*"=1.808","m=97","calibrated","tolerances",tau^'-'*"=0.726",tau^'+'*"=1.392","m=300","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))								
 								dev.off()
 								stop()
 							}							

@@ -138,7 +138,7 @@ nabc.chisqstretch.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, c
 	#compute the norm of lkl, given its support 
 	alpha		<- (n.of.x-2)/2	 
 	beta		<- s.of.x^2*(n.of.x-1)/2
-	lkl_support	<- pow_support
+	lkl_support	<- pow_support	
 	lkl_norm	<- diff(pigamma(lkl_support,alpha,beta))
 	
 	integral_range	<- pow_support			

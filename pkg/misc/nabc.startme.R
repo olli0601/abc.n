@@ -41,8 +41,8 @@ LIB.LOC		<<- NULL
 EPS			<<- 1e-12
 default.fun	<- "my.make.documentation"
 default.fun	<- "project.nABC.TOST"
-#default.fun <- "project.nABC.compareSEIRS"
-default.fun	<- "project.nABC.StretchedChi2"
+default.fun <- "project.nABC.compareSEIRS"
+#default.fun	<- "project.nABC.StretchedChi2"
 #default.fun<- "project.nABC.movingavg"
 ###############################################################################
 #if(length(args) && !is.loaded("tipc_tabulate_after_sample"))
