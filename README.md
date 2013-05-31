@@ -1,20 +1,63 @@
-abc.n
-=====
-test procedures for ABC based on n summary values
-
-to clone this R package from the git repository:
-* if there are issues like "Permission denied (publickey)" , try git clone http://github.com/olli0601/abc.n.git
-
-to build this R package:
-* R CMD build pkg: builds the package (generates an archive called foo.tar.gz).
-* R CMD build pkg --compact-vignettes --resave-data: same, making the package as small as possible.
-* R CMD check abc.n_1.0-0.gz --as-cran: runs package quality checks similar to the checks made by CRAN; must be passed without error/warning before.
-
-to install this R package:
-* R CMD INSTALL abc.n_1.0-0.tar.gz
-
-to re-build the R package:
-* R CMD build pkg
-
-to re-install the R package:
-* R CMD INSTALL  abc.n_1.0-0.tar.gz
+########################################################################################
+#
+#	Calibration procedures for accurate ABC
+#
+# 	The corresponding paper is now on arxiv http://arxiv.org/abs/1305.4283
+#	and is under review and not yet accepted
+#
+# 	authors 	Oliver Ratmann oliver.ratmann@ic.ac.uk
+#			Anton Camacho ntncmch@gmail.com	
+#
+########################################################################################
+#
+#	Warning: 
+#
+#	We are turning the Kullback Leibler calibrations into C code
+#	and existing R code may be rather slow
+#
+#	The calibration routines are still experimental
+#
+#
+#	Contributors:
+#
+#	If you d like to add calibration routines for different equivalence tests to this library,
+#	please let us know and we are happy to give you write access to the github repository
+#
+#########################################################################################
+#
+#	Installation instructions:
+#
+#
+#	To clone this R package from the git repository:
+#	git clone https://github.com/olli0601/abc.n.git
+#	If there are issues like "Permission denied (publickey)" , try 
+#	git clone http://github.com/olli0601/abc.n.git
+#
+#
+#	To build this R package:
+#	R CMD build pkg
+#
+#	To install this R package:
+#	R CMD INSTALL abc.n_1.0-0.tar.gz
+#
+#
+#########################################################################################
+#
+#	Content:
+#
+#	Calibration routines for dispersion equivalence of normally distributed summaries
+#	start with
+#	nabc.chisqstretch.*
+#
+#	Calibration routines for location equivalence of normally distributed summaries
+#	start with
+#	nabc.mutost.onesample.*
+#
+#	Calibration routines for asymptotic equivalence of autocorrelation
+#	start with
+#	nabc.acf.*
+#
+#	Various helper functions to reconstruct and display link functions and level sets
+#	
+# 
+#########################################################################################
