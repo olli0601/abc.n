@@ -26,6 +26,11 @@
 #ifndef NABC_QNG_H_
 #define NABC_QNG_H_
 
+#include <iostream>
+#include <cmath>
+#include <Rmath.h>
+#include "nabc_error_handling.h"
+
 /* x1, abscissae common to the 10-, 21-, 43- and 87-point rule */
 static const double x1[5] = {
   0.973906528517171720077964012084452,

@@ -17,10 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include <iostream>
-#include <cmath>
-#include <Rmath.h>
-#include "nabc_error_handling.h"
 #include "nabc_qng.h"
 
 static double
