@@ -106,7 +106,7 @@ nabc.chisqstretch.sulkl<- function(rho, n.of.x, s.of.x, norm = 1, support= c(0,I
 nabc.chisqstretch.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u=1, for.mle=0, pow_scale=1.5, debug = 0, plot = F) 
 {
 	require(pscl)	
-	scale	<- ifelse(for.mle, n.of.y, n.of.y-1)		
+	scale	<- ifelse(for.mle, n.of.x, n.of.x-1)
 	df 		<- n.of.y-1
 	
 	if (calibrate.tau.u) 
@@ -194,7 +194,7 @@ nabc.chisqstretch.tau.low<- function(tau.up, df, alpha, rho.star=1, tol= 1e-5, m
 	tau.low.lb	<-	1/tau.up		#1/tau.up gives rho.max<1 so we know we only need to go up
 	tau.low.ub	<- 	1				#tau.low must be between [tau.low.lb, tau.low.ub]
 	error		<- 1
-	scale		<- ifelse(for.mle,df+1,df)
+	scale		<- ifelse(for.mle,df+1,df)#bugg to fix: scale should be nx-1 or nx (mle), df=ny-1
 	while(abs(error)>tol && round(tau.low.lb,d=10)!=round(tau.low.ub,d=10) && max.it>0)
 	{
 		max.it<- max.it-1
@@ -328,7 +328,7 @@ nabc.chisqstretch.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, alpha, tau.u.ub=2, t
 		c.l		<- tmp[5]
 		c.u		<- tmp[6]
 		rho		<- seq(tau.l/2,2*tau.u,length.out=1e3)
-		scale	<- ifelse(for.mle,yn.ub,yn.ub-1)		
+		scale	<- ifelse(for.mle,n.of.x,n.of.x-1)
 		pw		<- nabc.chisqstretch.pow(rho, scale, yn.ub-1, c.l, c.u)
 		pw.cme	<- sum(rho*pw) / sum(pw)
 		pw.cvar	<- sum((rho-pw.cme)*(rho-pw.cme)*pw) / sum(pw)			
@@ -349,7 +349,7 @@ nabc.chisqstretch.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, alpha, tau.u.ub=2, t
 		c.l		<- tmp[5]
 		c.u		<- tmp[6]		
 		rho		<- seq(tau.l/2,2*tau.u,length.out=1e3)
-		scale	<- ifelse(for.mle,yn,yn-1)
+		scale	<- ifelse(for.mle,n.of.x,n.of.x-1)
 		pw		<- nabc.chisqstretch.pow(rho, scale, yn-1, c.l, c.u)
 		pw.cme	<- sum(rho*pw) / sum(pw)
 		pw.cvar	<- sum((rho-pw.cme)*(rho-pw.cme)*pw) / sum(pw)
@@ -446,7 +446,7 @@ nabc.chisqstretch<- function(sim, obs.mc, args=NA, verbose= FALSE, tau.l=1, tau.
 	ans["pfam.pval"]	<- nabc.get.pfam.pval(sim,normal.test) 
 			
 	#get confidence intervals by numerical approximation
-	scale				<- ifelse(for.mle,df.sim+1,df.sim)
+	scale				<- ifelse(for.mle,df.sim+1,df.sim)#bugg should be n.of.x
 	tmp					<- .Call("abcScaledChiSq",	c(scale,df.sim,tau.l,tau.u,alpha,1e-10,100,0.05)	)
 	if(tmp[4]>1e-10)	stop("get.dist.chisqstretch: error at 3a")
 	ans[c("cil","cir","mx.pow")]<- tmp[1:3]
