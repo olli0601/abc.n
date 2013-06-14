@@ -3,6 +3,7 @@
 #include <Rmath.h>
 #include "nabc_error_handling.h"
 #include "nabc_fun.h"
+#include "nabc_globals.h"
 
 static inline void oprintf(const char * format, ...)
 {
@@ -95,6 +96,64 @@ static inline void abcMuTOST_pow(const int &nrho, double * const rho, const doub
 		*xans= *xans<0 ? 0 : *xans;
 	}
 }
+
+double abcMuTOST_pow_scalar(double x, void *arg)
+{
+    basic_arg *a=(basic_arg *) arg;
+	double ans;
+	const double QU_TIS= qt(a->alpha, a->df, 1, 0)+a->tau_up/a->sT;
+    
+    ans= pnt( QU_TIS, a->df, x/a->sT, 1, 0) - pnt( -QU_TIS, a->df, x/a->sT, 1, 0);
+   
+    /* Can be 0 at some point! */
+    /* Usually this happens due to numerical inacurracy in the tail. */
+    /* To avoid infinity we assume that ans=nabcGlobals::NABC_DBL_MIN at these points. */
+    
+    ans= ans<=0 ? nabcGlobals::NABC_DBL_MIN : ans/a->norm;
+    
+    return a->give_log ? log(ans) : ans;
+
+}
+
+
+static inline void abcMuTOST_sulkl(const int &nrho, double * const rho, const double &nx, const double &sx, const double &norm, const int &give_log,double *ans)
+{
+	int n= nrho;
+	const double ssn= sx/sqrt(nx),df=nx-1;
+	double *xans= ans, *xrho=rho;
+    
+	for(; n--; xrho++, xans++)
+	{
+		*xans= dt( *xrho/ssn, df, give_log);
+        *xans= give_log ? *xans-log(ssn*norm) : *xans/ssn/norm;
+	}
+}
+
+double abcMuTOST_sulkl_scalar(double x, void *arg_void)
+{
+    basic_arg *arg=(basic_arg *) arg_void;
+    //std::cout<<"abcMuTOST_sulkl_scalar input:\nssn\t"<<arg->ssn<<"\ndf\t"<<arg->df<<"\ngive_log\t"<<arg->give_log<<"\nnorm\t"<<arg->norm<<"\nx\t"<<x<<std::endl;
+    
+	double ans;
+    
+    ans= dt( x/arg->ssn, arg->df, arg->give_log);
+    ans= arg->give_log ? ans-log(arg->ssn*arg->norm) : ans/arg->ssn/arg->norm;
+	
+    return ans;
+}
+
+double abcKL_integrand(double x,void *arg_void)
+{
+    kl_integrand_arg *arg=(kl_integrand_arg *) arg_void;
+    const double log_P=(*(arg->p))(x,arg->p_arg);
+    const double log_Q=(*(arg->q))(x,arg->q_arg);
+    
+    return (log_P-log_Q)*exp(log_P);
+ 
+}
+
+
+
 
 static inline void abcScaledChiSq_criticalregion(	const double scale, const double df, const double tl, const double tu, const double alpha, const double tol, const double incit,
 													double &maxit, double &c1, double &c2, double &mxpw, double &error	)
@@ -353,6 +412,83 @@ SEXP abcMuTOST_pow(SEXP arg_rho, SEXP arg_df, SEXP arg_tau_up, SEXP arg_sT, SEXP
 	return ans;
 }
 
+SEXP abcMuTOST_sulkl_integrate_qng(SEXP arg_lower, SEXP arg_upper, SEXP arg_abs_tol, SEXP arg_rel_tol, SEXP arg_nx, SEXP arg_sx, SEXP arg_norm, SEXP arg_log)
+{
+    
+    basic_arg f_arg;
+    f_arg.nx=asReal(arg_nx);
+    f_arg.df=f_arg.nx-1;
+    f_arg.sx=asReal(arg_sx);
+    f_arg.ssn=f_arg.sx/sqrt(f_arg.nx);
+    f_arg.norm=asReal(arg_norm);
+    f_arg.give_log=asInteger(arg_log);
+    
+
+	double lower= asReal(arg_lower),upper= asReal(arg_upper), abs_tol=asReal(arg_abs_tol),rel_tol=asReal(arg_rel_tol) ;
+    double abserr;
+    double *xans=NULL;
+    int neval,res;
+    
+	SEXP ans;
+    
+	PROTECT(ans=  allocVector(REALSXP,1));
+	xans= REAL(ans);
+	res=nabc_integration_qng(abcMuTOST_sulkl_scalar, &f_arg, lower, upper, abs_tol, rel_tol, xans, &abserr, &neval);
+	
+    //std::cout<<"abcMuTOST_sulkl_integrate_qng\nnx\t"<<f_arg.nx<<"\nsx\t"<<f_arg.sx<<"\ndf\t"<<f_arg.df<<"\nssn\t"<<f_arg.ssn<<"\nnorm\t"<<f_arg.norm<<"\ngive_log\t"<<f_arg.give_log<<"\nreturn\t"<<res<<"\nans\t"<<*xans<<std::endl;
+    
+	UNPROTECT(1);
+	return ans;
+}
+
+
+SEXP abcMuTOST_pow_integrate_qng(SEXP arg_lower, SEXP arg_upper, SEXP arg_abs_tol, SEXP arg_rel_tol, SEXP arg_df, SEXP arg_sT, SEXP arg_tau_up, SEXP arg_alpha, SEXP arg_norm, SEXP arg_log)
+{
+    
+    basic_arg f_arg;
+    f_arg.df=asReal(arg_df);
+    f_arg.sT=asReal(arg_sT);
+    f_arg.tau_up=asReal(arg_tau_up);
+    f_arg.alpha=asReal(arg_alpha);
+    f_arg.norm=asReal(arg_norm);
+    f_arg.give_log=asInteger(arg_log);
+    
+    
+	double lower= asReal(arg_lower),upper= asReal(arg_upper), abs_tol=asReal(arg_abs_tol),rel_tol=asReal(arg_rel_tol) ;
+    double abserr;
+    double *xans=NULL;
+    int neval,res;
+    
+	SEXP ans;
+    
+	PROTECT(ans=  allocVector(REALSXP,1));
+	xans= REAL(ans);
+	res=nabc_integration_qng(abcMuTOST_pow_scalar, &f_arg, lower, upper, abs_tol, rel_tol, xans, &abserr, &neval);
+	
+    //std::cout<<"abcMuTOST_pow_integrate_qng\ndf\t"<<f_arg.df<<"\nsT\t"<<f_arg.sT<<"\ntau_up\t"<<f_arg.tau_up<<"\nalpha\t"<<f_arg.alpha<<"\nnorm\t"<<f_arg.norm<<"\ngive_log\t"<<f_arg.give_log<<"\nreturn\t"<<res<<"\nans\t"<<*xans<<std::endl;
+    
+	UNPROTECT(1);
+	return ans;
+}
+
+
+SEXP abcMuTOST_sulkl(SEXP arg_rho, SEXP arg_nx, SEXP arg_sx, SEXP arg_norm, SEXP arg_log)
+{    
+	int nrho= Rf_length(arg_rho),give_log=asInteger(arg_log);
+	double *xrho= REAL(arg_rho), *xans=NULL;
+	double nx= asReal(arg_nx), sx= asReal(arg_sx), norm= asReal(arg_norm);
+	SEXP ans;
+    
+	PROTECT(ans=  allocVector(REALSXP,nrho));
+	xans= REAL(ans);
+	//std::cout<<"abcMuTOST_sulkl_c\t"<<nrho<<'\t'<<*xrho<<'\t'<<nx<<'\t'<<sx<<'\t'<<norm<<'\t'<<log<<std::endl;
+	abcMuTOST_sulkl(nrho, xrho, nx, sx, norm, give_log, xans);
+    
+	UNPROTECT(1);
+	return ans;
+}
+
+
 SEXP abcMuTOST_pwvar(SEXP args)
 {
 	FAIL_ON(!Rf_isReal(args) ,"abcMuTOST_pwvar: error at 1a %c");
@@ -379,6 +515,121 @@ SEXP abcMuTOST_pwvar(SEXP args)
 	UNPROTECT(1);
 	return ans;
 }
+
+void printBArg(basic_arg *arg)
+{
+    printf("nx=%f\nsx=%f\nssn=%f\ndf=%f\nnorm=%f\ngive_log=%d\nalpha=%f\ntau_up=%f\nsT=%f\n",arg->nx,arg->sx,arg->ssn,arg->df,arg->norm,arg->give_log,arg->alpha,arg->tau_up,arg->sT);
+    
+}
+
+static inline void abcMuTOST_KL(const double &nx, const double &sx, const double &ny, const double &sy, const double &mx_pw, const double &alpha, const int &calibrate_tau_up, double &tau_up,const double &pow_scale, double &curr_mxpw, double &KL_div)
+{
+    
+    //calibrate tau_up
+    if(calibrate_tau_up)
+    {
+        double *cali_tau= NEW_ARY(double,5);
+        *(cali_tau+1)= tau_up;//tau_ub
+        *(cali_tau+2)= 0;//rho_eq
+        *(cali_tau+3)= 1e-5;//tol
+        *(cali_tau+4)= 100;//maxit
+        
+        //std::cout<<"abcMuTOST_taulowup_pw at a1:\t"<<tau_up<<'\t'<<curr_mxpw<<'\t'<<*cali_tau<<std::endl;
+        
+        abcMuTOST_taulowup_pw(mx_pw, ny-1, sy/std::sqrt(ny), *(cali_tau+1), alpha, *(cali_tau+2), *(cali_tau+3), *(cali_tau+4), tau_up/*tau_up*/, curr_mxpw/*curr_mxpw*/, *cali_tau/*error*/);
+        
+        //std::cout<<"abcMuTOST_taulowup_pw at a2:\t"<<tau_up<<'\t'<<curr_mxpw<<'\t'<<*cali_tau<<std::endl;
+        
+        DELETE(cali_tau);
+    }
+    
+    //compute pow_norm
+    int res,neval;
+    double lower,upper,abs_tol,rel_tol,abserr;
+    upper=tau_up*pow_scale;
+    lower=-upper;
+    rel_tol=std::pow(nabcGlobals::NABC_DBL_EPSILON,0.25);
+    abs_tol=rel_tol;
+    
+    //create arg for pow
+    basic_arg pow_arg;
+    pow_arg.df=ny-1;
+    pow_arg.sT=sy/std::sqrt(ny);
+    pow_arg.tau_up=tau_up;
+    pow_arg.alpha=alpha;
+    pow_arg.norm=1;
+    pow_arg.give_log=0;
+
+    //std::cout<<"abcMuTOST_taulowup_pw at b1:\t"<<lower<<'\t'<<pow_arg.norm<<'\t'<<pow_arg.give_log<<'\t'<<neval<<std::endl;
+
+    //printBArg(&pow_arg);
+    nabc_integration_qng(abcMuTOST_pow_scalar, &pow_arg, lower, upper, abs_tol, rel_tol, &pow_arg.norm /*updated norm*/, &abserr, &neval);
+    
+    //std::cout<<"abcMuTOST_taulowup_pw at b2:\t"<<lower<<'\t'<<pow_arg.norm<<'\t'<<abserr<<'\t'<<neval<<std::endl;
+
+    //create arg for sulkl
+    basic_arg sulkl_arg;
+    sulkl_arg.nx=nx;
+    sulkl_arg.df=nx-1;
+    sulkl_arg.sx=sx;
+    sulkl_arg.ssn=sx/std::sqrt(nx);
+    sulkl_arg.norm=pt(upper/sulkl_arg.ssn,sulkl_arg.df,1,0)-pt(lower/sulkl_arg.ssn,sulkl_arg.df,1,0);
+    sulkl_arg.give_log=0;
+        
+    //put give_log to 1
+    sulkl_arg.give_log=1;
+    pow_arg.give_log=1;
+
+    kl_integrand_arg KL_arg;
+    KL_arg.p=abcMuTOST_sulkl_scalar;
+    KL_arg.q=abcMuTOST_pow_scalar;
+    KL_arg.p_arg=&sulkl_arg;
+    KL_arg.q_arg=&pow_arg;
+    
+//    printf("pow arguments\n");
+//    printBArg(&pow_arg);
+//    printf("\nsulkl arguments\n");    
+//    printBArg(&sulkl_arg);
+//    printf("Start KL integration\n");
+
+    nabc_integration_qng(abcKL_integrand, &KL_arg, lower, upper, abs_tol, rel_tol, &KL_div, &abserr, &neval);
+
+    //std::cout<<"abcMuTOST_taulowup_pw at c2:\t"<<KL_div<<'\t'<<abserr<<'\t'<<neval<<std::endl;
+
+    
+}
+
+
+SEXP abcMuTOST_KL(SEXP arg_nx, SEXP arg_sx, SEXP arg_ny, SEXP arg_sy, SEXP arg_mx_pw, SEXP arg_alpha, SEXP arg_calibrate_tau_up, SEXP arg_tau_up, SEXP arg_pow_scale)
+{
+    //SEXP to C
+    double nx=asReal(arg_nx);
+    double sx=asReal(arg_sx);
+    double ny=asReal(arg_ny);
+    double sy=asReal(arg_sy);
+    double mx_pw=asReal(arg_mx_pw);
+    double alpha=asReal(arg_alpha);
+    int calibrate_tau_up=asLogical(arg_calibrate_tau_up);
+    double tau_up=asReal(arg_tau_up);
+    double pow_scale=asReal(arg_pow_scale);
+    
+    //answer
+    double *xans= NULL;
+	SEXP ans;
+	PROTECT(ans= allocVector(REALSXP,3));
+	xans= REAL(ans);
+    xans[1]=tau_up;
+    xans[2]=mx_pw;
+    
+    //Call C function
+    //TODO need also to return support (common) and norm of sulkl and pow for plotting
+    abcMuTOST_KL(nx,sx, ny, sy,mx_pw,alpha, calibrate_tau_up, xans[1], pow_scale, xans[2],xans[0]);
+    
+	UNPROTECT(1);
+	return ans;
+
+}
+
 
 
 

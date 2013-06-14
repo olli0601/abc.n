@@ -1,4 +1,4 @@
-
+	
 #' Compute the density of the (possible truncated) power of the equivalence test for population means of normal summary values
 #' @inheritParams nabc.mutost.kl
 #' @inheritParams nabc.mutost.pow
@@ -28,6 +28,7 @@ dMuTOST_pow <- function(rho, df, s.of.T, tau.u, alpha, norm=1, support=c(-Inf,In
 	
 	return(ans)
 }
+
 #------------------------------------------------------------------------------------------------------------------------
 #' Perform a generic two one sided test. This is an internal function.
 #' @export
@@ -112,22 +113,36 @@ nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE,force= 
 #' \code{support=s.of.x/sqrt(n.of.x)*qt(c(1-norm,1+norm)/2,n.of.x-1)} and \code{norm=diff(pt(support/(s.of.x/sqrt(n.of.x)),n.of.x-1))}.
 #' @export	
 #'
-nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), log=FALSE) 
+nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), log=FALSE,debug=0) 
 {
-	ssn				<- s.of.x/sqrt(n.of.x)
-	df 				<- n.of.x - 1
-	if(norm>1) stop("norm must be <= 1")
+	
+	stopifnot(n.of.x>0,s.of.x>0,norm<=1,norm>0,support[1]<=support[2])
+	
 	ans 			<- rho
 	in_support 		<- (rho >= support[1] & rho <= support[2])
 	ans[!in_support]<- ifelse(log,-Inf,0)
-	if (any(in_support)) 
-	{
-		if(log)
-			ans[in_support] <- dt(rho[in_support]/ssn, df,log=T)-log(ssn*norm)
-		else
-			ans[in_support] <- dt(rho[in_support]/ssn, df)/ssn/norm		
+
+
+	if(debug){
+		#R code
+		ssn				<- s.of.x/sqrt(n.of.x)
+		df 				<- n.of.x - 1
+		if (any(in_support)) 
+		{
+			if(log)
+				ans[in_support] <- dt(rho[in_support]/ssn, df,log=T)-log(ssn*norm)
+			else
+				ans[in_support] <- dt(rho[in_support]/ssn, df)/ssn/norm		
+		}
+		
+	}else{
+		#C code
+		if (any(in_support)){
+			ans[in_support]<-.Call("abcMuTOST_sulkl",rho[in_support], n.of.x, s.of.x, norm, log)
+		}
+		
 	}
-	return(ans)
+		return(ans)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Compute Kullback-Leibler divergence between the summary likelihood and the power function of mutost 
@@ -154,66 +169,96 @@ nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf
 #' alpha=0.01, calibrate.tau.u=T, tau.u=1, plot=T)
 #'
 #------------------------------------------------------------------------------------------------------------------------
-nabc.mutost.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u=1, pow_scale=1.5, debug = 0, plot = F) 
-{
-	if (calibrate.tau.u) 
-	{
-		#calibrate tau.u constrained on yn, alpha and mx.pw	
-		tmp 	<- nabc.mutost.onesample.tau.lowup.pw(mx.pw, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha)
-		tau.u 	<- tmp[2]
-		pw.cmx 	<- tmp[3]
-		if (abs(pw.cmx - mx.pw) > 0.09) stop("tau.up not accurate")
+nabc.mutost.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, 
+	plot = F) {
+
+
+	if (!debug) {
+		
+		#if debug=0 use C code
+		#check argument with stopifnot and then .Call
+		
+		#ALL IN C
+		suppressWarnings({ #suppress numerical inaccuracy warnings
+			ans <- .Call("abcMuTOST_KL", n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u, tau.u, pow_scale)
+		})
+
+		KL_div <- ans[1]
+		tau.u <- ans[2]
+		pw.cmx <- ans[3]
+		
+		if(plot){
+			lkl_support <- pow_support <- c(-tau.u, tau.u) * pow_scale
+			lkl_norm <- diff(pt(lkl_support/ssn, df))
+			suppressWarnings({ #suppress numerical inaccuracy warnings
+				pow_norm <- .Call("abcMuTOST_pow_integrate_qng", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
+			})			
+		}
+
+	
+	} else {
+		#ALL IN R
+		if (calibrate.tau.u) {
+			#calibrate tau.u constrained on yn, alpha and mx.pw	
+			tmp <- nabc.mutost.onesample.tau.lowup.pw(mx.pw, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha)
+			tau.u <- tmp[2]
+			pw.cmx <- tmp[3]
+			if (abs(pw.cmx - mx.pw) > 0.09) 
+				stop("tau.up not accurate")
+		}
+
+		#truncate pow and compute pow_norm
+		pow_support <- c(-tau.u, tau.u) * pow_scale
+		#pow_norm <- integrate(dMuTOST_pow, lower = pow_support[1], upper = pow_support[2], df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u= tau.u, alpha= alpha, norm=1, support= pow_support, log=FALSE)
+		suppressWarnings({ #suppress numerical inaccuracy warnings
+				pow_norm <- .Call("abcMuTOST_pow_integrate_qng", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
+			})		
+		#compute the norm of lkl, given its support 
+		ssn <- s.of.x/sqrt(n.of.x)
+		df <- n.of.x - 1
+		lkl_support <- pow_support
+		lkl_norm <- diff(pt(lkl_support/ssn, df))
+
+		integral_range <- pow_support
+
+		lkl_arg <- list(n.of.x = n.of.x, s.of.x = s.of.x, norm = lkl_norm, support = lkl_support)
+		pow_arg <- list(df = n.of.y - 1, s.of.T = s.of.y/sqrt(n.of.y), tau.u = tau.u, alpha = alpha, norm = pow_norm, support = pow_support)
+
+		tmp <- integrate(nabc.kl.integrand, lower = integral_range[1], upper = integral_range[2], dP = nabc.mutost.sulkl, dQ = dMuTOST_pow, 
+			P_arg = lkl_arg, Q_arg = pow_arg)
+		KL_div <- tmp$value
+
+		if (tmp$message != "OK") {
+			warning(tmp$message)
+		}
+		
+		pw.cmx <- ifelse(calibrate.tau.u, pw.cmx, dMuTOST_pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha))
+
 	}
-	
-	#truncate pow and compute pow_norm
-	pow_support		<- c(-tau.u, tau.u)* pow_scale
-	rho 			<- seq(pow_support[1], pow_support[2], length.out = 1000)
-	pow 			<- dMuTOST_pow(rho, n.of.y-1, s.of.y/sqrt(n.of.y), tau.u, alpha)
-	pow_norm 		<- sum(pow) * diff(rho)[1]
-	pow 			<- pow/pow_norm
-	
-	#compute the norm of lkl, given its support 
-	ssn 			<- s.of.x/sqrt(n.of.x)
-	df 				<- n.of.x - 1
-	lkl_support		<- pow_support
-	lkl_norm		<- diff(pt(lkl_support/ssn,df))
-	
-	integral_range	<- pow_support	
-	
-	lkl_arg			<- list(n.of.x= n.of.x, s.of.x= s.of.x, norm = lkl_norm, support = lkl_support)
-	pow_arg			<- list(df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u= tau.u, alpha= alpha, norm=pow_norm, support=pow_support)
-	
-	tmp 			<- integrate(nabc.kl.integrand, lower = integral_range[1], upper = integral_range[2], dP=nabc.mutost.sulkl,dQ=dMuTOST_pow,P_arg=lkl_arg,Q_arg=pow_arg)
-	KL_div			<- tmp$value
-	
-	if (tmp$message != "OK") 
-	{
-		warning(tmp$message)
-	}
-	if (plot) 
-	{
+
+	if (plot) {
 		require(reshape)
 		require(ggplot2)
-		rho_lkl 			<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
-		lkl					<- nabc.mutost.sulkl(rho_lkl, n.of.x, s.of.x, lkl_norm, lkl_support)
-		df_lkl 				<- data.frame(x = rho_lkl, no = lkl*lkl_norm ,yes = lkl)
-		df_lkl$distribution	<- "summary likelihood"
-		df_pow 				<- data.frame(x = rho, no = pow*pow_norm ,yes = pow)
+		rho <- seq(lkl_support[1], lkl_support[2], length.out = 1000)
+		lkl <- nabc.mutost.sulkl(rho, n.of.x, s.of.x, lkl_norm, lkl_support)
+		df_lkl <- data.frame(x = rho, no = lkl * lkl_norm, yes = lkl)
+		df_lkl$distribution <- "summary likelihood"
+		pow<-dMuTOST_pow(rho, df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u, alpha, norm=pow_norm, support= pow_support, log=FALSE)
+		df_pow <- data.frame(x = rho, no = pow * pow_norm, yes = pow)
 		df_pow$distribution <- "ABC power"
-		df 					<- rbind(df_pow, df_lkl)
-		gdf					<- melt(df,id.vars=c("x","distribution"))
-		p 					<- ggplot(data = gdf, aes(x = x, y = value, colour = distribution,linetype=variable))
-		p					<- p+geom_vline(xintercept=c(-tau.u,tau.u),linetype="dotted")
-		p					<- p+geom_hline(yintercept= mx.pw,linetype="dotted")
-		p					<- p+ geom_line()
-		p					<- p+scale_linetype("truncated?")
-		p					<- p+xlab(expression(rho))+ylab("")
-		p 					<- p + ggtitle(paste("n.of.y=", n.of.y, "\ntau.u=", tau.u, "\nKL=", KL_div))
+		df <- rbind(df_pow, df_lkl)
+		gdf <- melt(df, id.vars = c("x", "distribution"))
+		p <- ggplot(data = gdf, aes(x = x, y = value, colour = distribution, linetype = variable))
+		p <- p + geom_vline(xintercept = c(-tau.u, tau.u), linetype = "dotted")
+		p <- p + geom_hline(yintercept = mx.pw, linetype = "dotted")
+		p <- p + geom_line()
+		p <- p + scale_linetype("truncated and\nstandardized?")
+		p <- p + xlab(expression(rho)) + ylab("")
+		p <- p + ggtitle(paste("n.of.y=", n.of.y, "\ntau.u=", tau.u, "\nKL=", KL_div))
 		print(p)
 	}
-	pw.cmx 					<- ifelse(calibrate.tau.u, pw.cmx, dMuTOST_pow(rho=0, n.of.y-1, s.of.y/sqrt(n.of.y), tau.u, alpha))
-	
-	ans 					<- c(KL_div = KL_div, tau.u = tau.u, pw.cmx = pw.cmx)
+
+	ans <- c(KL_div = KL_div, tau.u = tau.u, pw.cmx = pw.cmx)
 	return(ans)
 }
 #------------------------------------------------------------------------------------------------------------------------

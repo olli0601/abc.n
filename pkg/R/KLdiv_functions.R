@@ -128,7 +128,7 @@ nabc.calibrate.tau.nomxpw.yesKL <- function(KL_divergence, args, tau.u.lb=1, max
 #' 
 nabc.calibrate.m.and.tau.yesmxpw.yesKL <- function(KL_divergence, args, max.it = 100, debug = 0, plot = F) 
 {	
-	args$plot 			<- debug
+	args$plot 			<- F
 	args$calibrate.tau.u<- T
 	
 	if (debug) 

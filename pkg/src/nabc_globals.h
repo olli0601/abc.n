@@ -32,12 +32,43 @@ typedef unsigned int uint;
 #define ABS(x) ((x>0) ? x : -x) 										/**< macro to return the absolute value of a number */
 
 
-
 /**\brief All global variables. */
 struct nabcGlobals
 {
 	//user-defined variables that may change
 	static char BUFFER[256];/**<String buffer to perform string operations*/
+    static double NABC_DBL_EPSILON;
+    static double NABC_DBL_MIN;
 };
+
+typedef struct{
+    double nx;
+    double sx;
+    double ssn; /* sx/sqrt(nx) */
+    double df;
+    double norm;
+    int give_log;
+    
+    double alpha;
+    double tau_up;
+    double sT; /* sy/sqrt(ny) */
+    
+} basic_arg;
+
+typedef struct{
+    
+    double (*p)(double, void *);
+    double (*q)(double, void *);
+    void *p_arg;
+    void *q_arg;
+    
+} kl_integrand_arg;
+
+typedef struct{
+    
+} kl_arg;
+
+
+
 
 #endif /*NABC_GLOBALS_H_*/
