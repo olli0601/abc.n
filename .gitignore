@@ -5,3 +5,8 @@
 *.tar.gz
 *.Rout
 *.pdf
+pkg/misc/profiling.R
+
+*.o
+
+*.out
