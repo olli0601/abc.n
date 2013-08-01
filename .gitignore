@@ -8,5 +8,6 @@
 pkg/misc/profiling.R
 
 *.o
+*.so
 
 *.out

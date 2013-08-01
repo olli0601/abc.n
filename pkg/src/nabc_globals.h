@@ -8,12 +8,15 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <stdint.h>
 
 typedef double flt_ty; /**< type for scientific accuracy in rate constants */
 #ifdef USE_UNSIGNEDLONG
 	typedef unsigned long int ulint;/**< type for population counts */
 #else
-	typedef unsigned long long int ulint;/**< type for population counts */
+typedef unsigned long long ulint;/**< type for population counts */
+
+//typedef uint64_t ulint;/**< type for population counts */
 #endif
 typedef unsigned int uint;
 

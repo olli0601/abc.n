@@ -221,4 +221,6 @@ nabc_integration_qng (double (*f)(double, void *), void *f_arg,
     
     FAIL_ON(1,"failed to reach tolerance with highest-order rule");
     
+    return 0;
+    
 }

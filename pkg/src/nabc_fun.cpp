@@ -544,7 +544,7 @@ static inline void abcMuTOST_KL(const double &nx, const double &sx, const double
     }
     
     //compute pow_norm
-    int res,neval;
+    int neval;
     double lower,upper,abs_tol,rel_tol,abserr;
     upper=tau_up*pow_scale;
     lower=-upper;
@@ -622,7 +622,6 @@ SEXP abcMuTOST_KL(SEXP arg_nx, SEXP arg_sx, SEXP arg_ny, SEXP arg_sy, SEXP arg_m
     xans[2]=mx_pw;
     
     //Call C function
-    //TODO need also to return support (common) and norm of sulkl and pow for plotting
     abcMuTOST_KL(nx,sx, ny, sy,mx_pw,alpha, calibrate_tau_up, xans[1], pow_scale, xans[2],xans[0]);
     
 	UNPROTECT(1);
