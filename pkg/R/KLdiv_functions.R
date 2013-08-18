@@ -62,18 +62,40 @@ nabc.kl.optimize<- function(x_value, x_name, is_integer=FALSE, KL_divergence, ar
 #' @import stats
 #' @example inst/examples/ex.nabc.adjust.tau.lowup.KL.R
 #'
-nabc.calibrate.tau.nomxpw.yesKL <- function(KL_divergence, args, tau.u.lb=1, max.it=100,debug = 0, plot = F) {
+nabc.calibrate.tau.nomxpw.yesKL <- function(test_name, KL_args, tau.u.lb=1, max.it=100,debug = 0, plot = F, plot_debug = FALSE) {
 	
 	if(!tau.u.lb){stop("tau.u.lb must be >0")}
+	#TODO stopifnot
+
+	if(test_name=="mutost"){
+		
+		#check KL_args
+		
+	}else{
+		stop(test_name,"is currently not supported.")
+	}	
 	
-	args$calibrate.tau.u <- F
-	args$tau.u <- tau.u.lb
-	args$plot <- debug
-	if (debug) {
+	if(!debug){
+		#all in C
+		suppressWarnings({ #suppress numerical inaccuracy warnings
+			ans <- .Call("abcCalibrate_tau_nomxpw_yesKL", test_name, KL_args, tau.u.lb, max.it)
+		})
+
+		
+	}else{
+		#all in R
+	KL_divergence=switch(test_name,mutost="nabc.mutost.kl")
+	
+	KL_args$calibrate.tau.u <- F
+	KL_args$tau.u <- tau.u.lb
+	KL_args$plot <- plot_debug
+	if (plot_debug) {
 		cairo_pdf("KL_initial.pdf", onefile = T)
 	}
-	KL.of.tau.u <- do.call(KL_divergence, args)["KL_div"]
-	if (debug) {
+	
+	KL.of.tau.u <- do.call(KL_divergence, KL_args)["KL_div"]
+	
+	if (plot_debug) {
 		dev.off()
 	}
 	
@@ -81,35 +103,37 @@ nabc.calibrate.tau.nomxpw.yesKL <- function(KL_divergence, args, tau.u.lb=1, max
 	tau.u.ub < 2*tau.u.lb
 	curr.it <- max.it
 	
-	args$tau.u <- tau.u.ub
-	args$plot <- F
-	KL.of.tau.u.ub <- do.call(KL_divergence, args)["KL_div"]
+	KL_args$tau.u <- tau.u.ub
+	KL_args$plot <- F
+	KL.of.tau.u.ub <- do.call(KL_divergence, KL_args)["KL_div"]
 	
 	while (KL.of.tau.u.ub < KL.of.tau.u && curr.it > 0) {
 		curr.it <- curr.it - 1
 		KL.of.tau.u <- KL.of.tau.u.ub
 		tau.u.ub <- 2 * tau.u.ub
-		args$tau.u <- tau.u.ub
-		KL.of.tau.u.ub <- do.call(KL_divergence, args)["KL_div"]
+		KL_args$tau.u <- tau.u.ub
+		KL.of.tau.u.ub <- do.call(KL_divergence, KL_args)["KL_div"]
 	}
 	
 	if (curr.it == 0) 
 		stop("nabc.adjust.tau.lowup.KL: could not find upper bound for tau.u")
 	
 	#minimize KL_tau.u between [tau.u.lb - tau.u.ub]	
-	if (debug) {
+	if (plot_debug) {
 		cairo_pdf("KL_optimization.pdf", onefile = T)
 	}
-	args$plot <- debug
-	args <- args[-which(names(args) == "tau.u")]
-	tmp <- optimize(nabc.kl.optimize, interval = c(tau.u.lb,tau.u.ub), x_name="tau.u" ,KL_divergence= KL_divergence, args = args, verbose = debug)
-	if (debug) {
+	KL_args$plot <- plot_debug
+	KL_args["tau.u"]<-NULL
+	tmp <- optimize(nabc.kl.optimize, interval = c(tau.u.lb,tau.u.ub), x_name="tau.u" ,KL_divergence= KL_divergence, args = KL_args, verbose = debug)
+	if (plot_debug) {
 		dev.off()
 	}
 	tau.u <- tmp$minimum
-	args$tau.u <- tau.u
-	args$plot <- plot	
-	tmp <- do.call(KL_divergence, args)
+	KL_args$tau.u <- tau.u
+	KL_args$plot <- plot	
+	tmp <- do.call(KL_divergence, KL_args)
+	
+	}
 	
 	return(c(n.of.y = n.of.y, tmp))
 }
@@ -179,7 +203,7 @@ nabc.calibrate.m.and.tau.yesmxpw.yesKL <- function(KL_divergence, args, max.it =
 		cairo_pdf("KL_optimization.pdf", onefile = T)
 	}
 	args$plot 	<- debug
-	args 		<- args[-which(names(args) == "n.of.y")]
+	args["n.of.y"]<-NULL
 	tmp 		<- optimize(nabc.kl.optimize, interval = c(yn.lb, yn.ub), x_name = "n.of.y", is_integer = T, KL_divergence = KL_divergence, args = args, verbose = debug, tol = 1)	
 	if (debug) 
 	{

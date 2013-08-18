@@ -6,7 +6,8 @@
 #define NABC_ERROR_HANDLING_H_
 
 #include <cstdarg>
-#include <sstream>
+#include <sstream> 
+#include <stdexcept>
 #include "nabc_globals.h"
 
 #ifdef __cplusplus

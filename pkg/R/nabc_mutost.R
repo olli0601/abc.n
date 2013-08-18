@@ -172,12 +172,10 @@ nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf
 nabc.mutost.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, 
 	plot = F) {
 
-
+	#TODO check argument with stopifnot
+	
 	if (!debug) {
-		
-		#if debug=0 use C code
-		#check argument with stopifnot and then .Call
-		
+				
 		#ALL IN C
 		suppressWarnings({ #suppress numerical inaccuracy warnings
 			ans <- .Call("abcMuTOST_KL", n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u, tau.u, pow_scale)
@@ -773,10 +771,11 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 			sim.mean <- mean(sim[1:sim.n])
 			sim.sd <- sd(sim[1:sim.n])
 			
-			tmp <- nabc.calibrate.tau.nomxpw.yesKL("nabc.mutost.kl", args=list(n.of.x= n.of.x, s.of.x= s.of.x, n.of.y=n.of.y, s.of.y=s.of.y, mx.pw=mx.pw, alpha=alpha), tau.u.lb= tau.u.lb)
+			tmp <- nabc.calibrate.tau.nomxpw.yesKL(test_name="mutost", KL_args=list(n.of.x= n.of.x, s.of.x= s.of.x, n.of.y=n.of.y, s.of.y=s.of.y, mx.pw=mx.pw, alpha=alpha), tau.u.lb= tau.u.lb)
 			
-			if (abs(tmp["pw.cmx"] - mx.pw) > 0.09) 
-				stop("tau.up not accurate")
+			#we don't adjust mx.pw
+			#if (abs(tmp["pw.cmx"] - mx.pw) > 0.09) 
+			#	stop("tau.up not accurate")
 			
 			tau.u <- tmp["tau.u"] * annealing
 			tau.l <- -tau.u

@@ -1,6 +1,6 @@
 /** \file nabc_globals.h
-    \brief This file contains all type definitions, macros, enumerators and global constants.
-*/
+ \brief This file contains all type definitions, macros, enumerators and global constants.
+ */
 
 #ifndef NABC_GLOBALS_H_
 #define NABC_GLOBALS_H_
@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <map>
+#include <string>
 #include <stdint.h>
 
 typedef double flt_ty; /**< type for scientific accuracy in rate constants */
@@ -41,7 +43,33 @@ struct nabcGlobals
 	static char BUFFER[256];/**<String buffer to perform string operations*/
     static double NABC_DBL_EPSILON;
     static double NABC_DBL_MIN;
+    
+    
+    //static char EQ_TEST_NAMES[][1];
+    
 };
+
+enum EqTestValue {
+    MUTOST_ONE_SAMPLE,
+    TEST,
+    NUMBER_OF_EQ_TEST //list terminator
+};
+
+typedef std::map<std::string, EqTestValue> EqTestMap;
+
+typedef EqTestMap::value_type EqTestMapValue;
+
+static const EqTestMapValue EqTestMapEntries[] =
+{
+    
+	EqTestMapValue( "mutost",  MUTOST_ONE_SAMPLE ),
+	EqTestMapValue( "test",  TEST )
+	//EqTestMapValue( "n_test",  NUMBER_OF_EQ_TEST )
+    
+};
+
+static const EqTestMap s_mapEqTestValue( &EqTestMapEntries[MUTOST_ONE_SAMPLE], &EqTestMapEntries[NUMBER_OF_EQ_TEST] );
+
 
 typedef struct{
     double nx;
@@ -67,6 +95,18 @@ typedef struct{
 } kl_integrand_arg;
 
 typedef struct{
+    
+    double nx;//pass
+    double sx;
+    double ny;
+    double sy;
+    double mx_pw;
+    double alpha;
+    int calibrate_tau_up;
+    double tau_up;
+    double pow_scale;
+    double curr_mxpw;
+    double KL_div;
     
 } kl_arg;
 
