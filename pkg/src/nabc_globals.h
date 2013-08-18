@@ -36,6 +36,14 @@ typedef unsigned int uint;
 #define ABS(x) ((x>0) ? x : -x) 										/**< macro to return the absolute value of a number */
 
 
+enum EqTestValue {
+    MUTOST_ONE_SAMPLE,
+    NUMBER_OF_EQ_TEST //list terminator
+};
+typedef std::map<std::string, EqTestValue> EqTestMap;
+typedef EqTestMap::value_type EqTestMapValue;
+
+
 /**\brief All global variables. */
 struct nabcGlobals
 {
@@ -43,33 +51,10 @@ struct nabcGlobals
 	static char BUFFER[256];/**<String buffer to perform string operations*/
     static double NABC_DBL_EPSILON;
     static double NABC_DBL_MIN;
-    
-    
-    //static char EQ_TEST_NAMES[][1];
-    
-};
-
-enum EqTestValue {
-    MUTOST_ONE_SAMPLE,
-    TEST,
-    NUMBER_OF_EQ_TEST //list terminator
-};
-
-typedef std::map<std::string, EqTestValue> EqTestMap;
-
-typedef EqTestMap::value_type EqTestMapValue;
-
-static const EqTestMapValue EqTestMapEntries[] =
-{
-    
-	EqTestMapValue( "mutost",  MUTOST_ONE_SAMPLE ),
-	EqTestMapValue( "test",  TEST )
-	//EqTestMapValue( "n_test",  NUMBER_OF_EQ_TEST )
+    static EqTestMapValue EqTestMapEntries[];
+    static EqTestMap s_mapEqTestValue;
     
 };
-
-static const EqTestMap s_mapEqTestValue( &EqTestMapEntries[MUTOST_ONE_SAMPLE], &EqTestMapEntries[NUMBER_OF_EQ_TEST] );
-
 
 typedef struct{
     double nx;

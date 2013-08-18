@@ -676,7 +676,7 @@ SEXP abcCalibrate_tau_nomxpw_yesKL(SEXP arg_test_name, SEXP list_KL_args, SEXP a
     strcpy(nabcGlobals::BUFFER,CHAR(STRING_ELT(arg_test_name, 0)));
     
     try{
-        eq_test_val=s_mapEqTestValue.at(nabcGlobals::BUFFER);
+        eq_test_val=nabcGlobals::s_mapEqTestValue.at(nabcGlobals::BUFFER);
     }
     catch (const std::out_of_range& oor) {
         error("%s is not in the lookup table of equivalence test, see documentation\n",nabcGlobals::BUFFER);
