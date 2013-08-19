@@ -581,8 +581,8 @@ static inline void abcMuTOST_KL(const double &nx, const double &sx, const double
     pow_arg.give_log=1;
     
     kl_integrand_arg KL_arg;
-    KL_arg.p=abcMuTOST_sulkl_scalar;
-    KL_arg.q=abcMuTOST_pow_scalar;
+    KL_arg.p=&abcMuTOST_sulkl_scalar;
+    KL_arg.q=&abcMuTOST_pow_scalar;
     KL_arg.p_arg=&sulkl_arg;
     KL_arg.q_arg=&pow_arg;
     
@@ -602,7 +602,12 @@ static inline void abcMuTOST_KL(const double &nx, const double &sx, const double
 
 static inline void abcMuTOST_KL(kl_arg *arg)
 {
+    //std::cout<<"abcMuTOST_KL 1a:\t"<<arg->nx<<'\t'<<arg->sx<<'\t'<<arg->ny<<'\t'<<arg->sy<<'\t'<<arg->mx_pw<<'\t'<<arg->alpha<<'\t'<<arg->calibrate_tau_up<<'\t'<<arg->tau_up<<'\t'<<arg->pow_scale<<'\t'<<arg->curr_mxpw<<'\t'<<arg->KL_div<<std::endl;
+    
     abcMuTOST_KL(arg->nx, arg->sx, arg->ny, arg->sy, arg->mx_pw, arg->alpha, arg->calibrate_tau_up, arg->tau_up, arg->pow_scale, arg->curr_mxpw, arg->KL_div);
+    
+    //std::cout<<"abcMuTOST_KL 1b:\t"<<arg->nx<<'\t'<<arg->sx<<'\t'<<arg->ny<<'\t'<<arg->sy<<'\t'<<arg->mx_pw<<'\t'<<arg->alpha<<'\t'<<arg->calibrate_tau_up<<'\t'<<arg->tau_up<<'\t'<<arg->pow_scale<<'\t'<<arg->curr_mxpw<<'\t'<<arg->KL_div<<std::endl;
+
 }
 
 
@@ -648,21 +653,28 @@ SEXP getListElement(SEXP list, const char *str)
 }
 
 
+static inline void abcCalibrate_tau_nomxpw_yesKL(void (*KL_divergence)(kl_arg *), kl_arg *KL_arg, const double &tau_up_lb, const int &max_it)
+{
+    //TODO
+    KL_arg->calibrate_tau_up = 1;
+    KL_arg->tau_up=tau_up_lb;
+    KL_arg->curr_mxpw=0;
+
+    KL_divergence(KL_arg);
+    
+}
+
+
+
 SEXP abcCalibrate_tau_nomxpw_yesKL(SEXP arg_test_name, SEXP list_KL_args, SEXP arg_tau_up_lb, SEXP arg_max_it)
 {
     //SEXP to C
-    //    double nx=asReal(arg_nx);
-    //    double sx=asReal(arg_sx);
-    //    double ny=asReal(arg_ny);
-    //    double sy=asReal(arg_sy);
-    //    double mx_pw=asReal(arg_mx_pw);
-    //    double alpha=asReal(arg_alpha);
-    //    int calibrate_tau_up=asLogical(arg_calibrate_tau_up);
-    //    double tau_up=asReal(arg_tau_up);
-    //    double pow_scale=asReal(arg_pow_scale);
-
+    double tau_up_lb=asReal(arg_tau_up_lb);
+    int max_it=asInteger(arg_max_it);
+    
     EqTestValue eq_test_val;
 
+    void (*KL_divergence)(kl_arg *);
     //get element from list_KL_args and put them in a kl_arg structure
     //by default just add the arguments you need, un-needed arguments will just be NULL if not present in list_KL_args
     kl_arg arg;
@@ -670,8 +682,9 @@ SEXP abcCalibrate_tau_nomxpw_yesKL(SEXP arg_test_name, SEXP list_KL_args, SEXP a
     arg.sx = asReal(getListElement(list_KL_args,"s.of.x"));
     arg.ny = asReal(getListElement(list_KL_args,"n.of.y"));
     arg.sy = asReal(getListElement(list_KL_args,"s.of.y"));
-    arg.mx_pw = asInteger(getListElement(list_KL_args,"mx.pw"));
+    arg.mx_pw = asReal(getListElement(list_KL_args,"mx.pw"));
     arg.alpha = asReal(getListElement(list_KL_args,"alpha"));
+    arg.pow_scale = asReal(getListElement(list_KL_args,"pow_scale"));
     
     strcpy(nabcGlobals::BUFFER,CHAR(STRING_ELT(arg_test_name, 0)));
     
@@ -685,7 +698,7 @@ SEXP abcCalibrate_tau_nomxpw_yesKL(SEXP arg_test_name, SEXP list_KL_args, SEXP a
     //given the arg_test_name choose right function and ptr to it
     switch (eq_test_val) {
         case MUTOST_ONE_SAMPLE:
-            
+            KL_divergence=&abcMuTOST_KL;
             break;
             
         default:
@@ -699,11 +712,14 @@ SEXP abcCalibrate_tau_nomxpw_yesKL(SEXP arg_test_name, SEXP list_KL_args, SEXP a
     SEXP ans;
     PROTECT(ans= allocVector(REALSXP,3));
     xans= REAL(ans);
-    xans[1]=arg.nx;
-    xans[2]=arg.ny;
     
     //Call C function
-    //abcMuTOST_KL(nx,sx, ny, sy,mx_pw,alpha, calibrate_tau_up, xans[1], pow_scale, xans[2],xans[0]);
+    abcCalibrate_tau_nomxpw_yesKL(KL_divergence, &arg, tau_up_lb, max_it);
+
+    xans[0]=arg.KL_div;
+    xans[1]=arg.tau_up;
+    xans[2]=arg.curr_mxpw;
+
     
     UNPROTECT(1);
     return ans;
