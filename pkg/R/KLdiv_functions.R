@@ -15,7 +15,7 @@ nabc.kl.integrand<-function(x,dP,dQ,P_arg,Q_arg)
 	if(any(tmp<-(log_Q_x == -Inf)))
 	{
 		warning("Q(x) is 0 at some point! Usually this happens due to numerical inacurracy in the tail of Q. For simplicity we assume that log(Q(x))=-100 at these points.")
-		log_Q_x[tmp]<- -100
+		log_Q_x[tmp]<- log(.Machine$double.xmin)
 	}
 	ans		<- (log_P_x-log_Q_x)*exp(log_P_x)
 	if(any(!is.finite(ans)))
@@ -64,12 +64,13 @@ nabc.kl.optimize<- function(x_value, x_name, is_integer=FALSE, KL_divergence, ar
 #'
 nabc.calibrate.tau.nomxpw.yesKL <- function(test_name, KL_args, tau.u.lb=1, max.it=100,debug = 0, plot = F, plot_debug = FALSE) {
 	
-	if(!tau.u.lb){stop("tau.u.lb must be >0")}
-	#TODO stopifnot
+	stopifnot(tau.u.lb>0,max.it>0)
 
 	if(test_name=="mutost"){
 		
 		#check KL_args
+		stopifnot(all(c("n.of.x","s.of.x","n.of.y","s.of.y","mx.pw","alpha","pow_scale")%in%names(KL_args)))
+		with(KL_args,stopifnot(n.of.x>0,s.of.x>0, n.of.y>0, s.of.y>0,mx.pw>0, alpha>0, pow_scale>0))
 		
 	}else{
 		stop(test_name,"is currently not supported.")
@@ -78,12 +79,14 @@ nabc.calibrate.tau.nomxpw.yesKL <- function(test_name, KL_args, tau.u.lb=1, max.
 	if(!debug){
 		#all in C
 		suppressWarnings({ #suppress numerical inaccuracy warnings
-			ans <- .Call("abcCalibrate_tau_nomxpw_yesKL", test_name, KL_args, tau.u.lb, max.it)
+			tmp <- .Call("abcCalibrate_tau_nomxpw_yesKL", test_name, KL_args, as.double(tau.u.lb), as.integer(max.it))
 		})
-
+		
+		names(tmp)<-c("KL_div","tau.u","pw.cmx")
 		
 	}else{
-		#all in R
+	
+	#all in R
 	KL_divergence=switch(test_name,mutost="nabc.mutost.kl")
 	
 	KL_args$calibrate.tau.u <- F
@@ -93,20 +96,22 @@ nabc.calibrate.tau.nomxpw.yesKL <- function(test_name, KL_args, tau.u.lb=1, max.
 		cairo_pdf("KL_initial.pdf", onefile = T)
 	}
 	
+	
 	KL.of.tau.u <- do.call(KL_divergence, KL_args)["KL_div"]
+	
 	
 	if (plot_debug) {
 		dev.off()
 	}
 	
 	#to find tau.u.ub increase tau.u until the KL increases too
-	tau.u.ub < 2*tau.u.lb
+	tau.u.ub <- 2*tau.u.lb
 	curr.it <- max.it
 	
 	KL_args$tau.u <- tau.u.ub
 	KL_args$plot <- F
 	KL.of.tau.u.ub <- do.call(KL_divergence, KL_args)["KL_div"]
-	
+		
 	while (KL.of.tau.u.ub < KL.of.tau.u && curr.it > 0) {
 		curr.it <- curr.it - 1
 		KL.of.tau.u <- KL.of.tau.u.ub
@@ -115,8 +120,14 @@ nabc.calibrate.tau.nomxpw.yesKL <- function(test_name, KL_args, tau.u.lb=1, max.
 		KL.of.tau.u.ub <- do.call(KL_divergence, KL_args)["KL_div"]
 	}
 	
+	
+		
 	if (curr.it == 0) 
-		stop("nabc.adjust.tau.lowup.KL: could not find upper bound for tau.u")
+		stop("could not find upper bound for tau.u")
+	
+	if(curr.it < max.it){
+		tau.u.lb <- tau.u.ub/4
+	}
 	
 	#minimize KL_tau.u between [tau.u.lb - tau.u.ub]	
 	if (plot_debug) {
@@ -136,6 +147,7 @@ nabc.calibrate.tau.nomxpw.yesKL <- function(test_name, KL_args, tau.u.lb=1, max.
 	}
 	
 	return(c(n.of.y = n.of.y, tmp))
+	
 }
 
 #------------------------------------------------------------------------------------------------------------------------

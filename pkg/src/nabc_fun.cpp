@@ -548,7 +548,7 @@ static inline void abcMuTOST_KL(const double &nx, const double &sx, const double
     double lower,upper,abs_tol,rel_tol,abserr;
     upper=tau_up*pow_scale;
     lower=-upper;
-    rel_tol=std::pow(nabcGlobals::NABC_DBL_EPSILON,0.25);
+    rel_tol=nabcGlobals::NABC_DBL_TOL;
     abs_tol=rel_tol;
     
     //create arg for pow
@@ -559,6 +559,11 @@ static inline void abcMuTOST_KL(const double &nx, const double &sx, const double
     pow_arg.alpha=alpha;
     pow_arg.norm=1;
     pow_arg.give_log=0;
+    
+    //compute actual max power if tau.u is not calibrated
+    if (!calibrate_tau_up) {
+        curr_mxpw = abcMuTOST_pow_scalar(0,&pow_arg);
+    }
     
     //std::cout<<"abcMuTOST_taulowup_pw at b1:\t"<<lower<<'\t'<<pow_arg.norm<<'\t'<<pow_arg.give_log<<'\t'<<neval<<std::endl;
     
@@ -607,7 +612,7 @@ static inline void abcMuTOST_KL(kl_arg *arg)
     abcMuTOST_KL(arg->nx, arg->sx, arg->ny, arg->sy, arg->mx_pw, arg->alpha, arg->calibrate_tau_up, arg->tau_up, arg->pow_scale, arg->curr_mxpw, arg->KL_div);
     
     //std::cout<<"abcMuTOST_KL 1b:\t"<<arg->nx<<'\t'<<arg->sx<<'\t'<<arg->ny<<'\t'<<arg->sy<<'\t'<<arg->mx_pw<<'\t'<<arg->alpha<<'\t'<<arg->calibrate_tau_up<<'\t'<<arg->tau_up<<'\t'<<arg->pow_scale<<'\t'<<arg->curr_mxpw<<'\t'<<arg->KL_div<<std::endl;
-
+    
 }
 
 
@@ -653,14 +658,76 @@ SEXP getListElement(SEXP list, const char *str)
 }
 
 
-static inline void abcCalibrate_tau_nomxpw_yesKL(void (*KL_divergence)(kl_arg *), kl_arg *KL_arg, const double &tau_up_lb, const int &max_it)
-{
-    //TODO
-    KL_arg->calibrate_tau_up = 1;
-    KL_arg->tau_up=tau_up_lb;
-    KL_arg->curr_mxpw=0;
+//create a functio  that take a double and a void (kl_switch_arg), modify KL_arg according to KL_arg_value, run KL_divergence and return the KL_div
+double KL_divergence_switch_arg(double x, void* KL_switch_arg){
+    
+    //std::cout<<"tau_up:"<<x<<std::endl;
 
-    KL_divergence(KL_arg);
+    
+    kl_switch_arg *arg=(kl_switch_arg *) KL_switch_arg;
+    
+    //switch arg
+    switch (arg->KL_arg_value) {
+        case TAU_UP:
+            arg->KL_arg->tau_up = x;
+            break;
+            
+        case NY:
+            arg->KL_arg->ny = x;
+            break;
+            
+        default:
+            error("%s:%s:%d: edit switch to include KlArgValue %d",__FILE__,__FUNCTION__,__LINE__,nabcGlobals::BUFFER);
+            break;
+    }
+    
+    //compute KL divergence
+    arg->KL_divergence(arg->KL_arg);
+    
+    return arg->KL_arg->KL_div;
+    
+}
+
+
+static inline void abcCalibrate_tau_nomxpw_yesKL(void (*KL_divergence)(kl_arg *), kl_arg *KL_arg, const double &guess_tau_up_lb, const int &max_it)
+{
+        
+    double previous_KL_div,next_KL_div;
+    int curr_it;
+    //initialize kl_switch_arg
+    kl_switch_arg KL_switch_arg;
+    KL_switch_arg.KL_arg_value = TAU_UP;
+    KL_switch_arg.KL_arg = KL_arg;
+    KL_switch_arg.KL_divergence = KL_divergence;
+    
+    KL_arg->calibrate_tau_up = 0;
+    
+    // current KL
+    previous_KL_div = KL_divergence_switch_arg(guess_tau_up_lb,&KL_switch_arg);
+    //std::cout<<"previous KL div switch:"<<previous_KL_div<<"\tKL_switch_arg.KL_arg->tau_up:"<<KL_switch_arg.KL_arg->tau_up<<"\tKL_arg->tau_up:"<<KL_arg->tau_up<<std::endl;
+    
+    
+    // next KL
+    next_KL_div = KL_divergence_switch_arg(2*KL_arg->tau_up,&KL_switch_arg);
+    //std::cout<<"next KL div switch:"<<next_KL_div<<"\tKL_switch_arg.KL_arg->tau_up:"<<KL_switch_arg.KL_arg->tau_up<<"\tKL_arg->tau_up:"<<KL_arg->tau_up<<std::endl;
+    
+    curr_it = max_it;
+
+            
+    while ((next_KL_div < previous_KL_div) && curr_it--) {
+        previous_KL_div = next_KL_div;
+        next_KL_div = KL_divergence_switch_arg(2*KL_arg->tau_up,&KL_switch_arg);
+    }
+    
+    ERROR_ON(!curr_it ,"could not find upper bound for tau.u");
+    
+    //std::cout<<"tau_up_lb:"<<KL_arg->tau_up/4<<"\t tau_up_ub:"<<KL_arg->tau_up<<"\t curr_it:"<<curr_it<<std::endl;
+    
+    
+    //minimize KL between KL_arg->tau_up/4 and KL_arg->tau_up
+    //if curr_it==max_it then the lb is obtained by dividing ub by 2, by 4 otherwise
+    Brent_fmin((curr_it == max_it)?KL_arg->tau_up/2:KL_arg->tau_up/4, KL_arg->tau_up, &KL_divergence_switch_arg, &KL_switch_arg, nabcGlobals::NABC_DBL_TOL);
+    
     
 }
 
@@ -673,7 +740,7 @@ SEXP abcCalibrate_tau_nomxpw_yesKL(SEXP arg_test_name, SEXP list_KL_args, SEXP a
     int max_it=asInteger(arg_max_it);
     
     EqTestValue eq_test_val;
-
+    
     void (*KL_divergence)(kl_arg *);
     //get element from list_KL_args and put them in a kl_arg structure
     //by default just add the arguments you need, un-needed arguments will just be NULL if not present in list_KL_args
@@ -715,11 +782,11 @@ SEXP abcCalibrate_tau_nomxpw_yesKL(SEXP arg_test_name, SEXP list_KL_args, SEXP a
     
     //Call C function
     abcCalibrate_tau_nomxpw_yesKL(KL_divergence, &arg, tau_up_lb, max_it);
-
+    
     xans[0]=arg.KL_div;
     xans[1]=arg.tau_up;
     xans[2]=arg.curr_mxpw;
-
+    
     
     UNPROTECT(1);
     return ans;

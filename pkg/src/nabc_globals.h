@@ -11,6 +11,7 @@
 #include <map>
 #include <string>
 #include <stdint.h>
+#include <limits>
 
 typedef double flt_ty; /**< type for scientific accuracy in rate constants */
 #ifdef USE_UNSIGNEDLONG
@@ -44,6 +45,16 @@ typedef std::map<std::string, EqTestValue> EqTestMap;
 typedef EqTestMap::value_type EqTestMapValue;
 
 
+
+enum KlArgValue {
+    TAU_UP,
+    NY,
+    NUMBER_OF_KL_ARG //list terminator
+};
+//typedef std::map<std::string, KlArgValue> KlArgMap;
+//typedef KlArgMap::value_type KlArgMapValue;
+
+
 /**\brief All global variables. */
 struct nabcGlobals
 {
@@ -51,8 +62,11 @@ struct nabcGlobals
 	static char BUFFER[256];/**<String buffer to perform string operations*/
     static double NABC_DBL_EPSILON;
     static double NABC_DBL_MIN;
+    static double NABC_DBL_TOL;
     static EqTestMapValue EqTestMapEntries[];
     static EqTestMap s_mapEqTestValue;
+    //static KlArgMapValue KlArgMapEntries[];
+    //static KlArgMap s_mapKlArgValue;
     
 };
 
@@ -94,6 +108,14 @@ typedef struct{
     double KL_div;
     
 } kl_arg;
+
+typedef struct{
+    
+    KlArgValue KL_arg_value;
+    kl_arg *KL_arg;
+    void (*KL_divergence)(kl_arg *);
+    
+} kl_switch_arg;
 
 
 

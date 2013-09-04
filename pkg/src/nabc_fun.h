@@ -8,6 +8,7 @@
 #include <R.h>
 #include <Rinternals.h>
 #include "nabc_qng.h"
+#include "nabc_optimize.h"
 
 extern "C" {
     /*\brief Estimate the rejection interval for one-sample dispersion equivalence numerically.

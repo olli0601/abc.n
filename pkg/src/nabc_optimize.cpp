@@ -64,7 +64,7 @@
 #include "nabc_optimize.h"
 
 double Brent_fmin(double ax, double bx, double (*f)(double, void *),
-                  void *info, double tol, int interger_valued)
+                  void *info, double tol)
 {
     /*  c is the squared inverse of the golden ratio */
     const double c = (3. - sqrt(5.)) * .5;

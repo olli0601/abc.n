@@ -7,6 +7,7 @@
 
 #include <cstdarg>
 #include <sstream> 
+#include <Rinternals.h>
 #include <stdexcept>
 #include "nabc_globals.h"
 
@@ -32,7 +33,8 @@ inline void postIfError(const char* format, ...)
 
 #define POST_ERROR(X,Y) postIfError(__FILE__,X, Y)/**< macro to check for error messages */
 #define FAIL_ON(condition, message) if (condition){ postIfError(message, condition); }/**< macro to throw error messages */
-
+#define ERROR_ON(condition,message) if (condition){ error("%s:%s:%d:%s",__FILE__,__FUNCTION__,__LINE__,message);}//provided by Rinternal.h
+#define WARNING_ON(condition,message) if (condition){ warning("%s:%s:%d:%s",__FILE__,__FUNCTION__,__LINE__,message);}//provided by Rinternal.h
 
 
  #ifdef __cplusplus

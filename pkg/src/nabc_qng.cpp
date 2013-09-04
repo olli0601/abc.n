@@ -80,7 +80,7 @@ nabc_integration_qng (double (*f)(double, void *), void *f_arg,
         * result = 0;
         * abserr = 0;
         * neval = 0;
-        FAIL_ON(1,"tolerance cannot be acheived with given epsabs and epsrel");
+        WARNING_ON(1,"tolerance cannot be acheived with given epsabs and epsrel");
     };
     
     /* Compute the integral using the 10- and 21-point formula. */
@@ -219,7 +219,7 @@ nabc_integration_qng (double (*f)(double, void *), void *f_arg,
     * abserr = err ;
     * neval = 87;
     
-    FAIL_ON(1,"failed to reach tolerance with highest-order rule");
+    WARNING_ON(1,"failed to reach tolerance with highest-order rule");
     
     return 0;
     

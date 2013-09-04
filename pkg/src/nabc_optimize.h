@@ -15,4 +15,7 @@
 #include "nabc_error_handling.h"
 #include "nabc_globals.h"
 
+double Brent_fmin(double ax, double bx, double (*f)(double, void *),
+                  void *info, double tol);
+
 #endif /* defined(__nABC__nabc_optimize__) */
