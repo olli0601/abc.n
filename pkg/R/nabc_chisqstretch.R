@@ -105,7 +105,6 @@ nabc.chisqstretch.sulkl<- function(rho, n.of.x, s.of.x, norm = 1, support= c(0,I
 #'
 nabc.chisqstretch.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u=1, for.mle=0, pow_scale=1.5, debug = 0, plot = F) 
 {
-	require(pscl)	
 	scale	<- ifelse(for.mle, n.of.x, n.of.x-1)
 	df 		<- n.of.y-1
 	
@@ -152,8 +151,6 @@ nabc.chisqstretch.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, c
 	}
 	if (plot) 
 	{
-		require(reshape)
-		require(ggplot2)
 		rho_lkl 			<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
 		lkl					<- nabc.chisqstretch.sulkl(rho_lkl, n.of.x, s.of.x, lkl_norm, lkl_support)
 		df_lkl 				<- data.frame(x = rho_lkl, no = lkl*lkl_norm ,yes = lkl)

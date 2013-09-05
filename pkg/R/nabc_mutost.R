@@ -235,8 +235,6 @@ nabc.mutost.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibra
 	}
 
 	if (plot) {
-		require(reshape)
-		require(ggplot2)
 		rho <- seq(lkl_support[1], lkl_support[2], length.out = 1000)
 		lkl <- nabc.mutost.sulkl(rho, n.of.x, s.of.x, lkl_norm, lkl_support)
 		df_lkl <- data.frame(x = rho, no = lkl * lkl_norm, yes = lkl)

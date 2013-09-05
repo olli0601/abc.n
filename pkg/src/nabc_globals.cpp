@@ -19,7 +19,9 @@ EqTestMap nabcGlobals::s_mapEqTestValue(&EqTestMapEntries[MUTOST_ONE_SAMPLE], &E
 CalibrationMapValue nabcGlobals::CalibrationMapEntries[] =
 {
     
-	CalibrationMapValue( "tau_no_max_pow",  TAU_NO_MAX_POW )
+	CalibrationMapValue( "tau_no_max_pow",  TAU_NO_MAX_POW ),
+	CalibrationMapValue( "m_and_tau_yes_max_pow",  M_AND_TAU_YES_MAX_POW )
+    
     
 };
 

@@ -46,6 +46,7 @@ typedef EqTestMap::value_type EqTestMapValue;
 
 enum CalibrationValue {
     TAU_NO_MAX_POW,
+    M_AND_TAU_YES_MAX_POW,
     NUMBER_OF_CALIBRATION //list terminator
 };
 typedef std::map<std::string, CalibrationValue> CalibrationMap;

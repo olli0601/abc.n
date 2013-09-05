@@ -673,7 +673,7 @@ double KL_divergence_switch_arg(double x, void* KL_switch_arg){
             break;
             
         case NY:
-            arg->KL_arg->ny = x;
+            arg->KL_arg->ny = round(x);//TODO: tmp solution, need to change optimizer to deal with integer
             break;
             
         default:
@@ -721,7 +721,7 @@ static inline void abcCalibrate_tau_nomxpw_yesKL(void (*KL_divergence)(kl_arg *)
         next_KL_div = KL_divergence_switch_arg(2*KL_arg->tau_up,&KL_switch_arg);
     }
     
-    ERROR_ON(!curr_it ,"could not find upper bound for tau.u");
+    ERROR_ON(!curr_it ,"could not find upper bound for tau.u within the maximum number of iterations.");
     
     //std::cout<<"tau_up_lb:"<<KL_arg->tau_up/4<<"\t tau_up_ub:"<<KL_arg->tau_up<<"\t curr_it:"<<curr_it<<std::endl;
     
@@ -729,6 +729,63 @@ static inline void abcCalibrate_tau_nomxpw_yesKL(void (*KL_divergence)(kl_arg *)
     //minimize KL between KL_arg->tau_up/4 and KL_arg->tau_up
     //if curr_it==max_it then the lb is obtained by dividing ub by 2, by 4 otherwise
     Brent_fmin((curr_it == max_it)?KL_arg->tau_up/2:KL_arg->tau_up/4, KL_arg->tau_up, &KL_divergence_switch_arg, &KL_switch_arg, nabcGlobals::NABC_DBL_TOL);
+    
+}
+
+
+static inline void abcCalibrate_m_and_tau_yesmxpw_yesKL(void (*KL_divergence)(kl_arg *), kl_arg *KL_arg, const int &max_it)
+{
+    //here
+    
+    double test_KL_div,current_KL_div,ny_lb;
+    int curr_it;
+    //initialize kl_switch_arg
+    kl_switch_arg KL_switch_arg;
+    //choose parameter to calibrate
+    KL_switch_arg.KL_arg_value = NY;
+    KL_switch_arg.KL_arg = KL_arg;
+    KL_switch_arg.KL_divergence = KL_divergence;
+    
+    //calibrate tau_up when computing KL
+    KL_arg->calibrate_tau_up = 1;
+    
+    
+    // test KL
+    test_KL_div = KL_divergence_switch_arg(KL_arg->ny - 1,&KL_switch_arg);
+    //std::cout<<"next KL div switch:"<<next_KL_div<<"\tKL_switch_arg.KL_arg->tau_up:"<<KL_switch_arg.KL_arg->tau_up<<"\tKL_arg->tau_up:"<<KL_arg->tau_up<<std::endl;
+    
+    
+    // current KL
+    current_KL_div = KL_divergence_switch_arg(KL_arg->ny+1,&KL_switch_arg);// ny +1 since it has been modified by previous call to KL_divergence_switch_arg
+    //std::cout<<"previous KL div switch:"<<previous_KL_div<<"\tKL_switch_arg.KL_arg->tau_up:"<<KL_switch_arg.KL_arg->tau_up<<"\tKL_arg->tau_up:"<<KL_arg->tau_up<<std::endl;
+     
+    curr_it = max_it;
+    
+    if (test_KL_div < current_KL_div) {
+        ny_lb = 1;
+    }
+    else
+    {
+        test_KL_div = KL_divergence_switch_arg(2*KL_arg->ny,&KL_switch_arg);
+        
+        while ((test_KL_div < current_KL_div) && curr_it--) {
+            current_KL_div = test_KL_div;
+            test_KL_div = KL_divergence_switch_arg(2*KL_arg->ny,&KL_switch_arg);
+        }
+        
+        //if curr_it==max_it then the lb is obtained by dividing ub by 2, by 4 otherwise
+        ny_lb = (curr_it == max_it)?KL_arg->ny/2:KL_arg->ny/4;
+        
+    }
+    
+        
+    ERROR_ON(!curr_it ,"could not find upper bound for n.of.y within the maximum number of iterations.");
+    
+    //std::cout<<"tau_up_lb:"<<KL_arg->tau_up/4<<"\t tau_up_ub:"<<KL_arg->tau_up<<"\t curr_it:"<<curr_it<<std::endl;
+    
+    
+    //minimize KL between ny_lb and KL_arg->ny
+    Brent_fmin(ny_lb, KL_arg->ny, &KL_divergence_switch_arg, &KL_switch_arg, 1.0);//nabcGlobals::NABC_DBL_TOL
     
     
 }
@@ -744,6 +801,11 @@ SEXP abcCalibrate_minimize_KL(SEXP arg_test_name, SEXP arg_calibration_name, SEX
     CalibrationValue calibration_val;
     
     void (*KL_divergence)(kl_arg *);
+    
+    //answer
+    double *xans= NULL;
+    SEXP ans, ans_names;
+    
     //get element from list_KL_args and put them in a kl_arg structure
     //by default just add the arguments you need, un-needed arguments will just be NULL if not present in list_KL_args
     kl_arg arg;
@@ -792,6 +854,40 @@ SEXP abcCalibrate_minimize_KL(SEXP arg_test_name, SEXP arg_calibration_name, SEX
     switch (calibration_val) {
         case TAU_NO_MAX_POW:
             abcCalibrate_tau_nomxpw_yesKL(KL_divergence, &arg, max_it);
+            
+            PROTECT(ans= allocVector(REALSXP,3));
+            PROTECT(ans_names= allocVector(STRSXP,3));
+            
+            xans= REAL(ans);
+            
+            xans[0]=arg.KL_div;
+            xans[1]=arg.tau_up;
+            xans[2]=arg.curr_mxpw;
+
+            SET_STRING_ELT(ans_names,0,mkChar("KL_div"));
+            SET_STRING_ELT(ans_names,1,mkChar("tau.u"));
+            SET_STRING_ELT(ans_names,2,mkChar("pw.cmx"));
+
+            break;
+            
+        case M_AND_TAU_YES_MAX_POW:
+            abcCalibrate_m_and_tau_yesmxpw_yesKL(KL_divergence, &arg, max_it);
+            
+            PROTECT(ans= allocVector(REALSXP,4));
+            PROTECT(ans_names= allocVector(STRSXP,4));
+
+            xans= REAL(ans);
+            
+            xans[0]=arg.KL_div;
+            xans[1]=round(arg.ny);
+            xans[2]=arg.tau_up;
+            xans[3]=arg.curr_mxpw;
+            
+            SET_STRING_ELT(ans_names,0,mkChar("KL_div"));
+            SET_STRING_ELT(ans_names,1,mkChar("n.of.y"));
+            SET_STRING_ELT(ans_names,2,mkChar("tau.u"));
+            SET_STRING_ELT(ans_names,3,mkChar("pw.cmx"));
+
             break;
             
         default:
@@ -799,20 +895,9 @@ SEXP abcCalibrate_minimize_KL(SEXP arg_test_name, SEXP arg_calibration_name, SEX
             break;
     }
 
+    setAttrib(ans, R_NamesSymbol, ans_names);
     
-    //answer
-    double *xans= NULL;
-    SEXP ans;
-    PROTECT(ans= allocVector(REALSXP,3));
-    xans= REAL(ans);
-
-    
-    xans[0]=arg.KL_div;
-    xans[1]=arg.tau_up;
-    xans[2]=arg.curr_mxpw;
-    //TODO: add other parameter potentially calibrated or put ans in the switch
-    
-    UNPROTECT(1);
+    UNPROTECT(2);
     return ans;
     
 }
