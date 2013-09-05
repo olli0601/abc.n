@@ -661,8 +661,7 @@ SEXP getListElement(SEXP list, const char *str)
 //create a functio  that take a double and a void (kl_switch_arg), modify KL_arg according to KL_arg_value, run KL_divergence and return the KL_div
 double KL_divergence_switch_arg(double x, void* KL_switch_arg){
     
-    std::cout<<"n.of.y:"<<x<<std::endl;
-
+    //std::cout<<"x:"<<x<<std::endl;
     
     kl_switch_arg *arg=(kl_switch_arg *) KL_switch_arg;
     
