@@ -689,21 +689,23 @@ double KL_divergence_switch_arg(double x, void* KL_switch_arg){
 }
 
 
-static inline void abcCalibrate_tau_nomxpw_yesKL(void (*KL_divergence)(kl_arg *), kl_arg *KL_arg, const double &guess_tau_up_lb, const int &max_it)
+static inline void abcCalibrate_tau_nomxpw_yesKL(void (*KL_divergence)(kl_arg *), kl_arg *KL_arg, const int &max_it)
 {
         
     double previous_KL_div,next_KL_div;
     int curr_it;
     //initialize kl_switch_arg
     kl_switch_arg KL_switch_arg;
+    //choose parameter to calibrate
     KL_switch_arg.KL_arg_value = TAU_UP;
     KL_switch_arg.KL_arg = KL_arg;
     KL_switch_arg.KL_divergence = KL_divergence;
     
+    //do not calibrate tau_up when computing KL
     KL_arg->calibrate_tau_up = 0;
     
     // current KL
-    previous_KL_div = KL_divergence_switch_arg(guess_tau_up_lb,&KL_switch_arg);
+    previous_KL_div = KL_divergence_switch_arg(KL_arg->tau_up,&KL_switch_arg);
     //std::cout<<"previous KL div switch:"<<previous_KL_div<<"\tKL_switch_arg.KL_arg->tau_up:"<<KL_switch_arg.KL_arg->tau_up<<"\tKL_arg->tau_up:"<<KL_arg->tau_up<<std::endl;
     
     
@@ -733,13 +735,13 @@ static inline void abcCalibrate_tau_nomxpw_yesKL(void (*KL_divergence)(kl_arg *)
 
 
 
-SEXP abcCalibrate_tau_nomxpw_yesKL(SEXP arg_test_name, SEXP list_KL_args, SEXP arg_tau_up_lb, SEXP arg_max_it)
+SEXP abcCalibrate_minimize_KL(SEXP arg_test_name, SEXP arg_calibration_name, SEXP list_KL_args, SEXP arg_max_it)
 {
     //SEXP to C
-    double tau_up_lb=asReal(arg_tau_up_lb);
     int max_it=asInteger(arg_max_it);
     
     EqTestValue eq_test_val;
+    CalibrationValue calibration_val;
     
     void (*KL_divergence)(kl_arg *);
     //get element from list_KL_args and put them in a kl_arg structure
@@ -751,6 +753,7 @@ SEXP abcCalibrate_tau_nomxpw_yesKL(SEXP arg_test_name, SEXP list_KL_args, SEXP a
     arg.sy = asReal(getListElement(list_KL_args,"s.of.y"));
     arg.mx_pw = asReal(getListElement(list_KL_args,"mx.pw"));
     arg.alpha = asReal(getListElement(list_KL_args,"alpha"));
+    arg.tau_up = asReal(getListElement(list_KL_args,"tau.u"));
     arg.pow_scale = asReal(getListElement(list_KL_args,"pow_scale"));
     
     strcpy(nabcGlobals::BUFFER,CHAR(STRING_ELT(arg_test_name, 0)));
@@ -762,7 +765,7 @@ SEXP abcCalibrate_tau_nomxpw_yesKL(SEXP arg_test_name, SEXP list_KL_args, SEXP a
         error("%s is not in the lookup table of equivalence test, see documentation\n",nabcGlobals::BUFFER);
     }
     
-    //given the arg_test_name choose right function and ptr to it
+    //given the eq_test_val choose right function and ptr to it
     switch (eq_test_val) {
         case MUTOST_ONE_SAMPLE:
             KL_divergence=&abcMuTOST_KL;
@@ -774,19 +777,40 @@ SEXP abcCalibrate_tau_nomxpw_yesKL(SEXP arg_test_name, SEXP list_KL_args, SEXP a
     }
     
     
+        
+    //Call C function according to type_of_calibration
+    strcpy(nabcGlobals::BUFFER,CHAR(STRING_ELT(arg_calibration_name, 0)));
+    
+    try{
+        calibration_val=nabcGlobals::s_mapCalibrationValue.at(nabcGlobals::BUFFER);
+    }
+    catch (const std::out_of_range& oor) {
+        error("%s is not in the lookup table of calibration, see documentation\n",nabcGlobals::BUFFER);
+    }
+    
+    //given the calibration_val run appropriate calibration function
+    switch (calibration_val) {
+        case TAU_NO_MAX_POW:
+            abcCalibrate_tau_nomxpw_yesKL(KL_divergence, &arg, max_it);
+            break;
+            
+        default:
+            error("%s:%s:%d: edit switch to include calibration %s",__FILE__,__FUNCTION__,__LINE__,nabcGlobals::BUFFER);
+            break;
+    }
+
+    
     //answer
     double *xans= NULL;
     SEXP ans;
     PROTECT(ans= allocVector(REALSXP,3));
     xans= REAL(ans);
-    
-    //Call C function
-    abcCalibrate_tau_nomxpw_yesKL(KL_divergence, &arg, tau_up_lb, max_it);
+
     
     xans[0]=arg.KL_div;
     xans[1]=arg.tau_up;
     xans[2]=arg.curr_mxpw;
-    
+    //TODO: add other parameter potentially calibrated or put ans in the switch
     
     UNPROTECT(1);
     return ans;

@@ -44,6 +44,13 @@ enum EqTestValue {
 typedef std::map<std::string, EqTestValue> EqTestMap;
 typedef EqTestMap::value_type EqTestMapValue;
 
+enum CalibrationValue {
+    TAU_NO_MAX_POW,
+    NUMBER_OF_CALIBRATION //list terminator
+};
+typedef std::map<std::string, CalibrationValue> CalibrationMap;
+typedef CalibrationMap::value_type CalibrationMapValue;
+
 
 
 enum KlArgValue {
@@ -51,8 +58,6 @@ enum KlArgValue {
     NY,
     NUMBER_OF_KL_ARG //list terminator
 };
-//typedef std::map<std::string, KlArgValue> KlArgMap;
-//typedef KlArgMap::value_type KlArgMapValue;
 
 
 /**\brief All global variables. */
@@ -65,8 +70,8 @@ struct nabcGlobals
     static double NABC_DBL_TOL;
     static EqTestMapValue EqTestMapEntries[];
     static EqTestMap s_mapEqTestValue;
-    //static KlArgMapValue KlArgMapEntries[];
-    //static KlArgMap s_mapKlArgValue;
+    static CalibrationMapValue CalibrationMapEntries[];
+    static CalibrationMap s_mapCalibrationValue;
     
 };
 

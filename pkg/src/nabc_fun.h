@@ -45,7 +45,7 @@ extern "C" {
     
     SEXP abcMuTOST_KL(SEXP arg_nx, SEXP arg_sx, SEXP arg_ny, SEXP arg_sy, SEXP arg_mx_pw, SEXP arg_alpha, SEXP arg_calibrate_tau_up, SEXP arg_tau_up, SEXP arg_pow_scale);
     
-    SEXP abcCalibrate_tau_nomxpw_yesKL(SEXP arg_test_name, SEXP list_KL_args, SEXP arg_tau_up_lb, SEXP arg_max_it);
+    SEXP abcCalibrate_minimize_KL(SEXP arg_test_name, SEXP arg_calibration_name, SEXP list_KL_args, SEXP arg_max_it);
     
 }
 
