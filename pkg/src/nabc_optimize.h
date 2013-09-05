@@ -16,6 +16,6 @@
 #include "nabc_globals.h"
 
 double Brent_fmin(double ax, double bx, double (*f)(double, void *),
-                  void *info, double tol);
+                  void *info, double tol, int integer_valued);
 
 #endif /* defined(__nABC__nabc_optimize__) */

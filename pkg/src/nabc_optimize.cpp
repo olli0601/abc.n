@@ -22,6 +22,11 @@
 /* fmin.f -- translated by f2c (version 19990503).
  */
 
+/*Anton Camacho added a fix to deal with integer values of x
+ on 4/9/2013 that save some computation in the for loop.
+ email: anton.camacho@lshtm.ac.uk
+ */
+
 /* R's  optimize() :   function	fmin(ax,bx,f,tol)
  =    ==========		~~~~~~~~~~~~~~~~~
  
@@ -36,6 +41,8 @@
  in the interval  (ax,bx)
  tol   desired length of the interval of uncertainty of the final
  result ( >= 0.)
+ integer_valued flag to 1 if you want the function to deal with integer
+ values, that is to stop when the searching interval is smaller than 1
  
  OUTPUT..
  
@@ -64,7 +71,7 @@
 #include "nabc_optimize.h"
 
 double Brent_fmin(double ax, double bx, double (*f)(double, void *),
-                  void *info, double tol)
+                  void *info, double tol, int integer_valued)
 {
     /*  c is the squared inverse of the golden ratio */
     const double c = (3. - sqrt(5.)) * .5;
@@ -75,7 +82,7 @@ double Brent_fmin(double ax, double bx, double (*f)(double, void *),
     
     /*  eps is approximately the square root of the relative machine precision. */
     eps = nabcGlobals::NABC_DBL_EPSILON;
-    tol1 = eps + 1.;/* the smallest 1.000... > 1 *///Note: not useful
+    //tol1 = eps + 1.;/* the smallest 1.000... > 1 *///Note: not useful
     eps = sqrt(eps);
     
     a = ax;
@@ -99,9 +106,17 @@ double Brent_fmin(double ax, double bx, double (*f)(double, void *),
         t2 = tol1 * 2.;
         
         /* check stopping criterion */
-        //Note: if integer_valued and round(x)==round(xm) => break
-        //else
-        if (fabs(x - xm) <= t2 - (b - a) * .5) break;
+        if(integer_valued && fabs(b-a) <= 1)
+        {
+            //std::cout<<"exit1 x:"<<x<<" xm:"<<xm<<" a:"<<a<<" b:"<<b<<std::endl;
+            x = round(x);
+            break;
+        }
+        else if (fabs(x - xm) <= t2 - (b - a) * .5){
+            //std::cout<<"exit2 x:"<<x<<" xm:"<<xm<<" a:"<<a<<" b:"<<b<<std::endl;
+            break;
+        }
+        
         p = 0.;
         q = 0.;
         r = 0.;

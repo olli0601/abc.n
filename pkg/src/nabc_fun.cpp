@@ -661,7 +661,7 @@ SEXP getListElement(SEXP list, const char *str)
 //create a functio  that take a double and a void (kl_switch_arg), modify KL_arg according to KL_arg_value, run KL_divergence and return the KL_div
 double KL_divergence_switch_arg(double x, void* KL_switch_arg){
     
-    //std::cout<<"tau_up:"<<x<<std::endl;
+    std::cout<<"n.of.y:"<<x<<std::endl;
 
     
     kl_switch_arg *arg=(kl_switch_arg *) KL_switch_arg;
@@ -673,7 +673,7 @@ double KL_divergence_switch_arg(double x, void* KL_switch_arg){
             break;
             
         case NY:
-            arg->KL_arg->ny = round(x);//TODO: tmp solution, need to change optimizer to deal with integer
+            arg->KL_arg->ny = round(x);
             break;
             
         default:
@@ -728,14 +728,16 @@ static inline void abcCalibrate_tau_nomxpw_yesKL(void (*KL_divergence)(kl_arg *)
     
     //minimize KL between KL_arg->tau_up/4 and KL_arg->tau_up
     //if curr_it==max_it then the lb is obtained by dividing ub by 2, by 4 otherwise
-    Brent_fmin((curr_it == max_it)?KL_arg->tau_up/2:KL_arg->tau_up/4, KL_arg->tau_up, &KL_divergence_switch_arg, &KL_switch_arg, nabcGlobals::NABC_DBL_TOL);
+    KL_arg->tau_up = Brent_fmin((curr_it == max_it)?KL_arg->tau_up/2:KL_arg->tau_up/4, KL_arg->tau_up, &KL_divergence_switch_arg, &KL_switch_arg, nabcGlobals::NABC_DBL_TOL, 0);
+    
+    //compute final KL_div
+    KL_divergence(KL_arg);
     
 }
 
 
 static inline void abcCalibrate_m_and_tau_yesmxpw_yesKL(void (*KL_divergence)(kl_arg *), kl_arg *KL_arg, const int &max_it)
 {
-    //here
     
     double test_KL_div,current_KL_div,ny_lb;
     int curr_it;
@@ -759,34 +761,34 @@ static inline void abcCalibrate_m_and_tau_yesmxpw_yesKL(void (*KL_divergence)(kl
     current_KL_div = KL_divergence_switch_arg(KL_arg->ny+1,&KL_switch_arg);// ny +1 since it has been modified by previous call to KL_divergence_switch_arg
     //std::cout<<"previous KL div switch:"<<previous_KL_div<<"\tKL_switch_arg.KL_arg->tau_up:"<<KL_switch_arg.KL_arg->tau_up<<"\tKL_arg->tau_up:"<<KL_arg->tau_up<<std::endl;
      
-    curr_it = max_it;
     
     if (test_KL_div < current_KL_div) {
         ny_lb = 1;
     }
     else
     {
+        curr_it = max_it;
+
         test_KL_div = KL_divergence_switch_arg(2*KL_arg->ny,&KL_switch_arg);
         
         while ((test_KL_div < current_KL_div) && curr_it--) {
             current_KL_div = test_KL_div;
             test_KL_div = KL_divergence_switch_arg(2*KL_arg->ny,&KL_switch_arg);
         }
-        
+
+        ERROR_ON(!curr_it ,"could not find upper bound for n.of.y within the maximum number of iterations.");
+
         //if curr_it==max_it then the lb is obtained by dividing ub by 2, by 4 otherwise
         ny_lb = (curr_it == max_it)?KL_arg->ny/2:KL_arg->ny/4;
         
     }
     
-        
-    ERROR_ON(!curr_it ,"could not find upper bound for n.of.y within the maximum number of iterations.");
-    
-    //std::cout<<"tau_up_lb:"<<KL_arg->tau_up/4<<"\t tau_up_ub:"<<KL_arg->tau_up<<"\t curr_it:"<<curr_it<<std::endl;
-    
-    
     //minimize KL between ny_lb and KL_arg->ny
-    Brent_fmin(ny_lb, KL_arg->ny, &KL_divergence_switch_arg, &KL_switch_arg, 1.0);//nabcGlobals::NABC_DBL_TOL
+    KL_arg->ny = Brent_fmin(ny_lb, KL_arg->ny, &KL_divergence_switch_arg, &KL_switch_arg, nabcGlobals::NABC_DBL_TOL, 1);//
     
+    //compute final KL_div
+    KL_divergence(KL_arg);
+
     
 }
 

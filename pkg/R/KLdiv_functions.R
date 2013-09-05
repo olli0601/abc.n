@@ -187,13 +187,13 @@ nabc.calibrate.m.and.tau.yesmxpw.yesKL <- function(test_name, KL_args, max.it = 
 		KL_divergence = switch(test_name, mutost = "nabc.mutost.kl")
 
 		KL_args$calibrate.tau.u <- T
-		KL_args$plot <- plot_debug
+		KL_args$plot <- F
 
-		if (plot_debug) {
+		if (0) {
 			cairo_pdf("KL_initial.pdf", onefile = T)
 		}
 		KL.of.yn <- do.call(KL_divergence, KL_args)["KL_div"]
-		if (plot_debug) {
+		if (0) {
 			dev.off()
 		}
 		n.of.y <- KL_args$n.of.y
@@ -209,7 +209,6 @@ nabc.calibrate.m.and.tau.yesmxpw.yesKL <- function(test_name, KL_args, max.it = 
 			yn.ub <- n.of.y
 		} else {
 			#find upper bound for optimize
-			yn.lb <- n.of.y
 			curr.it <- max.it
 			yn.ub <- 2 * n.of.y
 
@@ -223,8 +222,12 @@ nabc.calibrate.m.and.tau.yesmxpw.yesKL <- function(test_name, KL_args, max.it = 
 				KL_args$n.of.y <- yn.ub
 				KL.of.yn_ub <- do.call(KL_divergence, KL_args)["KL_div"]
 			}
+						
 			if (curr.it == 0) 
 				stop("nabc.calibrate.m.and.tau.yesmxpw.yesKL: could not find upper bound for yn")
+				
+			yn.lb <-ifelse(curr.it == max.it,KL_args$n.of.y/2,KL_args$n.of.y/4)
+
 		}
 		if (plot_debug) {
 			cairo_pdf("KL_optimization.pdf", onefile = T)
