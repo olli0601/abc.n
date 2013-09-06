@@ -1,14 +1,16 @@
-/** \file nabc_fun.h
+/** \file nabc_Rcall.h
  \brief Main file that provides all functions that are callable from R.
  */
 
-#ifndef NABC_FUN_H_
-#define NABC_FUN_H_
+#ifndef NABC_RCALL_H_
+#define NABC_RCALL_H_
 
-#include <R.h>
-#include <Rinternals.h>
-#include "nabc_qng.h"
-#include "nabc_optimize.h"
+#include "nabc_globals.h"
+#include "nabc_error_handling.h"
+#include "nabc_KLdiv.h"
+#include "nabc_mutost.h"
+#include "nabc_chisqstretch.h"
+
 
 extern "C" {
     /*\brief Estimate the rejection interval for one-sample dispersion equivalence numerically.
@@ -50,4 +52,4 @@ extern "C" {
 }
 
 
-#endif /*NABC_FUN_H_*/
+#endif /*NABC_RCALL_H_*/

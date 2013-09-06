@@ -102,7 +102,7 @@ double Brent_fmin(double ax, double bx, double (*f)(double, void *),
     
     for(;;) {
         xm = (a + b) * .5;
-        tol1 = integer_valued? 0.5 : eps * fabs(x) + tol3;
+        tol1 = integer_valued? 0.5 : eps * fabs(x) + tol3;//if integer valued do not propose a new x closer than 0.5 (minimum distance able to change rounding value)
         t2 = tol1 * 2.;
         
         /* check stopping criterion */

@@ -5,6 +5,10 @@
 #ifndef NABC_GLOBALS_H_
 #define NABC_GLOBALS_H_
 
+#include <iostream>
+#include <R.h>
+#include <Rinternals.h>
+#include <Rmath.h>
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
@@ -12,6 +16,8 @@
 #include <string>
 #include <stdint.h>
 #include <limits>
+#include <cmath>
+
 
 typedef double flt_ty; /**< type for scientific accuracy in rate constants */
 #ifdef USE_UNSIGNEDLONG
