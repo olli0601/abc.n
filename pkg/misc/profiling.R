@@ -99,8 +99,6 @@ system.time(nabc.calibrate.m.and.tau.yesmxpw.yesKL("nabc.chisqstretch.kl", args 
 }
 
 
-
-
 test_nomxpw.yesK<-function(){
 
 

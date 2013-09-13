@@ -89,7 +89,6 @@ typedef struct{
     double df;
     double norm;
     int give_log;
-    
     double alpha;
     double tau_up;
     double sT; /* sy/sqrt(ny) */
