@@ -5,11 +5,10 @@
 #ifndef NABC_ERROR_HANDLING_H_
 #define NABC_ERROR_HANDLING_H_
 
+#include "nabc_globals.h"
 #include <cstdarg>
 #include <sstream> 
-#include <Rinternals.h>
 #include <stdexcept>
-#include "nabc_globals.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include "nabc_qng.h"
+#include "nabc_integrate.h"
 
 static double
 rescale_error (double err, const double result_abs, const double result_asc)

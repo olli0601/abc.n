@@ -1,5 +1,4 @@
 #include "nabc_globals.h"
-#include <cmath>
 
 char nabcGlobals::BUFFER[256]= "";
 double nabcGlobals::NABC_DBL_EPSILON= std::numeric_limits<double>::epsilon();
