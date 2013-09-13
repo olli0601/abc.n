@@ -12,6 +12,7 @@
 #include "nabc_globals.h"
 #include "nabc_error_handling.h"
 
+//I don't use the functions from here...
 void oprintf(const char * format, ...);
 
 void oprintff(const char * format, ...);
@@ -23,6 +24,7 @@ void oseq_nout(const double &a, const double &b, const int &n, double * const an
 void ovar(const int &n, double * const x, double * const fx, const double &mean, double &var);
 
 int oIsZero(const int &n, double * const x);
+//...until here
 
 void printBArg(basic_arg *arg);
 

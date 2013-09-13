@@ -2,7 +2,6 @@
 //  nabc_mutost.h
 //  nABC
 //
-//  Created by anton camacho on 06/09/13.
 //
 //
 
@@ -27,14 +26,15 @@ double abcMuTOST_sulkl_scalar(double x, void *arg_void);
 void abcMuTOST_taulowup_pw(	const double &mxpw, const double &df, const double &sT, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
                                          double &maxit, double &tau_u, double &curr_mxpw, double &error);
 
+//I don't use the one below
 void abcMuTOST_taulowup_var(	const double &slkl, const double &df, const double &sT, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
                                           double &maxit, double &tau_u, double &curr_pwv, double &error);
 
-
+//I don't use the one below
 void abcMUTOST_pwvar(	const double &mxpw, const double &df, const double &sT, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
                                    double &maxit, double &curr_pwv);
 
-
+//I don't use the one below
 void abcMuTOST_nsim(	const double &nobs, const double &slkl, const double &mxpw, const double &sSim, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
                                   double &maxit, double &nsim, double &tau_u, double &curr_pwv, double &curr_pw, double &error);
 
