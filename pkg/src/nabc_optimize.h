@@ -9,11 +9,8 @@
 #ifndef __nABC__nabc_optimize__
 #define __nABC__nabc_optimize__
 
-#include <iostream>
-#include <cmath>
-#include <Rmath.h>
-#include "nabc_error_handling.h"
 #include "nabc_globals.h"
+#include "nabc_error_handling.h"
 
 double Brent_fmin(double ax, double bx, double (*f)(double, void *),
                   void *info, double tol, int integer_valued);

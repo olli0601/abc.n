@@ -23,12 +23,10 @@
    1981. */
 
 
-#ifndef NABC_QNG_H_
-#define NABC_QNG_H_
+#ifndef NABC_INTEGRATE_H_
+#define NABC_INTEGRATE_H_
 
-#include <iostream>
-#include <cmath>
-#include <Rmath.h>
+#include "nabc_globals.h"
 #include "nabc_error_handling.h"
 
 /* x1, abscissae common to the 10-, 21-, 43- and 87-point rule */
@@ -207,5 +205,5 @@ int nabc_integration_qng (double (*f)(double, void *), void *f_arg,
                           double * result, double * abserr, int * neval);
 
 
-#endif /*NABC_QNG_H_*/
+#endif /*NABC_INTEGRATE_H_*/
 
