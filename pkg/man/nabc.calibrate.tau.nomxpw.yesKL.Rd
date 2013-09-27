@@ -2,8 +2,9 @@
 \alias{nabc.calibrate.tau.nomxpw.yesKL}
 \title{Calibrate the equivalence region for a specified test of equivalence by minimising the Kullback-Leibler divergence between the power function and the summary likelihood.}
 \usage{
-  nabc.calibrate.tau.nomxpw.yesKL(KL_divergence, args,
-    tau.u.lb = 1, max.it = 100, debug = 0, plot = F)
+  nabc.calibrate.tau.nomxpw.yesKL(test_name, KL_args,
+    tau.u.lb = 1, max.it = 100, debug = 0, plot = F,
+    plot_debug = FALSE)
 }
 \arguments{
   \item{KL_divergence}{character, name of the function to
@@ -16,7 +17,7 @@
   \item{tau.u.lb}{guess on an lower bound on the upper
   tolerance of the equivalence region}
 
-  \item{args}{list of argument to be passed to
+  \item{KL_args}{list of argument to be passed to
   \code{KL_divergence}.}
 
   \item{max.it}{this algorithm stops prematurely when the

@@ -52,7 +52,7 @@
 }
 \examples{
 alpha<- 0.01; xn<- yn<- 60; xsigma2<- 1; tau.u<- 2.2
-	tau.l<- nabc.chisqstretch.tau.low(tau.u, yn-1, alpha)
+	tau.l<- nabc.chisqstretch.calibrate.taulow(tau.u, yn-1, alpha)
 	args<- paste("chisqstretch",tau.l,tau.u,alpha,sep='/')
 	x<- rnorm(xn,0,sd=sqrt(xsigma2))
 	y<- rnorm(yn,0,sd=sqrt(xsigma2))

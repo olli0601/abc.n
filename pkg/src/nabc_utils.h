@@ -26,7 +26,8 @@ void ovar(const int &n, double * const x, double * const fx, const double &mean,
 int oIsZero(const int &n, double * const x);
 //...until here
 
-void printBArg(basic_arg *arg);
+SEXP getListElement(SEXP list, const char *str);
+
 
 
 #endif /* defined(__nABC__nabc_utils__) */

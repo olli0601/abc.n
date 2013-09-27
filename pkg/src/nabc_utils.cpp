@@ -86,12 +86,16 @@ int oIsZero(const int &n, double * const x)
 	return isZero;
 }
 
-
-
-void printBArg(basic_arg *arg)
+SEXP getListElement(SEXP list, const char *str)
 {
-    printf("nx=%f\nsx=%f\nssn=%f\ndf=%f\nnorm=%f\ngive_log=%d\nalpha=%f\ntau_up=%f\nsT=%f\n",arg->nx,arg->sx,arg->ssn,arg->df,arg->norm,arg->give_log,arg->alpha,arg->tau_up,arg->sT);
-    
+    SEXP elmt = R_NilValue, names = getAttrib(list, R_NamesSymbol);
+
+    for (int i = 0; i < length(list); i++)
+        if(strcmp(CHAR(STRING_ELT(names, i)), str) == 0) {
+            elmt = VECTOR_ELT(list, i);
+            break;
+        }
+    return elmt;
 }
 
 

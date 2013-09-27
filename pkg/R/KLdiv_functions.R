@@ -37,17 +37,14 @@ nabc.kl.integrand<-function(x,dP,dQ,P_arg,Q_arg)
 #' @export
 nabc.kl.optimize<- function(x_value, x_name, is_integer=FALSE, KL_divergence, KL_args, verbose=FALSE) 
 {
-	if (verbose)	print(x_value)
+	if (verbose)		cat(paste("\nOptimizing x=",x_value))
 	if(is_integer)
-		x_value 	<- round(x_value)	
-	
-
+		x_value 		<- round(x_value)	
 	KL_args 			<- c(list(x_name = x_value),KL_args)
 	names(KL_args)[1] 	<- x_name
-	tmp				<- do.call(KL_divergence,KL_args)	
+	tmp					<- do.call(KL_divergence,KL_args)	
 	if(0 || !verbose)								#TODO anton check
-		options(warn=0)
-	
+		options(warn=0)	
 	return(tmp["KL_div"])
 }
 
@@ -92,7 +89,7 @@ nabc.calibrate.tau.nomxpw.yesKL <- function(test_name, KL_args, tau.u.lb=1, max.
 	KL_args$tau.u <- tau.u.lb
 	KL_args$plot <- plot_debug
 	if (plot_debug) {
-		cairo_pdf("KL_initial.pdf", onefile = T)
+		pdf("KL_initial.pdf", onefile = T)
 	}
 	
 	
@@ -130,7 +127,7 @@ nabc.calibrate.tau.nomxpw.yesKL <- function(test_name, KL_args, tau.u.lb=1, max.
 	
 	#minimize KL_tau.u between [tau.u.lb - tau.u.ub]	
 	if (plot_debug) {
-		cairo_pdf("KL_optimization.pdf", onefile = T)
+		pdf("KL_optimization.pdf", onefile = T)
 	}
 	KL_args$plot <- plot_debug
 	KL_args["tau.u"]<-NULL
@@ -190,7 +187,7 @@ nabc.calibrate.m.and.tau.yesmxpw.yesKL <- function(test_name, KL_args, max.it = 
 		KL_args$plot <- F
 
 		if (0) {
-			cairo_pdf("KL_initial.pdf", onefile = T)
+			pdf("KL_initial.pdf", onefile = T)
 		}
 		KL.of.yn <- do.call(KL_divergence, KL_args)["KL_div"]
 		if (0) {
@@ -230,7 +227,7 @@ nabc.calibrate.m.and.tau.yesmxpw.yesKL <- function(test_name, KL_args, max.it = 
 
 		}
 		if (plot_debug) {
-			cairo_pdf("KL_optimization.pdf", onefile = T)
+			pdf("KL_optimization.pdf", onefile = T)
 		}
 		KL_args$plot <- plot_debug
 		KL_args["n.of.y"] <- NULL

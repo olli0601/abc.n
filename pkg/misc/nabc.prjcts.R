@@ -262,6 +262,44 @@ project.nABC.pval<- function()
 	stop()
 }
 #------------------------------------------------------------------------------------------------------------------------
+project.nABC.plot.schema<- function()
+{
+	theta	<- 1.2
+	nbreaks	<- 10
+	x		<- rnorm(2e2, theta, 0.5)
+	width	<- 2
+	dir.name<- "/Users/Oliver/workspace_sandbox/phylody/data/nABC.illustrations"
+	
+	breaks			<- max(abs( theta - x ))*1.1 / nbreaks								
+	breaks			<- c( rev(seq(from= theta-breaks/2, by=-breaks, length.out= nbreaks )), seq(from= theta+breaks/2, by=breaks, length.out= nbreaks ) )	
+	ans.h			<- hist(x, breaks=breaks, plot= 0)
+	norm.x			<- seq(min(x),max(x),length.out=1e3)
+	norm.y			<- dnorm(norm.x, theta, 0.5)
+	
+	pdf(paste(dir.name,"/schema_GAUSS_1.pdf",sep=''),version="1.4",width=4,height=2)
+	par(mar=c(0,0,0,0))
+	plot(ans.h, freq=0, border="white", col="gray30", main='', xlab='', ylab='', yaxt='n', xaxt='n', ylim=range(c(0,ans.h$density, norm.y)))
+	lines(norm.x, norm.y, lty=2, lwd=2)
+	abline(v=theta, lwd=2)
+	dev.off()
+
+	x		<- rnorm(2e2, theta, 0.5)
+	
+	breaks			<- max(abs( theta - x ))*1.1 / nbreaks								
+	breaks			<- c( rev(seq(from= theta-breaks/2, by=-breaks, length.out= nbreaks )), seq(from= theta+breaks/2, by=breaks, length.out= nbreaks ) )	
+	ans.h			<- hist(x, breaks=breaks, plot= 0)
+	norm.x			<- seq(min(x),max(x),length.out=1e3)
+	norm.y			<- dnorm(norm.x, theta, 0.5)
+	
+	pdf(paste(dir.name,"/schema_GAUSS_2.pdf",sep=''),version="1.4",width=4,height=2)
+	par(mar=c(0,0,0,0))
+	plot(ans.h, freq=0, border="black", col="gray70", main='', xlab='', ylab='', yaxt='n', xaxt='n', ylim=range(c(0,ans.h$density, norm.y)))
+	lines(norm.x, norm.y, lty=2, lwd=2)
+	abline(v=theta, lwd=2)
+	dev.off()
+	
+}
+#------------------------------------------------------------------------------------------------------------------------
 project.nABC.plotGAUSSresults<- function()
 {
 	dir.name<- "/Users/olli0601/duke/2012_frequencyABC/sim.data"
@@ -2506,9 +2544,9 @@ print(f.name)
 							dev.off()		
 							
 							n.of.x<- ifelse(xname=="AMED.FD.ATT.R",7,8)
-							tmp<- nabc.calibrate.m.and.tau.yesmxpw.yesKL("nabc.mutost.kl", args = list(n.of.x = n.of.x, s.of.x = xsd[j], n.of.y = 30, s.of.y = xsd[j], mx.pw = 0.9, alpha = 0.01, calibrate.tau.u = T, tau.u = 1))
+							tmp<- nabc.calibrate.m.and.tau.yesmxpw.yesKL(args = list(n.of.x = n.of.x, s.of.x = xsd[j], n.of.y = 30, s.of.y = xsd[j], mx.pw = 0.9, alpha = 0.01, calibrate.tau.u = T, tau.u = 1))
 							cat(paste("\nKL divergence for",xname,"with calibrated m is ",tmp[2]))
-							tmp<- nabc.mutost.kl(n.of.x, xsd[j], n.of.x, xsd[j], 0.9, 0.01, calibrate.tau.u = T, tau.u=1, plot=F)
+							tmp<- nabc.mutost.calibrate.tolerances.getkl(n.of.x, xsd[j], n.of.x, xsd[j], 0.9, 0.01, calibrate.tau.u = T, tau.u=1, plot=F)
 							cat(paste("\nKL divergence for ",xname," and m=n ",tmp[1]))
 						})		
 				stop()
@@ -2558,11 +2596,334 @@ print(f.name)
 	}
 }
 #------------------------------------------------------------------------------------------------------------------------
+project.nABC.StretchedChi2.illustratepower<- function()		#illustrate power of scaled ChiSquare
+{
+	my.mkdir(DATA,"nABC.StretchedChisq")
+	dir.name	<- paste(DATA,"nABC.StretchedChisq",sep='/')
+	
+	print("illustrate power")		
+	alpha		<- 0.01		
+	tau.up		<- 2.2 #2.95				
+	plot.pdf	<- 1 
+	verbose		<- 1
+	pdf.width	<- 4
+	pdf.height	<-5
+	
+	tau.up		<- 2.2 #1.09
+	yn			<- 60 #5e3
+	scale		<- yn
+	df			<- yn-1
+	tau.low		<- nabc.chisqstretch.tau.low(tau.up, df, alpha, for.mle=1)
+	#tau.low	<- 0.35
+	
+	rej<- .Call("abcScaledChiSq",	c(scale,df,tau.low,tau.up,alpha,1e-10,100,0.05)	)
+	pw<- nabc.chisqstretch.pow(seq(tau.low,tau.up,by=0.001),scale,df,rej[1],rej[2])
+	print( seq(tau.low,tau.up,by=0.001)[ which.max(pw) ] )
+	plot(seq(tau.low,tau.up,by=0.001),pw,type='l')
+	print(c(tau.low,rej))
+	
+	#
+	#	plot power as n=m increases
+	#
+	yns		<- c(10,30,60,100)
+	tau.low	<- sapply(yns, function(x)	nabc.chisqstretch.tau.low(tau.up, x-1, alpha)	)
+	pw		<- lapply(seq_along(yns),function(i)
+				{
+					rej<- .Call("abcScaledChiSq",	c(yns[i]-1,yns[i]-1,tau.low[i],tau.up,alpha,1e-10,100,0.05)	)
+					nabc.chisqstretch.pow(seq(tau.low[i],tau.up,by=0.001),yns[i]-1,yns[i]-1,rej[1],rej[2])					
+				})	
+	xlim	<- range(c(tau.low,tau.up))
+	ylim	<- range(pw)
+	ltys	<- c(2,3,1,4)
+	if(plot.pdf)
+	{
+		f.name<- paste(dir.name,"/nABC.Chisq_power2.pdf",sep='')
+		pdf(f.name,version="1.4",width=pdf.width,height=pdf.height)
+	}
+	par(mar=c(5,4,0.5,0.5))
+	plot(1,1,type='n',bty='n',xlim=xlim,ylim=ylim,xlab=expression(rho),ylab="power")
+	sapply(seq_along(yns),function(i)
+			{
+				rho<- seq(tau.low[i],tau.up,by=0.001)
+				lines(rho,pw[[i]],lty=ltys[i])
+			})
+	
+	legend("topright",bty='n',lty=c(NA,NA,NA,ltys),legend=expression("calibrated",chi^2*"-test","","m=10","m=30","m=60","m=100"))
+	if(plot.pdf)	
+		dev.off()
+	
+	#
+	#	plot power as tau+ increases
+	#
+	yn		<- 60
+	tau.ups	<- c(1.5,1.7,2.2,3)
+	tau.low	<- sapply(tau.ups, function(x)	nabc.chisqstretch.tau.low(x, yn-1, alpha)	)
+	pw		<- lapply(seq_along(tau.ups),function(i)
+					{
+						rej<- .Call("abcScaledChiSq",	c(yn-1,yn-1,tau.low[i],tau.ups[i],alpha,1e-10,100,0.05)	)
+						nabc.chisqstretch.pow(seq(tau.low[i],tau.ups[i],by=0.001),yn-1,yn-1,rej[1],rej[2])					
+					})		
+	xlim	<- range(c(tau.low,tau.up,tau.ups))
+	ylim	<- range(pw)
+	ltys	<- c(2,3,1,4)
+	if(plot.pdf)
+	{
+		f.name<- paste(dir.name,"/nABC.Chisq_power3.pdf",sep='')
+		pdf(f.name,version="1.4",width=pdf.width,height=pdf.height)
+	}
+	par(mar=c(5,4,0.5,0.5))
+	plot(1,1,type='n',bty='n',xlim=xlim,ylim=ylim,xlab=expression(rho),ylab="power")
+	sapply(seq_along(tau.ups),function(i)
+			{
+				rho<- seq(tau.low[i],tau.ups[i],by=0.001)
+				lines(rho,pw[[i]], lty=ltys[i])
+			})
+	legend("topright",bty='n',lty=c(NA,NA,NA,ltys),legend=expression("calibrated",chi^2*"-test","",tau^'+'*"=1.5",tau^'+'*"=1.7",tau^'+'*"=2.2",tau^'+'*"=3"))
+	if(plot.pdf)	
+		dev.off()
+	
+stop()	
+	yn<- 60
+	df<- yn-1
+	tau.low<- nabc.chisqstretch.tau.low(tau.up, df, alpha)
+	#plot location of power
+	rej<- .Call("abcScaledChiSq",	c(df,df,tau.low,tau.up,alpha,1e-10,100,0.05)	)						
+	rho<- seq(tau.low,tau.up,by=0.001)
+	pw<- nabc.chisqstretch.pow(rho,df,df,rej[1],rej[2])
+	if(verbose)	cat(paste("\ncase: rho.max at 1\ntau.low is",tau.low,"\ttau.up is",tau.up,"\tcl is",rej[1],"\tcu is",rej[2]))
+	if(verbose)	cat(paste("\nrho.max is",rho[ which.max(pw) ],"\tpow.max is",pw[ which.max(pw) ]))
+	
+	pw.f<- project.nABC.StretchedF.pow.sym(rho, df, rej[2], cl= rej[1])
+	
+	rej<- .Call("abcScaledChiSq",	c(df,df,1/tau.up,tau.up,alpha,1e-10,100,0.05)	)
+	rho.sym<- seq(1/tau.up,tau.up,by=0.001)		
+	pw.sym<- nabc.chisqstretch.pow(rho.sym,df,df,rej[1],rej[2])
+	if(verbose)	cat(paste("\n\n\ncase: tau.low=1/tau.up\ntau.low is",1/tau.up,"\ttau.up is",tau.up,"\tcl is",rej[1],"\tcu is",rej[2]))
+	if(verbose)	cat(paste("\nrho.max is",rho.sym[ which.max(pw.sym) ],"\tpow.max is",pw.sym[ which.max(pw.sym) ]))
+	
+	h<- 0.65	#diff(c(tau.low,tau.up))/2
+	rej<- .Call("abcScaledChiSq",	c(df,df,1-h,1+h,alpha,1e-10,100,0.05)	)
+	rho.diff<- seq(1-h,1+h,by=0.001)		
+	pw.diff<- nabc.chisqstretch.pow(rho.diff,df,df,rej[1],rej[2])
+	if(verbose)	cat(paste("\n\n\ncase: +-h\ntau.low is",1-h,"\ttau.up is",1+h,"\tcl is",rej[1],"\tcu is",rej[2]))
+	if(verbose)	cat(paste("\nrho.max is",rho.diff[ which.max(pw.diff) ],"\tpow.max is",pw.diff[ which.max(pw.diff) ]))
+	
+	cols<- c(my.fade.col("black",0.2),my.fade.col("black",0.6),"black")		
+	ltys<- c(1,1,4)
+	xlim<- range(c(rho.diff,rho.sym,rho))
+	ylim<- range(c(pw,pw.sym,pw.diff))
+	if(plot.pdf)
+	{
+		f.name<- paste(dir.name,"/nABC.Chisq_power.pdf",sep='')
+		pdf(f.name,version="1.4",width=pdf.width,height=pdf.height)
+	}
+	par(mar=c(5,4,0.5,0.5))		
+	plot(1,1,xlim=xlim,ylim=ylim,type='n',bty='n',xlab=expression(rho),ylab="power")
+	#lines(rho.diff,pw.diff,col=cols[2],lty=ltys[2])
+	polygon(c(rho.diff,rho.diff[length(rho.diff)],rho.diff[1]), c(pw.diff,0,0), border=NA,col=cols[2] )
+	polygon(c(rho,rho[length(rho)],rho[1]), c(pw,0,0), border=NA,col=cols[1] )
+	lines(rho,pw,col=cols[1],lty=ltys[1])
+	lines(rho.sym,pw.sym,col="gray20")
+	
+	lines(rho,pw.f,col=cols[3],lty=ltys[3])		
+	lines(rep(rho[which.max(pw.f)],2), c(-1,pw.f[which.max(pw.f)]), col=cols[3],lty=ltys[3])
+	
+	lines(rep(rho[which.max(pw)],2), c(-1,pw[which.max(pw)]), col=cols[1],lty=ltys[1])
+	lines(rep(rho.diff[which.max(pw.diff)],2), c(-1,pw.diff[which.max(pw.diff)]), col=cols[2],lty=ltys[2])
+	
+	#legend<- expression('['*c^'-'*", "*c^'+'*"]= [0.5,1.5]", '['*c^'-'*", "*c^'+'*"]= [1/1.5,1.5]",'['*c^'-'*", "*c^'+'*"]= [0.5,1/0.5]")				
+	legend("topright",fill=c(cols[1],"transparent",cols[2],"transparent",cols[3],"transparent"),lty=c(ltys[1],NA,ltys[2],NA,ltys[3],NA),legend=expression("calibrated",chi^2*"-test","naive",chi^2*"-test","F-test",""), bty= 'n', border=NA)
+	if(plot.pdf)	
+		dev.off()				
+}
+#------------------------------------------------------------------------------------------------------------------------
+nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m<- function()		#check MLE, yn>xn
+{
+	my.mkdir(DATA,"nABC.chi2stretch")
+	dir.name	<- paste(DATA,"nABC.chi2stretch",sep='/')
+	pdf.width	<- 4
+	pdf.height	<- 5	
+	resume		<- 0
+	m			<- 1	
+	xn			<- yn	<- 60
+	df			<- yn-1
+	alpha		<- 0.01		
+	tau.u		<- 2.2 		
+	tau.h		<- 0.65
+	
+	ymu			<- xmu	<- 0
+	xsigma2		<- 1
+	prior.u		<- 4
+	prior.l		<- 0.2
+	N			<- 1e6
+	
+	if(exists("argv"))
+	{
+		tmp<- na.omit(sapply(argv,function(arg)
+						{	switch(substr(arg,2,2),
+									m= return(as.numeric(substr(arg,3,nchar(arg)))),NA)	}))
+		if(length(tmp)>0) m<- tmp[1]
+	}
+	
+	
+	simu.chi2stretch.fix.x.uprior.ysig2<- function(N, prior.l, prior.u, x, yn, ymu)		
+	{		
+		if(prior.u<1)	stop("project.nABC.StretchedChi2.fix.x.uprior.ysig2: error at 1c")
+		if(prior.l>1)	stop("project.nABC.StretchedChi2.fix.x.uprior.ysig2: error at 1d")
+		ans						<- vector("list",3)
+		names(ans)				<- c("x","xsigma2","data")
+		ans[["x"]]				<- x
+		ans[["xsigma2"]]		<- (length(x)-1)*var(x)/length(x)			#MLE of sig2
+		ans[["data"]]			<- sapply(1:N,function(i)
+									{					
+										ysigma2		<- runif(1,prior.l,prior.u)
+										y			<- rnorm(yn,ymu,sd=sqrt(ysigma2))
+										tmp			<- c( ysigma2, var(y)/var(x), (var(y)*(yn-1))/(var(x)*(length(x)-1)/length(x)), log( var(y)/var(x) ), var(y)-var(x) )									
+										tmp					
+									})								
+		rownames(ans[["data"]])	<- c("ysigma2","vy/vx","T","rho.mc","sy2-sx2")
+		ans
+	}
+	
+	
+	if(!is.na(m))
+	{		
+		f.name<- paste(dir.name,"/nABC.Chisq_mle_yn_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".R",sep='')
+		cat(paste("\nnABC.Chisq: compute ",f.name))
+		options(show.error.messages = FALSE, warn=1)		
+		readAttempt<-try(suppressWarnings(load(f.name)))						
+		options(show.error.messages = TRUE)						
+		if(!resume || inherits(readAttempt, "try-error"))
+		{
+			x		<- rnorm(xn,xmu,sd=sqrt(xsigma2))
+			x 		<- (x - mean(x))/sd(x) * sqrt(xsigma2) + xmu			
+			
+			ans		<- simu.chi2stretch.fix.x.uprior.ysig2(N, prior.l, prior.u, x, yn, ymu)
+			g(yn, tau.l, tau.u, c.l, c.u, pw.cmx, KL_div)	%<-% nabc.chisqstretch.calibrate(length(x), sd(x), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
+			cat(paste("\nn.of.y=",yn,"tau.l=", tau.l,"tau.u=", tau.u,"c.l=", c.l,"c.u=", c.u,"pw.cmx=", pw.cmx,"KL_div=", KL_div))
+			f.name	<- paste(dir.name,"/nABC.Chisq_mle_yncalibrated_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')
+			ans.ok	<- simu.chi2stretch.fix.x.uprior.ysig2(N, prior.l, prior.u, x, yn, ymu)
+			cat(paste("\nnABC.Chisq: save ",f.name))
+			save(ans.ok,file=f.name)				
+			ans.ok	<- NULL				
+			
+			yn		<- 300			
+			f.name	<- paste(dir.name,"/nABC.Chisq_mle_yntoolarge_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')				
+			ans.too	<- simu.chi2stretch.fix.x.uprior.ysig2(N, prior.l, prior.u, x, yn, ymu)
+			cat(paste("\nnABC.Chisq: save ",f.name))
+			save(ans.too,file=f.name)				
+			ans.too	<- NULL
+			
+			yn		<- length(x)
+			g(tau.l, tau.u, curr.mx.pw,	error, cl, cu)		%<-% nabc.chisqstretch.calibrate.tauup(0.9, 3*sd(x), length(x), yn-1, alpha=alpha)
+			f.name	<- paste(dir.name,"/nABC.Chisq_mle_yneqxn_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')				
+			ans.eq	<- simu.chi2stretch.fix.x.uprior.ysig2(N, prior.l, prior.u, x, yn, ymu)
+			cat(paste("\nnABC.Chisq: save ",f.name))
+			save(ans.eq,file=f.name)				
+			ans.eq	<- NULL			
+		}
+		else
+			cat(paste("\nnABC.MA: resumed ",f.name))
+	}	
+	else
+	{
+		stop()
+		#load data
+		cat(paste("\nnABC.Chisq",dir.name))
+		f.name<- paste(dir.name,"/nABC.Chisq_mle_yn_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,".R",sep='')
+		options(show.error.messages = FALSE, warn=1)		
+		readAttempt<-try(suppressWarnings(load(f.name)))						
+		options(show.error.messages = TRUE)		
+		resume<- 0
+		if(!resume || inherits(readAttempt, "try-error"))
+		{				
+			f.name<- list.files(dir.name, pattern=paste("^nABC.Chisq_mle_yn_",sep=''), full.names = TRUE)
+			tmp<- sort(sapply(strsplit(f.name,'_',fixed=1),function(x)	as.numeric(substr(x[length(x)],2,nchar(x[length(x)])-2))		), index.return=1)
+			f.name<- f.name[tmp$ix]				
+			f.name2<- list.files(dir.name, pattern=paste("^nABC.Chisq_mle_yntoolarge_",sep=''), full.names = TRUE)
+			tmp2<- sort(sapply(strsplit(f.name2,'_',fixed=1),function(x)	as.numeric(substr(x[length(x)],2,nchar(x[length(x)])-2))		), index.return=1)
+			f.name2<- f.name2[tmp2$ix]
+			f.name<- rbind( 	f.name[tmp$x%in%intersect(tmp$x,tmp2$x)], f.name2[tmp2$x%in%intersect(tmp$x,tmp2$x)]	)
+			print(f.name)
+			cat(paste("\nnABC.Chisq load data: ", ncol(f.name)))
+			ans<- lapply(seq_len(ncol(f.name)),function(j)
+					{
+						out<- matrix(NA,2,4,dimnames=list(c("ok","large"),c("mean","hmode","dmode","xsigma2")))
+						
+						cat(paste("\nload",f.name[1,j]))
+						readAttempt<-try(suppressWarnings(load( f.name[1,j] )))
+						if(inherits(readAttempt, "try-error"))	stop("error at ok")
+						#tmp fix bug (now resolved)
+						#ans.ok[["data"]]["error",]<- ans.ok[["data"]]["error",]*59/60
+						#accept if T in boundaries					
+						acc.ok<- which( ans.ok[["data"]]["error",]<=ans.ok[["cir"]]  &  ans.ok[["data"]]["error",]>=ans.ok[["cil"]] )
+						acc.h.ok<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok], ans.ok[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0)
+						out["ok",]<- c(acc.h.ok[["mean"]],acc.h.ok[["hmode"]],acc.h.ok[["dmode"]],ans.ok[["xsigma2"]])
+						
+						cat(paste("\nload",f.name[2,j]))	
+						#ans.naive<- ans.ok
+						readAttempt<-try(suppressWarnings(load( f.name[2,j] )))
+						if(inherits(readAttempt, "try-error"))	stop("error at toolarge")	
+						#tmp fix bug (now resolved)
+						#ans.naive[["cil"]]<- 0.5084666; ans.naive[["cir"]]<- 1.009202							
+						acc.too<- which( ans.too[["data"]]["error",]<=ans.too[["cir"]]  &  ans.too[["data"]]["error",]>=ans.too[["cil"]] )
+						acc.h.too<- project.nABC.movingavg.gethist(ans.too[["data"]]["ysigma2",acc.too], ans.too[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0)
+						out["large",]<- c(acc.h.too[["mean"]],acc.h.too[["hmode"]],acc.h.too[["dmode"]],ans.too[["xsigma2"]])
+						#print(length(acc.too) / ncol(ans.too[["data"]]))											
+						if(1 && j==1)
+						{								
+							cols<- c(my.fade.col("black",0.6),my.fade.col("black",0.2),"black")
+							ltys<- c(1,1,4,3)
+							require(pscl)
+							#plot sigma2
+							f.name<- paste(dir.name,"/nABC.Chisq_mle_yyn_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",j,".pdf",sep='')
+							print(f.name)
+							pdf(f.name,version="1.4",width=4,height=5)
+							par(mar=c(5,5,0.5,0.5))
+							plot(acc.h.too, col=cols[2],border=NA,main='',freq=0,ylab=expression("numerical estimate of "*pi[abc]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,3))
+							plot(acc.h.ok, col=cols[1],border=NA,main='',add=1,freq=0)
+							#plot(acc.h.ok, col=cols[1],border=NA,main='',freq=0,ylab=expression("numerical estimate of "*pi[abc]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,3))
+							a		<- (xn-2)/2	 
+							b		<- ans.ok[["xsigma2"]]*(xn)/2
+							var.lkl	<- b*b/((a-1)*(a-1)*(a-2))		
+							
+							s.of.x	<- sqrt( ans.ok[["xsigma2"]]/(xn-1)*xn )								
+							tmp		<- nabc.calibrate.m.and.tau.yesmxpw.yesKL("nabc.chisqstretch.kl", args = list(	n.of.x = xn, s.of.x = s.of.x, n.of.y = xn, 
+											s.of.y = NA, mx.pw = 0.9, alpha = alpha, 
+											calibrate.tau.u = T, for.mle=1, tau.u = 2), plot = F)																			
+							print(tmp)
+							
+							yn		<- round(tmp[1]*3/100)*100
+							tmp		<- nabc.chisqstretch.tau.lowup(0.9, 2, yn-1, alpha, for.mle=1)
+							tmp		<- nabc.chisqstretch.kl(xn, s.of.x, yn, NA, 0.9, alpha, calibrate.tau.u = F, tau.u = tmp[2], plot = F)
+							print(tmp)
+							
+							x<- seq(prior.l,prior.u,0.001)
+							y<- densigamma(x,a,b) / diff(pigamma(c(prior.l,prior.u),a,b))							
+							lines(x,y,col=cols[3],lty=ltys[4])
+							abline(v=ans.ok[["xsigma2"]],col=cols[3],lty=ltys[3])								
+							legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,NA,ltys[2],NA,NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.572", tau^'+'*"=1.808","m=97","calibrated","tolerances",tau^'-'*"=0.726",tau^'+'*"=1.392","m=300","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
+							#legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.572", tau^'+'*"=1.808","m=97","","","","","","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
+							dev.off()
+							stop()
+						}							
+						out			
+					})
+			
+			f.name<- paste(dir.name,"/nABC.Chisq_ynmean_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,".R",sep='')
+			cat(paste("\nnABC.Chisq save 'ans' to ",f.name))				
+			#save(ans,file=f.name)
+			print(ans)
+			#stop()
+		}
+	}
+}
+#------------------------------------------------------------------------------------------------------------------------
 project.nABC.StretchedChi2<- function()
 {	
 	my.mkdir(DATA,"nABC.StretchedChisq")
 	dir.name<- paste(DATA,"nABC.StretchedChisq",sep='/')
-	subprog<- 3
+	subprog<- 7
 	pdf.width<- 4
 	pdf.height<-5
 	
@@ -2879,14 +3240,16 @@ project.nABC.StretchedChi2<- function()
 			pdf(f.name,version="1.4",width=pdf.width,height=pdf.height)				
 			par(mar=c(4,4.25,1,.5))
 			ylim<- range(	sapply(ans, function(x) x[,"dmode"]) 	)
-			plot(1,1,type='n',bty='n',log='x',xlim=range(sample.size),ylim=ylim, xlab="sample size n",ylab=expression("mode of "*pi[tau]*'('*sigma^2*'|'*x*')'))
-			abline(h=0.1,lty=2, col="gray60")				
-			points(sample.size,sapply(ans, function(x) x["fx.pw","dmode"]),		pch=18,cex=0.5,col=cols[1])
-			points(sample.size,sapply(ans, function(x) x["fx.tau.u","dmode"]),	pch=20,cex=0.75,col=cols[2])	
-			legend("topleft",bty='n',border=NA,fill=c(cols[1],"transparent",cols[2],"transparent","transparent","transparent"),lty=c(ltys[1],NA,ltys[2],NA,NA,ltys[3]),legend=c("fixed power &",expression("decreasing "*tau^'+'),"increasing power &",expression("fixed "*tau^'+'),"",expression(scriptstyle(frac(1,n-1)*S^2(x)))))
-			abline(h=1,lty=4)
+			plot(1,1,type='n',bty='n',log='x',xlim=range(sample.size),ylim=ylim, xlab="sample size n",ylab=expression("numerically estimated mode of "*pi[abc]*'('*sigma^2*'|'*x*')'))
+			abline(h=0.1,lty=2, col="gray60")
+			z<- sapply(ans, function(x) x["fx.pw","dmode"])	- 1 + (sample.size-1)/sample.size
+			points(sample.size, z,		pch=18,cex=0.5,col=cols[1])
+			z<- sapply(ans, function(x) x["fx.tau.u","dmode"]) - 1 + (sample.size-1)/sample.size
+			points(sample.size, z,	pch=20,cex=0.75,col=cols[2])	
+			legend("topleft",bty='n',border=NA,fill=c(cols[1],"transparent",cols[2],"transparent","transparent","transparent"),lty=c(ltys[1],NA,ltys[2],NA,NA,ltys[3]),legend=c("fixed power &",expression("decreasing "*tau^'+'),"increasing power &",expression("fixed "*tau^'+'),"",expression(scriptstyle(frac(n-1,n)*sigma[0]^2))))
+			lines(sample.size, (sample.size-1)/sample.size, lty=4)
 			dev.off()
-
+stop()
 			f.name<- paste(dir.name,"/nABC.Chisq_largen_",N,"_",prior.u,"_",prior.l,"_acc.pdf",sep='')			
 			pdf(f.name,version="1.4",width=pdf.width,height=pdf.height)				
 			par(mar=c(4,4.25,1,.5))
@@ -3225,11 +3588,12 @@ project.nABC.StretchedChi2<- function()
 								require(pscl)
 								#plot sigma2
 								f.name<- paste(dir.name,"/nABC.Chisq_mle_yyn_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",j,".pdf",sep='')
+								print(f.name)
 								pdf(f.name,version="1.4",width=4,height=5)
 								par(mar=c(5,5,0.5,0.5))
-								#plot(acc.h.too, col=cols[2],border=NA,main='',freq=0,ylab=expression("n-ABC estimate of "*pi[tau]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,3))
-								#plot(acc.h.ok, col=cols[1],border=NA,main='',add=1,freq=0)
-								plot(acc.h.ok, col=cols[1],border=NA,main='',freq=0,ylab=expression("n-ABC estimate of "*pi[tau]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,3))
+								plot(acc.h.too, col=cols[2],border=NA,main='',freq=0,ylab=expression("numerical estimate of "*pi[abc]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,3))
+								plot(acc.h.ok, col=cols[1],border=NA,main='',add=1,freq=0)
+								#plot(acc.h.ok, col=cols[1],border=NA,main='',freq=0,ylab=expression("numerical estimate of "*pi[abc]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,3))
 								a		<- (xn-2)/2	 
 								b		<- ans.ok[["xsigma2"]]*(xn)/2
 								var.lkl	<- b*b/((a-1)*(a-1)*(a-2))		
@@ -3249,8 +3613,8 @@ project.nABC.StretchedChi2<- function()
 								y<- densigamma(x,a,b) / diff(pigamma(c(prior.l,prior.u),a,b))							
 								lines(x,y,col=cols[3],lty=ltys[4])
 								abline(v=ans.ok[["xsigma2"]],col=cols[3],lty=ltys[3])								
-								#legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,NA,ltys[2],NA,NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.572", tau^'+'*"=1.808","m=97","calibrated","tolerances",tau^'-'*"=0.726",tau^'+'*"=1.392","m=300","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
-								legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.572", tau^'+'*"=1.808","m=97","","","","","","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
+								legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,NA,ltys[2],NA,NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.572", tau^'+'*"=1.808","m=97","calibrated","tolerances",tau^'-'*"=0.726",tau^'+'*"=1.392","m=300","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
+								#legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.572", tau^'+'*"=1.808","m=97","","","","","","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
 								dev.off()
 								stop()
 							}							
@@ -3401,17 +3765,19 @@ project.nABC.StretchedChi2<- function()
 								#dev.off()
 								#plot sigma2
 								f.name<- paste(dir.name,"/nABC.Chisq_mle_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",j,".pdf",sep='')
-								#pdf(f.name,version="1.4",width=4,height=5)
+								print(f.name)
+								pdf(f.name,version="1.4",width=4,height=5)
 								par(mar=c(5,5,0.5,0.5))
-								#plot(acc.h.ok, col=cols[1],border=NA,main='',freq=0,ylab=expression("n-ABC estimate of "*pi[tau]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,3))								
-								plot(acc.h.naive, col=cols[2],border=NA,main='',freq=0,ylab=expression("n-ABC estimate of "*pi[tau]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,2.75),ylim=c(0,3))
+								plot(acc.h.ok, col=cols[1],border=NA,main='',freq=0,ylab=expression("numerical estimate of "*pi[abc]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,3))								
+								#plot(acc.h.naive, col=cols[2],border=NA,main='',freq=0,ylab=expression("numerical estimate of "*pi[abc]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,2.75),ylim=c(0,3))
+								plot(acc.h.naive, col=cols[2],border=NA,main='',freq=0,add=1)
 								x<- seq(prior.l,prior.u,0.001)
 								y<- densigamma(x,(xn-2)/2,ans.ok[["xsigma2"]]*xn/2) / diff(pigamma(c(prior.l,prior.u),(xn-2)/2,ans.ok[["xsigma2"]]*xn/2))							
 								lines(x,y,col=cols[3],lty=ltys[4])
 								abline(v=ans.ok[["xsigma2"]],col=cols[3],lty=ltys[3])								
-								#legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,ltys[2],NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.477", tau^'+'*"=2.2","naive","tolerances",tau^'-'*"=0.35",tau^'+'*"=1.65","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
-								legend("topright",fill=c("transparent","transparent","transparent","transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,NA,NA,NA,NA,ltys[2],NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","","","", "","naive","tolerances",tau^'-'*"=0.35",tau^'+'*"=1.65","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
-								#dev.off()
+								legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,ltys[2],NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.477", tau^'+'*"=2.2","naive","tolerances",tau^'-'*"=0.35",tau^'+'*"=1.65","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
+								#legend("topright",fill=c("transparent","transparent","transparent","transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,NA,NA,NA,NA,ltys[2],NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","","","", "","naive","tolerances",tau^'-'*"=0.35",tau^'+'*"=1.65","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
+								dev.off()
 								stop()
 							}							
 							out			
@@ -3616,124 +3982,6 @@ project.nABC.StretchedChi2<- function()
 			legend("topright",bty='n',border=NA,fill=c("transparent","transparent",cols[1],"transparent",cols[2],"transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,ltys[2],NA,NA,ltys[3]),legend=expression("n=60","","calibrated","tolerances","naive","tolerances","",scriptstyle(frac(1,n-1))*S^2(x)))
 			dev.off()						
 		}	
-	}
-	if(!is.na(subprog) && subprog==3)		#illustrate power of scaled ChiSquare
-	{
-		print("illustrate power")		
-		alpha<- 0.01		
-		tau.up<- 2.2 #2.95				
-		plot.pdf<- 1 
-		verbose<- 1
-		
-		tau.up<- 2.2 #1.09
-		yn<- 60 #5e3
-		scale<- yn
-		df<- yn-1
-		tau.low<- nabc.chisqstretch.tau.low(tau.up, df, alpha, for.mle=1)
-		#tau.low<- 0.35
-		rej<- .Call("abcScaledChiSq",	c(scale,df,tau.low,tau.up,alpha,1e-10,100,0.05)	)
-		pw<- nabc.chisqstretch.pow(seq(tau.low,tau.up,by=0.001),scale,df,rej[1],rej[2])
-		print( seq(tau.low,tau.up,by=0.001)[ which.max(pw) ] )
-		plot(seq(tau.low,tau.up,by=0.001),pw,type='l')
-		print(c(tau.low,rej))
-
-		
-		#plot height of power
-		yns<- c(10,30,60,100)
-		tau.low<- sapply(yns, function(x)	nabc.chisqstretch.tau.low(tau.up, x-1, alpha)	)
-		pw<- lapply(seq_along(yns),function(i)
-				{
-					rej<- .Call("abcScaledChiSq",	c(yns[i]-1,yns[i]-1,tau.low[i],tau.up,alpha,1e-10,100,0.05)	)
-					nabc.chisqstretch.pow(seq(tau.low[i],tau.up,by=0.001),yns[i]-1,yns[i]-1,rej[1],rej[2])					
-				})	
-		yn<- 60
-		tau.ups<- c(1.5,1.7,2,3)
-		tau.low2<- sapply(tau.ups, function(x)	nabc.chisqstretch.tau.low(x, yn-1, alpha)	)
-		pw2<- lapply(seq_along(tau.ups),function(i)
-				{
-					rej<- .Call("abcScaledChiSq",	c(yn-1,yn-1,tau.low2[i],tau.ups[i],alpha,1e-10,100,0.05)	)
-					nabc.chisqstretch.pow(seq(tau.low2[i],tau.ups[i],by=0.001),yn-1,yn-1,rej[1],rej[2])					
-				})	
-				
-		#xlim<- range(c(tau.low,tau.up,tau.ups))
-		xlim<- range(c(tau.low,tau.up))
-		ylim<- range(c(pw,pw2))
-		ltys<- c(2,3,1,4)
-		if(plot.pdf)
-		{
-			f.name<- paste(dir.name,"/nABC.Chisq_power2.pdf",sep='')
-			pdf(f.name,version="1.4",width=pdf.width,height=pdf.height)
-		}
-		par(mar=c(5,4,0.5,0.5))
-		plot(1,1,type='n',bty='n',xlim=xlim,ylim=ylim,xlab=expression(rho),ylab="power")
-		sapply(seq_along(yns),function(i)
-				{
-					rho<- seq(tau.low[i],tau.up,by=0.001)
-					lines(rho,pw[[i]],lty=ltys[i])
-				})
-		
-		legend("topright",bty='n',lty=c(NA,NA,NA,ltys),legend=expression("calibrated",chi^2*"-test","","m=10","m=30","m=60","m=100"))
-		#sapply(seq_along(tau.ups),function(i)
-		#		{
-		#			rho<- seq(tau.low2[i],tau.ups[i],by=0.001)
-		#			lines(rho,pw2[[i]], lty=4)
-		#		})
-		if(plot.pdf)	
-			dev.off()
-		
-		
-		yn<- 60
-		df<- yn-1
-		tau.low<- nabc.chisqstretch.tau.low(tau.up, df, alpha)
-		#plot location of power
-		rej<- .Call("abcScaledChiSq",	c(df,df,tau.low,tau.up,alpha,1e-10,100,0.05)	)						
-		rho<- seq(tau.low,tau.up,by=0.001)
-		pw<- nabc.chisqstretch.pow(rho,df,df,rej[1],rej[2])
-		if(verbose)	cat(paste("\ncase: rho.max at 1\ntau.low is",tau.low,"\ttau.up is",tau.up,"\tcl is",rej[1],"\tcu is",rej[2]))
-		if(verbose)	cat(paste("\nrho.max is",rho[ which.max(pw) ],"\tpow.max is",pw[ which.max(pw) ]))
-				
-		pw.f<- project.nABC.StretchedF.pow.sym(rho, df, rej[2], cl= rej[1])
-		
-		rej<- .Call("abcScaledChiSq",	c(df,df,1/tau.up,tau.up,alpha,1e-10,100,0.05)	)
-		rho.sym<- seq(1/tau.up,tau.up,by=0.001)		
-		pw.sym<- nabc.chisqstretch.pow(rho.sym,df,df,rej[1],rej[2])
-		if(verbose)	cat(paste("\n\n\ncase: tau.low=1/tau.up\ntau.low is",1/tau.up,"\ttau.up is",tau.up,"\tcl is",rej[1],"\tcu is",rej[2]))
-		if(verbose)	cat(paste("\nrho.max is",rho.sym[ which.max(pw.sym) ],"\tpow.max is",pw.sym[ which.max(pw.sym) ]))
-		
-		h<- 0.65	#diff(c(tau.low,tau.up))/2
-		rej<- .Call("abcScaledChiSq",	c(df,df,1-h,1+h,alpha,1e-10,100,0.05)	)
-		rho.diff<- seq(1-h,1+h,by=0.001)		
-		pw.diff<- nabc.chisqstretch.pow(rho.diff,df,df,rej[1],rej[2])
-		if(verbose)	cat(paste("\n\n\ncase: +-h\ntau.low is",1-h,"\ttau.up is",1+h,"\tcl is",rej[1],"\tcu is",rej[2]))
-		if(verbose)	cat(paste("\nrho.max is",rho.diff[ which.max(pw.diff) ],"\tpow.max is",pw.diff[ which.max(pw.diff) ]))
-		
-		cols<- c(my.fade.col("black",0.2),my.fade.col("black",0.6),"black")		
-		ltys<- c(1,1,4)
-		xlim<- range(c(rho.diff,rho.sym,rho))
-		ylim<- range(c(pw,pw.sym,pw.diff))
-		if(plot.pdf)
-		{
-			f.name<- paste(dir.name,"/nABC.Chisq_power.pdf",sep='')
-			pdf(f.name,version="1.4",width=pdf.width,height=pdf.height)
-		}
-		par(mar=c(5,4,0.5,0.5))		
-		plot(1,1,xlim=xlim,ylim=ylim,type='n',bty='n',xlab=expression(rho),ylab="power")
-		#lines(rho.diff,pw.diff,col=cols[2],lty=ltys[2])
-		polygon(c(rho.diff,rho.diff[length(rho.diff)],rho.diff[1]), c(pw.diff,0,0), border=NA,col=cols[2] )
-		polygon(c(rho,rho[length(rho)],rho[1]), c(pw,0,0), border=NA,col=cols[1] )
-		lines(rho,pw,col=cols[1],lty=ltys[1])
-		lines(rho.sym,pw.sym,col="gray20")
-		
-		lines(rho,pw.f,col=cols[3],lty=ltys[3])		
-		lines(rep(rho[which.max(pw.f)],2), c(-1,pw.f[which.max(pw.f)]), col=cols[3],lty=ltys[3])
-		
-		lines(rep(rho[which.max(pw)],2), c(-1,pw[which.max(pw)]), col=cols[1],lty=ltys[1])
-		lines(rep(rho.diff[which.max(pw.diff)],2), c(-1,pw.diff[which.max(pw.diff)]), col=cols[2],lty=ltys[2])
-		
-		#legend<- expression('['*c^'-'*", "*c^'+'*"]= [0.5,1.5]", '['*c^'-'*", "*c^'+'*"]= [1/1.5,1.5]",'['*c^'-'*", "*c^'+'*"]= [0.5,1/0.5]")				
-		legend("topright",fill=c(cols[1],"transparent",cols[2],"transparent",cols[3],"transparent"),lty=c(ltys[1],NA,ltys[2],NA,ltys[3],NA),legend=expression("calibrated",chi^2*"-test","naive",chi^2*"-test","F-test",""), bty= 'n', border=NA)
-		if(plot.pdf)	
-			dev.off()				
 	}
 	if(!is.na(subprog) && subprog==4)		#illustrate scaled ChiSquare
 	{
@@ -5020,6 +5268,109 @@ print(c(ncol(ans),length(acc)/ncol(ans),ans["cil",1],ans["cir",1]))
 		ans<- .Call("abcScaledF",args)
 		print(ans)
 	}
+}
+#------------------------------------------------------------------------------------------------------------------------
+nabc.test.chi2stretch.calibrate<- function()
+{
+	#require(devtools)
+	#setwd(DIR_PKG)
+	#dev_mode()
+	#load_all(recompile=T)
+	#load_all()
+	library(ggplot2)
+	library(reshape2)
+	library(pscl)
+	library(nortest)
+	library(stats)
+	library(plyr)
+	library(abc.n)
+	
+	verbose	<- 1
+	#simulate data
+	n.of.x	<- n.of.y<- 60
+	ymu		<- xmu<- 0
+	xsigma2	<- 1
+	ysigma2	<- 1.2
+	x		<- rnorm(n.of.x,xmu,sd=sqrt(xsigma2))
+	x 		<- (x - mean(x))/sd(x) * sqrt(xsigma2) + xmu
+	if(verbose)	cat(paste("n of x=",length(x),"mean of x=",mean(x),"sd of x=",sd(x)))
+	y		<- rnorm(n.of.y,ymu,sd=sqrt(ysigma2))
+	y 		<- (y - mean(y))/sd(y) * sqrt(ysigma2) + ymu
+	if(verbose)	cat(paste("n of y=",length(y),"mean of y=",mean(y),"sd of y=",sd(y)))
+	
+	#set up test
+	for.mle		<- 1
+	s.of.x		<- sd(x)
+	s.of.y		<- sd(y)	
+	alpha		<- 0.01		
+	tau.u		<- 2.2 		
+	#tau.l		<- nabc.chisqstretch.calibrate.taulow(tau.u, df, alpha, for.mle=for.mle)
+	#tau.h		<- 0.65
+	calibrate.tau.u<- F
+	mx.pw		<- 0.9
+	pow_scale	<- 1.5
+	
+	df		<- n.of.y-1
+	scale	<- n.of.x
+	nabc.chisqstretch.calibrate.taulow(tau.u, scale, df, alpha, rho.star=1, tol= 1e-5, max.it=100)
+	
+	nabc.chisqstretch.calibrate.tauup(mx.pw, 3*s.of.y, scale, df, alpha, rho.star=1, tol= 1e-5, max.it=100)
+	
+	nabc.chisqstretch.calibrate(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=T)
+	stop()
+	
+	
+}
+#------------------------------------------------------------------------------------------------------------------------
+nabc.test.mutost.calibrate<- function()
+{
+	#require(devtools)
+	#setwd(DIR_PKG)
+	#dev_mode()
+	#load_all(recompile=T)
+	#load_all()
+	library(ggplot2)
+	library(reshape2)
+	library(pscl)
+	library(nortest)
+	library(stats)
+	library(plyr)
+	library(abc.n)
+	
+	xn 		<- 60
+	yn 		<- 60
+	xsigma 	<- 1	
+	
+	ymean 	<- xmean <- 0
+	ysigma 	<- 0.2
+	#ysigma 	<- 1.2
+	
+	obs 	<- rnorm(xn, xmean, xsigma)
+	obs 	<- (obs - mean(obs))/sd(obs) * xsigma + xmean
+	sim 	<- rnorm(yn, ymean, ysigma)
+	if(verbose)	cat(paste("\nsim has sample mean",mean(sim),"and sample sd",sd(sim)))
+	n.of.x 	<- xn
+	s.of.x 	<- sd(obs)
+	n.of.y 	<- yn
+	s.of.y 	<- sd(sim)
+	mx.pw 	<- 0.9
+	alpha 	<- 0.01	
+	
+	KL_args 		<- list(n.of.x= n.of.x, s.of.x= s.of.x, n.of.y=n.of.y, s.of.y=s.of.y, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5)
+	KL_args$tau.u 	<- 0.01
+	max.it 			<- 100
+	
+	print("R")
+	KL_args$debug=1
+	system.time(	ans	<- nabc.mutost.calibrate( KL_args, max.it, debug=1, plot_debug=1))
+	print(ans)
+	flush.console()
+	print("C")
+	KL_args$debug=0
+	system.time(	ans	<- nabc.mutost.calibrate( KL_args, max.it, debug=0, plot_debug=1))
+	print(ans)
+	
+	nabc.mutost.calibrate.tolerances.getkl(n.of.x, s.of.x, ans["n.of.y"], s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = ans["tau.u"], plot=T, debug=1)	
 }
 #------------------------------------------------------------------------------------------------------------------------
 project.nABC.TOST<- function()

@@ -50,3 +50,33 @@ void abcScaledChiSq_criticalregion(	const double scale, const double df, const d
 	//maxit updated
 }
 
+SEXP abcScaledChiSq(SEXP args)
+{
+	FAIL_ON(! Rf_isReal(args) ,"abcScaledChiSqu: error at 1a %c");
+	double scale=0, df=0, tl= 1, tu= 1, alpha= 0.01, tol= 1e-10, maxit= 100, incit= 0.05;
+	double *xans= NULL;
+	SEXP ans;
+
+	//convert SEXP into C
+	FAIL_ON(length(args)!=8,"abcScaledChiSqu: error at 1b %c");
+	FAIL_ON((scale= REAL(args)[0])<3,"abcScaledChiSqu: error at 1c %c");
+	FAIL_ON((df= REAL(args)[1])<2,"abcScaledChiSqu: error at 1d %c");
+	FAIL_ON((tl= REAL(args)[2])>1 || tl<0,"abcScaledChiSqu: error at 1e %c");
+	FAIL_ON((tu= REAL(args)[3])<1,"abcScaledChiSqu: error at 1f %c");
+	FAIL_ON((alpha= REAL(args)[4])>1 || alpha<0,"abcScaledChiSqu: error at 1g %c");
+	tol= REAL(args)[5];
+	maxit= REAL(args)[6];
+	incit= REAL(args)[7];
+
+	//output
+	PROTECT(ans=  allocVector(REALSXP,5));
+	xans= REAL(ans);
+	*(xans+4)= maxit;
+
+	//compute stuff
+	abcScaledChiSq_criticalregion(scale, df, tl, tu, alpha, tol, incit, *(xans+4) /*maxit will be updated*/, *xans /*c1*/, *(xans+1) /*c2*/, *(xans+2) /*mxpw*/, *(xans+3) /*error*/);
+
+	UNPROTECT(1);
+	return ans;
+}
+

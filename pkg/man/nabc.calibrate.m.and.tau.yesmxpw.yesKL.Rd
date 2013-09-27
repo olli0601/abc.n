@@ -2,8 +2,9 @@
 \alias{nabc.calibrate.m.and.tau.yesmxpw.yesKL}
 \title{Calibrate the number of simulated summary values and the equivalence region for a specified test of equivalence by minimising the Kullback-Leibler divergence from the standardized power function to the summary likelihood.}
 \usage{
-  nabc.calibrate.m.and.tau.yesmxpw.yesKL(KL_divergence,
-    args, max.it = 100, debug = 0, plot = F)
+  nabc.calibrate.m.and.tau.yesmxpw.yesKL(test_name,
+    KL_args, max.it = 100, debug = 0, plot = FALSE,
+    plot_debug = FALSE)
 }
 \arguments{
   \item{KL_divergence}{character, name of the function to
@@ -12,7 +13,7 @@
   \code{n.of.y}, the number of simulated summaries, and
   \code{plot}, which flag some plotting options.}
 
-  \item{args}{list of argument to be passed to
+  \item{KL_args}{list of argument to be passed to
   \code{KL_divergence}.}
 
   \item{max.it}{this algorithm stops prematurely when the

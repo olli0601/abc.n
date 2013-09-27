@@ -1,41 +1,39 @@
 \name{nabc.mutost.pow}
 \alias{nabc.mutost.pow}
-\title{Compute power of the equivalence test for population means of normal summary values}
+\title{Compute the density of the (possible truncated) power of the equivalence test for population means of normal summary values}
 \usage{
-  nabc.mutost.pow(rho, df, tau.u, s.of.T, alpha,
-    rtn.fun = FALSE, force = FALSE)
+  nabc.mutost.pow(rho, df, s.of.T, tau.u, alpha, norm = 1,
+    support = c(-Inf, Inf), log = FALSE)
 }
 \arguments{
-  \item{rho}{true difference in simulated and observed
-  population means}
+  \item{rho}{vector of quantile}
 
-  \item{df}{degrees of freedom of the simulated summary
-  values}
+  \item{norm}{normalization constant for the truncated
+  power function.}
 
-  \item{tau.u}{upper tolerance of the equivalence region}
+  \item{support}{vector of dimension 2. Support of the
+  truncated power function.}
 
-  \item{s.of.T}{standard deviation of the test statistic}
+  \item{log}{logical; if \code{TRUE}, densities d are given
+  as log(d).}
+
+  \item{tau.u}{upper tolerance of the equivalence region.
+  If \code{calibrate.tau.u==TRUE}, it's just a guess on an
+  upper bound on the upper tolerance of the equivalence
+  region.}
 
   \item{alpha}{level of the equivalence test}
-
-  \item{rtn.fun}{indicator if a function to compute the
-  power should be returned. Defaults to 0.}
-
-  \item{force}{if TRUE, enforce power computation outside
-  of acceptance region}
-}
-\value{
-  approximate power of the exact test. this is approximate
-  because the standard deviation of the normal model for
-  the simulated summary values is not known.
 }
 \description{
-  Compute power of the equivalence test for population
-  means of normal summary values
+  Compute the density of the (possible truncated) power of
+  the equivalence test for population means of normal
+  summary values
 }
-\examples{
-prior.u<- 5; prior.l<- -prior.u; tau.u	<- 0.75; yn<- 60; ysigma2<- 1; alpha<- 0.01
-rho	<- seq(prior.l,prior.u,length.out=1e3)
-nabc.mutost.pow(rho, yn-1, tau.u, sqrt(ysigma2/yn), alpha)
+\note{
+  The summary likelihood can be truncated to \code{support}
+  and then standardized with \code{norm}. For computational
+  efficiency, both \code{norm} and \code{support} must be
+  provided although each one can be derived (numerically)
+  from the other.
 }
 

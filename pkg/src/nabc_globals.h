@@ -82,18 +82,6 @@ struct nabcGlobals
     
 };
 
-typedef struct{
-    double nx;
-    double sx;
-    double ssn; /* sx/sqrt(nx) */
-    double df;
-    double norm;
-    int give_log;
-    double alpha;
-    double tau_up;
-    double sT; /* sy/sqrt(ny) */
-    
-} basic_arg;
 
 typedef struct{
     
@@ -103,30 +91,6 @@ typedef struct{
     void *q_arg;
     
 } kl_integrand_arg;
-
-typedef struct{
-    
-    double nx;//pass
-    double sx;
-    double ny;
-    double sy;
-    double mx_pw;
-    double alpha;
-    int calibrate_tau_up;
-    double tau_up;
-    double pow_scale;
-    double curr_mxpw;
-    double KL_div;
-    
-} kl_arg;
-
-typedef struct{
-    
-    KlArgValue KL_arg_value;
-    kl_arg *KL_arg;
-    void (*KL_divergence)(kl_arg *);
-    
-} kl_switch_arg;
 
 
 

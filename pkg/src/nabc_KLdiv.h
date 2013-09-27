@@ -19,9 +19,8 @@
 
 double abcKL_integrand(double x,void *arg_void);
 
-void abcCalibrate_tau_nomxpw_yesKL(void (*KL_divergence)(kl_arg *), kl_arg *KL_arg, const int &max_it);
+void abc_generic_calibrate_tauup_for_KL(void (*KL_divergence)(void*), double (*KL_optimize)(double, void*), void *KL_arg, const int &max_it);
 
-void abcCalibrate_m_and_tau_yesmxpw_yesKL(void (*KL_divergence)(kl_arg *), kl_arg *KL_arg, const int &max_it);
-
+void abc_generic_calibrate_yn_for_KL(void (*KL_divergence)(void*), double (*KL_optimize)(double, void*), void *KL_arg, const int &max_it);
 
 #endif /* defined(__nABC__nabc_KLdiv__) */

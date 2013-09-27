@@ -43,6 +43,9 @@ default.fun	<- "my.make.documentation"
 default.fun	<- "project.nABC.TOST"
 default.fun <- "project.nABC.compareSEIRS"
 default.fun	<- "project.nABC.StretchedChi2"
+default.fun	<- "nabc.test.mutost.calibrate"
+default.fun	<- "nabc.test.chi2stretch.calibrate"
+default.fun	<- "nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m"
 #default.fun<- "project.nABC.movingavg"
 ###############################################################################
 #if(length(args) && !is.loaded("tipc_tabulate_after_sample"))
@@ -54,7 +57,7 @@ default.fun	<- "project.nABC.StretchedChi2"
 #cat(paste("is.loaded('tipcr')->",is.loaded("tipc_tabulate_after_sample"),'\n'))
 ###############################################################################
 function.list<-c(list.files(path= paste(CODE.HOME,"R",sep='/'), pattern = ".R$", all.files = FALSE,
-		full.names = TRUE, recursive = FALSE),paste(CODE.HOME,"misc","nabc.prjcts.R",sep='/'))
+		full.names = TRUE, recursive = FALSE),paste(CODE.HOME,"misc","nabc.prjcts.R",sep='/'),paste(CODE.HOME,"misc","profiling.R",sep='/'))
 sapply(function.list,function(x) source(x,echo=FALSE,print.eval=FALSE, verbose=FALSE))
 ###############################################################################
 my.mkdir<-function(root,data.name)

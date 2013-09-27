@@ -1,6 +1,6 @@
 	
 #' Compute the density of the (possible truncated) power of the equivalence test for population means of normal summary values
-#' @inheritParams nabc.mutost.kl
+#' @inheritParams nabc.mutost.calibrate.tolerances.getkl
 #' @inheritParams nabc.mutost.pow
 #' @param rho vector of quantile
 #' @param norm normalization constant for the truncated power function.
@@ -10,23 +10,21 @@
 #' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived (numerically) from the other.
 #' @export
 #' 	
-dMuTOST_pow <- function(rho, df, s.of.T, tau.u, alpha, norm=1, support=c(-Inf,Inf), log=FALSE){
+nabc.mutost.pow <- function(rho, df, s.of.T, tau.u, alpha, norm=1, support=c(-Inf,Inf), log=FALSE)
+{	
+	ans				<- rho
+	in_support		<- (rho >= support[1] & rho <= support[2])
+	ans[!in_support]<- 0
 	
-	ans<-rho
-	in_support<- (rho >= support[1] & rho <= support[2])
-	ans[!in_support] <- 0
-	
-	if(any(in_support)){
+	if(any(in_support))
+	{
 		suppressWarnings({ #suppress numerical inaccuracy warnings
 					ans[in_support] <- .Call("abcMuTOST_pow", rho[in_support], df, tau.u, s.of.T, alpha)/norm
 				})
-	}
-	
-	if(log){
-		ans<-log(ans)
-	}
-	
-	return(ans)
+	}	
+	if(log)
+		ans			<- log(ans)	
+	ans
 }
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -78,7 +76,7 @@ nabc.generic.tost<- function(tost.args, tau.l, tau.u, alpha, tost.distr="t")
 #' @examples	prior.u<- 5; prior.l<- -prior.u; tau.u	<- 0.75; yn<- 60; ysigma2<- 1; alpha<- 0.01
 #' rho	<- seq(prior.l,prior.u,length.out=1e3)
 #' nabc.mutost.pow(rho, yn-1, tau.u, sqrt(ysigma2/yn), alpha)
-nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE,force= FALSE)
+old.nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE,force= FALSE)
 { 
 	x<-	rho
 	if(length(x)<10)
@@ -103,7 +101,7 @@ nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE,force= 
 		return( pw.fun(rho) )
 }
 #' Compute the density of the (possibly truncated) summary likelihood for population means of normal summary values
-#' @inheritParams nabc.mutost.kl
+#' @inheritParams nabc.mutost.calibrate.tolerances.getkl
 #' @param rho vector of quantile
 #' @param norm scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
 #' @param support vector of dimension 2, support of the truncated summary likelihood.
@@ -165,20 +163,17 @@ nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf
 #' @import ggplot2 reshape2
 #' @examples
 #' 
-#' nabc.mutost.kl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
+#' nabc.mutost.calibrate.tolerances.getkl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
 #' alpha=0.01, calibrate.tau.u=T, tau.u=1, plot=T)
 #'
 #------------------------------------------------------------------------------------------------------------------------
-nabc.mutost.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, 
-	plot = F) {
-
-	#TODO check argument with stopifnot
-	
-	if (!debug) {
-				
-		#ALL IN C
+nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, plot = F) 
+{
+	#TODO check argument with stopifnot	
+	if (!debug)		#ALL IN C 
+	{						
 		suppressWarnings({ #suppress numerical inaccuracy warnings
-			ans <- .Call("abcMuTOST_KL", n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u, tau.u, pow_scale)
+			ans <- .Call("abc_mutost_get_KL", n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u, tau.u, pow_scale)
 		})
 
 		KL_div <- ans[1]
@@ -189,72 +184,182 @@ nabc.mutost.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibra
 			lkl_support <- pow_support <- c(-tau.u, tau.u) * pow_scale
 			lkl_norm <- diff(pt(lkl_support/ssn, df))
 			suppressWarnings({ #suppress numerical inaccuracy warnings
-				pow_norm <- .Call("abcMuTOST_pow_integrate_qng", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
+				pow_norm <- .Call("abc_mutost_integrate_pow", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
 			})			
 		}
-
-	
-	} else {
-		#ALL IN R
-		if (calibrate.tau.u) {
+	} 
+	else			#ALL IN R 
+	{		
+		if (calibrate.tau.u) 
+		{
 			#calibrate tau.u constrained on yn, alpha and mx.pw	
-			tmp <- nabc.mutost.onesample.tau.lowup.pw(mx.pw, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha)
-			tau.u <- tmp[2]
-			pw.cmx <- tmp[3]
-			if (abs(pw.cmx - mx.pw) > 0.09) 
-				stop("tau.up not accurate")
+			tmp 	<- nabc.mutost.calibrate.tolerances(mx.pw, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha)
+			tau.u 	<- tmp[2]
+			pw.cmx 	<- tmp[3]
+			if (abs(pw.cmx - mx.pw) > 0.09) 	stop("tau.up not accurate")
 		}
-
 		#truncate pow and compute pow_norm
 		pow_support <- c(-tau.u, tau.u) * pow_scale
-		#pow_norm <- integrate(dMuTOST_pow, lower = pow_support[1], upper = pow_support[2], df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u= tau.u, alpha= alpha, norm=1, support= pow_support, log=FALSE)
+		#pow_norm <- integrate(nabc.mutost.pow, lower = pow_support[1], upper = pow_support[2], df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u= tau.u, alpha= alpha, norm=1, support= pow_support, log=FALSE)
 		suppressWarnings({ #suppress numerical inaccuracy warnings
-				pow_norm <- .Call("abcMuTOST_pow_integrate_qng", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
+				pow_norm <- .Call("abc_mutost_integrate_pow", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
 			})		
 		#compute the norm of lkl, given its support 
-		ssn <- s.of.x/sqrt(n.of.x)
-		df <- n.of.x - 1
-		lkl_support <- pow_support
-		lkl_norm <- diff(pt(lkl_support/ssn, df))
-
-		integral_range <- pow_support
-
-		lkl_arg <- list(n.of.x = n.of.x, s.of.x = s.of.x, norm = lkl_norm, support = lkl_support)
-		pow_arg <- list(df = n.of.y - 1, s.of.T = s.of.y/sqrt(n.of.y), tau.u = tau.u, alpha = alpha, norm = pow_norm, support = pow_support)
-
-		tmp <- integrate(nabc.kl.integrand, lower = integral_range[1], upper = integral_range[2], dP = nabc.mutost.sulkl, dQ = dMuTOST_pow, 
-			P_arg = lkl_arg, Q_arg = pow_arg)
-		KL_div <- tmp$value
-
-		if (tmp$message != "OK") {
-			warning(tmp$message)
-		}
-		
-		pw.cmx <- ifelse(calibrate.tau.u, pw.cmx, dMuTOST_pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha))
-
+		ssn 			<- s.of.x/sqrt(n.of.x)
+		df 				<- n.of.x - 1
+		lkl_support 	<- pow_support
+		lkl_norm 		<- diff(pt(lkl_support/ssn, df))
+		integral_range	<- pow_support
+		lkl_arg 		<- list(n.of.x = n.of.x, s.of.x = s.of.x, norm = lkl_norm, support = lkl_support)
+		pow_arg 		<- list(df = n.of.y - 1, s.of.T = s.of.y/sqrt(n.of.y), tau.u = tau.u, alpha = alpha, norm = pow_norm, support = pow_support)
+		tmp 			<- integrate(nabc.kl.integrand, lower = integral_range[1], upper = integral_range[2], dP = nabc.mutost.sulkl, dQ = nabc.mutost.pow, P_arg = lkl_arg, Q_arg = pow_arg)
+		KL_div 			<- tmp$value
+		if (tmp$message != "OK")	warning(tmp$message)
+		pw.cmx 			<- ifelse(calibrate.tau.u, pw.cmx, nabc.mutost.pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha))
 	}
-
-	if (plot) {
-		rho <- seq(lkl_support[1], lkl_support[2], length.out = 1000)
-		lkl <- nabc.mutost.sulkl(rho, n.of.x, s.of.x, lkl_norm, lkl_support)
-		df_lkl <- data.frame(x = rho, no = lkl * lkl_norm, yes = lkl)
+	if (plot) 
+	{
+		rho 				<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
+		lkl 				<- nabc.mutost.sulkl(rho, n.of.x, s.of.x, lkl_norm, lkl_support)
+		df_lkl 				<- data.frame(x = rho, no = lkl * lkl_norm, yes = lkl)
 		df_lkl$distribution <- "summary likelihood"
-		pow<-dMuTOST_pow(rho, df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u, alpha, norm=pow_norm, support= pow_support, log=FALSE)
-		df_pow <- data.frame(x = rho, no = pow * pow_norm, yes = pow)
+		pow					<- nabc.mutost.pow(rho, df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u, alpha, norm=pow_norm, support= pow_support, log=FALSE)
+		df_pow 				<- data.frame(x = rho, no = pow * pow_norm, yes = pow)
 		df_pow$distribution <- "ABC power"
-		df <- rbind(df_pow, df_lkl)
-		gdf <- melt(df, id.vars = c("x", "distribution"))
-		p <- ggplot(data = gdf, aes(x = x, y = value, colour = distribution, linetype = variable))
-		p <- p + geom_vline(xintercept = c(-tau.u, tau.u), linetype = "dotted")
-		p <- p + geom_hline(yintercept = mx.pw, linetype = "dotted")
-		p <- p + geom_line()
-		p <- p + scale_linetype("truncated and\nstandardized?")
-		p <- p + xlab(expression(rho)) + ylab("")
-		p <- p + ggtitle(paste("n.of.y=", n.of.y, "\ntau.u=", tau.u, "\nKL=", KL_div))
+		df 					<- rbind(df_pow, df_lkl)
+		gdf 				<- melt(df, id.vars = c("x", "distribution"))
+		p 					<- ggplot(data = gdf, aes(x = x, y = value, colour = distribution, linetype = variable))
+		p 					<- p + geom_vline(xintercept = c(-tau.u, tau.u), linetype = "dotted")
+		p 					<- p + geom_hline(yintercept = mx.pw, linetype = "dotted")
+		p 					<- p + geom_line()
+		p 					<- p + scale_linetype("truncated and\nstandardized?")
+		p 					<- p + xlab(expression(rho)) + ylab("")
+		p 					<- p + ggtitle(paste("n.of.y=", n.of.y, "\ntau.u=", tau.u, "\nKL=", KL_div))
 		print(p)
 	}
-
-	ans <- c(KL_div = KL_div, tau.u = tau.u, pw.cmx = pw.cmx)
+	ans <- c(KL_div = KL_div, n.of.y=n.of.y, tau.u = tau.u, pw.cmx = pw.cmx)
+	ans
+}
+#------------------------------------------------------------------------------------------------------------------------
+nabc.mutost.calibrate<- function(KL_args, tau.u.lb=1, max.it = 100, debug = 0, plot = FALSE, plot_debug = FALSE, verbose=TRUE) 
+{	
+	stopifnot(max.it > 0)
+	stopifnot(all(c("n.of.x", "s.of.x", "n.of.y", "s.of.y", "mx.pw", "alpha", "tau.u", "pow_scale") %in% names(KL_args)))
+	with(KL_args, stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, n.of.y>=n.of.x, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0))
+	#print(KL_args)
+	
+	#see if power function "too tight" for yn=xn -> as a marker we use that KL(yn-1) < KL(yn). 
+	#In this case, 	the only way to minimize KL is to use yn<xn, which is not what we like.
+	#				instead, we give up on mx.pw=0.9	
+	KL_divergence			<-  "nabc.mutost.calibrate.tolerances.getkl"		
+	KL_args$calibrate.tau.u <- T
+	KL_args$plot 			<- F	
+	if(0) 
+		pdf("KL_initial.pdf", onefile = T)		
+	KL.of.yn 				<- do.call(KL_divergence, KL_args)["KL_div"]
+	if(0) 
+		dev.off()		
+	n.of.y 					<- KL_args$n.of.y	
+	KL_args$n.of.y 			<- n.of.y - 1
+	KL_args$plot 			<- F
+	KL.of.yn_m1 			<- do.call(KL_divergence, KL_args)["KL_div"]		
+	decrease_n.of.y			<- as.logical(KL.of.yn_m1 < KL.of.yn)
+	if(verbose)	cat(paste("\ninitial m=",n.of.y, "KL(m)=",KL.of.yn, "KL(m-1)=",KL.of.yn_m1))
+	KL_args$n.of.y 			<- n.of.y
+	if (!debug)		#all in C 
+	{		
+		if(!decrease_n.of.y)		#case power function not "too tight", adjust yn for fixed mx.pw
+		{
+			suppressWarnings({ #suppress numerical inaccuracy warnings
+					ans 	<- .Call("abc_mutost_calibrate_powerbroader", KL_args, as.integer(max.it))
+				})
+		}
+		else						#case power function "too tight", force yn=xn and give up mx.pw
+		{
+			KL_args$tau.u 	<- as.double(KL_args$s.of.y / 5)
+			stopifnot(KL_args$tau.u>0)
+			suppressWarnings({ #suppress numerical inaccuracy warnings
+						ans <- .Call("abc_mutost_calibrate_powertighter", KL_args, as.integer(max.it))
+					})
+		}
+	} 
+	else			#all in R
+	{
+		if(!decrease_n.of.y)		#case power function not "too tight", adjust yn for fixed mx.pw 
+		{		
+			#we have KL(yn-1)>KL(yn), ie KL decreases as yn-1 is incremented. Find upper bound yn.ub such that KL first increases again. 						
+			curr.it 		<- max.it
+			yn.ub 			<- 2 * n.of.y		#Anton strictly, shouldn t this be 2 * (n.of.y-1) ?		
+			KL_args$n.of.y 	<- yn.ub
+			KL.of.yn_ub 	<- do.call(KL_divergence, KL_args)["KL_div"]
+			while (KL.of.yn_ub < KL.of.yn && curr.it > 0) 
+			{
+					#print(c(yn.ub, KL.of.yn_ub, KL.of.yn, curr.it))
+					curr.it 		<- curr.it - 1
+					KL.of.yn 		<- KL.of.yn_ub
+					yn.ub 			<- 2 * yn.ub
+					KL_args$n.of.y 	<- yn.ub
+					KL.of.yn_ub 	<- do.call(KL_divergence, KL_args)["KL_div"]				
+			}			
+			if (curr.it == 0) 	stop("could not find upper bound for yn")					
+			yn.lb 				<-ifelse(curr.it == max.it,KL_args$n.of.y/2,KL_args$n.of.y/4)		#previous 'yn.ub' could be exactly the minimum, so need to choose 'yn.ub/4' as lower bound 
+			#KL is minimized in the open set (yn.lb,yn.ub)						
+			if(verbose)	cat(paste("\nupper and lower bounds on m:",yn.lb, yn.ub))
+			if (plot_debug) 
+				pdf("KL_optimization.pdf", onefile = T)		
+			KL_args$plot 			<- plot_debug
+			KL_args["n.of.y"] 		<- NULL
+			tmp 					<- optimize(nabc.kl.optimize, interval = c(yn.lb, yn.ub), x_name = "n.of.y", is_integer = T, KL_divergence = KL_divergence, KL_args = KL_args, verbose = debug, tol = 1)
+			if (plot_debug) 
+				dev.off()
+			KL_args$n.of.y 			<- round(tmp$minimum)
+			KL_args$plot 			<- plot
+			ans 					<- do.call(KL_divergence, KL_args)
+		}
+		else					#case power function "too tight", force yn=xn and give up mx.pw
+		{
+			KL_args$calibrate.tau.u <- F
+			KL_args$tau.u 			<- KL_args$s.of.y / 2
+			print(KL_args$tau.u)
+			KL_args$plot 			<- plot_debug
+			if (plot_debug)
+				pdf("KL_initial.pdf", onefile = T)
+			KL.of.tau.u 			<- do.call(KL_divergence, KL_args)["KL_div"]
+			if (plot_debug)
+				dev.off()
+			
+			#to find tau.u.ub increase tau.u until the KL increases too
+			tau.u.ub 				<- 2*KL_args$tau.u
+			curr.it 				<- max.it			
+			KL_args$tau.u 			<- tau.u.ub
+			KL_args$plot 			<- F
+			KL.of.tau.u.ub 			<- do.call(KL_divergence, KL_args)["KL_div"]			
+			while (KL.of.tau.u.ub < KL.of.tau.u && curr.it > 0) 
+			{
+				#print(c(tau.u.ub, KL.of.tau.u.ub , KL.of.tau.u, curr.it))
+				curr.it 			<- curr.it - 1
+				KL.of.tau.u 		<- KL.of.tau.u.ub
+				tau.u.ub 			<- 2 * tau.u.ub
+				KL_args$tau.u 		<- tau.u.ub
+				KL.of.tau.u.ub 		<- do.call(KL_divergence, KL_args)["KL_div"]
+			}
+			if(curr.it == 0) 	stop("could not find upper bound for tau.u")
+			#print(c(tau.u.ub, KL.of.tau.u.ub , KL.of.tau.u, curr.it))
+			tau.u.lb				<- ifelse(curr.it==max.it, tau.u.lb, tau.u.ub/4)
+			#minimize KL_tau.u between [tau.u.lb, tau.u.ub]
+			if(verbose)	cat(paste("\nupper and lower bounds on tau.u:",tau.u.lb, tau.u.ub))
+			if(plot_debug)
+				pdf("KL_optimization.pdf", onefile = T)
+			KL_args$plot 			<- plot_debug
+			KL_args["tau.u"]		<- NULL
+			tmp 					<- optimize(nabc.kl.optimize, interval = c(tau.u.lb,tau.u.ub), x_name="tau.u" ,KL_divergence= KL_divergence, KL_args = KL_args, verbose = debug)
+			if(plot_debug)
+				dev.off()
+			KL_args$tau.u 	<- tmp$minimum
+			KL_args$plot 	<- plot	
+			ans 			<- do.call(KL_divergence, KL_args)
+		}			
+	}
 	return(ans)
 }
 #------------------------------------------------------------------------------------------------------------------------
@@ -275,13 +380,13 @@ nabc.mutost.kl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibra
 #' 	\item{3}{actual maximum power associated with the equivalence region}
 #' 	\item{4}{error ie abs(actual power - mx.pw)}
 #' @examples yn<- 60; ysigma2<- 1; alpha<- 0.01
-#'	nabc.mutost.onesample.tau.lowup.pw(0.9, yn-1, sqrt(ysigma2/yn), 2, alpha )
-nabc.mutost.onesample.tau.lowup.pw<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star=0, tol= 1e-5, max.it=100, debug=0)
+#'	nabc.mutost.calibrate.tolerances(0.9, yn-1, sqrt(ysigma2/yn), 2, alpha )
+nabc.mutost.calibrate.tolerances<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star=0, tol= 1e-5, max.it=100, debug=0)
 {
 	if(!debug)
 	{
 		suppressWarnings({	#suppress numerical inaccuracy warnings
-					ans<- .Call("abcMuTOST_taulowup_pw",c(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star, tol, max.it))
+					ans<- .Call("abc_mutost_calibrate_tauup_for_mxpw",c(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star, tol, max.it))
 				})
 		return(ans)
 	}
@@ -299,7 +404,7 @@ nabc.mutost.onesample.tau.lowup.pw<- function(mx.pw, df, s.of.T, tau.up.ub, alph
 		#curr.mx.pw	<- nabc.mutost.pow(rho.star, df, tau.up.ub, s.of.T, alpha)
 		#print( curr.mx.pw )		
 	}
-	if(tmp==0)	stop("nabc.mutost.onesample.tau.lowup.pw: could not find tau.up.ub")	
+	if(tmp==0)	stop("nabc.mutost.calibrate.tolerances: could not find tau.up.ub")	
 #print(tau.up.ub); stop()
 	tau.up.lb	<- 0
 	error		<- 1	
@@ -319,7 +424,7 @@ nabc.mutost.onesample.tau.lowup.pw<- function(mx.pw, df, s.of.T, tau.up.ub, alph
 			tau.up.ub<- tau.up
 #print(c(abs(error), round(tau.up.lb,d=10)!=round(tau.up.ub,d=10)) )	
 	}
-	if(max.it==0)	warning("nabc.mutost.onesample.tau.lowup.pw: reached max.it")
+	if(max.it==0)	warning("nabc.mutost.calibrate.tolerances: reached max.it")
 #	stop("HERE")
 	c(-tau.up,tau.up,curr.mx.pw,abs(error))
 }
@@ -360,7 +465,7 @@ nabc.mutost.onesample.tau.lowup.pw<- function(mx.pw, df, s.of.T, tau.up.ub, alph
 #'	lines(rho,y,col="red")
 #'	lines(rho2,y2,col="blue")			
 #'	abline(v=0,col="red")			
-nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, tau.u.ub=2, tol= 1e-5, max.it=100, debug=0)
+old.nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, tau.u.ub=2, tol= 1e-5, max.it=100, debug=0)
 {
 	if(!debug)
 	{
@@ -381,7 +486,7 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 		curr.it	<- curr.it-1
 		yn.ub	<- 2*yn.ub
 #print(c(mx.pw,yn.ub))			
-		tmp		<- nabc.mutost.onesample.tau.lowup.pw(mx.pw, yn.ub-1, s.of.y/sqrt(yn.ub), 2*tau.u, alpha, debug=0)
+		tmp		<- nabc.mutost.calibrate.tolerances(mx.pw, yn.ub-1, s.of.y/sqrt(yn.ub), 2*tau.u, alpha, debug=0)
 #print(c("OK ",tmp))		
 		tau.u	<- tmp[2]
 		pw.cmx	<- tmp[3]
@@ -402,7 +507,7 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 	{
 		max.it	<- max.it-1
 		yn		<- round( (yn.lb + yn.ub)/2 )		
-		tmp		<- nabc.mutost.onesample.tau.lowup.pw(mx.pw, yn-1, s.of.y/sqrt(yn), 2*tau.u, alpha, debug=0)
+		tmp		<- nabc.mutost.calibrate.tolerances(mx.pw, yn-1, s.of.y/sqrt(yn), 2*tau.u, alpha, debug=0)
 		tau.u	<- tmp[2]
 		pw.cmx	<- tmp[3]
 		rho		<- seq(-2*tau.u,2*tau.u,length.out=1e3)
@@ -441,7 +546,7 @@ nabc.mutost.onesample.n.of.y<- function(n.of.x, s.of.Sx, mx.pw, s.of.y, alpha, t
 #' 	\item{4}{error ie abs(actual var(power) - var(summary likelihood))}
 #' @examples yn<- 60; ysigma2<- 1; alpha<- 0.01
 #'	nabc.mutost.onesample.tau.lowup.var(0.002, yn-1, sqrt(ysigma2/yn), 2, alpha )
-nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, alpha, rho.star=0, tol= 1e-5, max.it=100, debug=0)
+old.nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.ub, alpha, rho.star=0, tol= 1e-5, max.it=100, debug=0)
 {
 	if(!debug)
 	{
@@ -579,7 +684,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 			sim.n	<- obs.n		
 		sim.mean<- mean(sim[seq.int(1,sim.n)])
 		sim.sd	<- sd(sim[seq.int(1,sim.n)])					
-		tmp		<- nabc.mutost.onesample.tau.lowup.pw(mx.pw, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha)
+		tmp		<- nabc.mutost.calibrate.tolerances(mx.pw, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha)
 		if(tmp[4]>0.09)	stop("tau.up not accurate")		
 		tau.l	<- tmp[1]*annealing
 		tau.u	<- tmp[2]*annealing	
@@ -596,7 +701,7 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 			sim.n	<- obs.n		
 		sim.mean<- mean(sim[seq.int(1,sim.n)])
 		sim.sd	<- sd(sim[seq.int(1,sim.n)])					
-		tmp		<- nabc.mutost.onesample.tau.lowup.pw(mx.pw, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha)
+		tmp		<- nabc.mutost.calibrate.tolerances(mx.pw, sim.n-1, sim.sd/sqrt(sim.n), 2*tau.u.ub, alpha)
 		if(tmp[4]>0.09)	stop("tau.up not accurate")		
 		tau.l	<- max(tmp[1],-tau.u.ub)*annealing
 		tau.u	<- min(tmp[2],tau.u.ub)*annealing	
@@ -722,14 +827,14 @@ nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbos
 		#we start from the case n.of.y=n.of.x (but - for simplicity? - we use sd(sim))	
 		#check if KL decreases when the number of simulations increases by one
 		#this should be equivalent to check that s.of.pow > s.of.lkl
-		KL.sim.n <- nabc.mutost.kl(n.of.x, s.of.x, n.of.x, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub)
-		KL.sim.n_p1 <- nabc.mutost.kl(n.of.x, s.of.x, n.of.x + 1, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub)
+		KL.sim.n <- nabc.mutost.calibrate.tolerances.getkl(n.of.x, s.of.x, n.of.x, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub)
+		KL.sim.n_p1 <- nabc.mutost.calibrate.tolerances.getkl(n.of.x, s.of.x, n.of.x + 1, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub)
 		
 		increase_n.of.y <- as.logical(KL.sim.n_p1["KL_div"] < KL.sim.n["KL_div"])
 		
 		if (increase_n.of.y) {
 			#increase sim.n so that the KL.div between the summary likelihood and the power is minimised
-			tmp <- nabc.calibrate.m.and.tau.yesmxpw.yesKL("nabc.mutost.kl", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, s.of.y = s.of.y, 
+			tmp <- nabc.calibrate.m.and.tau.yesmxpw.yesKL("nabc.mutost.calibrate.tolerances.getkl", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, s.of.y = s.of.y, 
 							mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, tau.u = tau.u.ub))
 			
 			if (abs(tmp["pw.cmx"] - mx.pw) > 0.09) 

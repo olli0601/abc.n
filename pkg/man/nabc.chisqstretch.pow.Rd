@@ -1,36 +1,39 @@
 \name{nabc.chisqstretch.pow}
 \alias{nabc.chisqstretch.pow}
-\title{Compute power of the exact equivalence test for dispersion}
+\title{Compute the density of the (possible truncated) power of the equivalence test for population dispersion of normal summary values}
 \usage{
-  nabc.chisqstretch.pow(rho, scale, df, cl, cu)
+  nabc.chisqstretch.pow(rho, scale, df, c.l, c.u, norm = 1,
+    trafo = 1, support = c(0, Inf), log = FALSE)
 }
 \arguments{
-  \item{rho}{true ratio in simulated variance / observed
-  variance}
+  \item{rho}{vector of quantile}
 
   \item{scale}{scaling of T apart from rho, either n-1 for
   unbiased ABC or n for exact MAP}
 
   \item{df}{degrees of freedom}
 
-  \item{cl}{lower ABC tolerance}
+  \item{c.l,c.u}{lower and upper ABC tolerance}
 
-  \item{cu}{upper ABC tolerance}
-}
-\value{
-  power of the exact test. this is exact.
+  \item{norm}{normalization constant for the truncated
+  power function.}
+
+  \item{support}{vector of dimension 2. Support of the
+  truncated power function.}
+
+  \item{log}{logical; if \code{TRUE}, densities d are given
+  as log(d).}
 }
 \description{
-  Compute power of the exact equivalence test for
-  dispersion
+  Compute the density of the (possible truncated) power of
+  the equivalence test for population dispersion of normal
+  summary values
 }
-\examples{
-alpha<- 0.01
-	tau.up<- 1.09
-	yn<- 5e3
-	tau.low<- nabc.chisqstretch.tau.low(tau.up, yn-1, alpha)
-	rej<- .Call("abcScaledChiSq",	c(yn-1,yn-1,tau.low,tau.up,alpha,1e-10,100,0.05)	)
-	rho<- seq(tau.low,tau.up,by=0.001)
-	nabc.chisqstretch.pow(rho,yn-1,yn-1,rej[1],rej[2])
+\note{
+  The summary likelihood can be truncated to \code{support}
+  and then standardized with \code{norm}. For computational
+  efficiency, both \code{norm} and \code{support} must be
+  provided although each one can be derived (numerically)
+  from the other.
 }
 

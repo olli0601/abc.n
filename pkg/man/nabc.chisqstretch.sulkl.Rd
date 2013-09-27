@@ -2,8 +2,9 @@
 \alias{nabc.chisqstretch.sulkl}
 \title{Compute the density of the (possibly truncated) summary likelihood for population dispersion of normal summary values}
 \usage{
-  nabc.chisqstretch.sulkl(rho, n.of.x, s.of.x, norm = 1,
-    support = c(0, Inf), log = FALSE)
+  nabc.chisqstretch.sulkl(rho, n.of.x, s.of.x,
+    trafo = (n.of.x - 1)/n.of.x * s.of.x * s.of.x,
+    norm = 1, support = c(0, Inf), log = FALSE)
 }
 \arguments{
   \item{rho}{vector of quantile}
@@ -16,11 +17,6 @@
 
   \item{log}{logical; if \code{TRUE}, densities d are given
   as log(d).}
-
-  \item{n.of.x}{number of observed summary values}
-
-  \item{s.of.x}{standard deviation of observed summary
-  values}
 }
 \description{
   Compute the density of the (possibly truncated) summary

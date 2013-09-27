@@ -3,7 +3,7 @@
 \title{Compute the density of the (possibly truncated) summary likelihood for population means of normal summary values}
 \usage{
   nabc.mutost.sulkl(rho, n.of.x, s.of.x, norm = 1,
-    support = c(-Inf, Inf), log = FALSE)
+    support = c(-Inf, Inf), log = FALSE, debug = 0)
 }
 \arguments{
   \item{rho}{vector of quantile}
@@ -21,6 +21,8 @@
 
   \item{s.of.x}{standard deviation of observed summary
   values}
+
+  \item{debug}{flag if C implementation is used}
 }
 \description{
   Compute the density of the (possibly truncated) summary
