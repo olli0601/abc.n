@@ -150,14 +150,29 @@ nabc.chisqstretch.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, scale, 
 nabc.chisqstretch.calibrate.taulow<- function(tau.up, scale, df, alpha=0.01, rho.star=1, tol= 1e-5, max.it=100, pow_scale=1.5, verbose=0) 
 {	
 	rho			<- seq(1/(tau.up*pow_scale), tau.up*pow_scale, len=1024)
-	tau.low.lb	<- 1/tau.up			#1/tau.up gives rho.max<1 so we know we only need to go up
-	tau.low.ub	<- 1				#tau.low must be between [tau.low.lb, tau.low.ub]
+	tau.low.lb	<- 2/tau.up				
+	tmp			<- max.it
+	c.rho.max	<- Inf
+	while(c.rho.max>rho.star && tmp>0)
+	{
+		tmp							<- tmp-1
+		tau.low.lb					<- tau.low.lb/2
+		rej							<- .Call("abcScaledChiSq",	c(scale,df,tau.low.lb,tau.up,alpha,1e-10,100,0.05)	)
+		if(rej[4]>tol)	stop("compute tau.low.lb: rejection region does not have level alpha within tolerance")
+		pw							<- nabc.chisqstretch.pow(rho,scale,df,rej[1],rej[2])
+		c.rho.max					<- rho[ which.max(pw) ]
+		if(verbose)	cat(paste("\ntrial lower bound",tau.low.lb,"with current rho.max",c.rho.max,"critical region",rej[1],rej[2],"error in level is",rej[4]))
+	}
+	tau.low.ub	<- ifelse(tmp+1<max.it,2*tau.low.lb,tau.up)
+	if(verbose)	cat(paste("\nregion for tau.low is",tau.low.lb,tau.low.ub))	
 	error		<- 1
 	while(abs(error)>tol && round(tau.low.lb,d=10)!=round(tau.low.ub,d=10) && max.it>0)
 	{
 		max.it	<- max.it-1
 		tau.low	<- (tau.low.lb + tau.low.ub)/2
+#print(c(tau.low, tau.up))
 		rej		<- .Call("abcScaledChiSq",	c(scale,df,tau.low,tau.up,alpha,1e-10,100,0.05)	)
+		if(rej[4]>tol)	stop("compute tau.low: rejection region does not have level alpha within tolerance")
 		pw		<- nabc.chisqstretch.pow(rho,scale,df,rej[1],rej[2])
 #print( c(rho[ which.max(pw) ],pw[ which.max(pw) ], tau.low.lb, tau.low.ub,round(tau.low.lb,d=10)==round(tau.low.ub,d=10) ))	
 		error	<- rho[ which.max(pw) ] - rho.star
@@ -191,33 +206,37 @@ nabc.chisqstretch.calibrate.taulow<- function(tau.up, scale, df, alpha=0.01, rho
 #' 	\item{6}{upper point of critical region}
 #' @examples yn<- 60
 #' 	nabc.chisqstretch.calibrate.tauup(0.9, 2.5, yn-1, 0.01)
-nabc.chisqstretch.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01, rho.star=1, tol= 1e-5, max.it=100, verbose=0)
+nabc.chisqstretch.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01, rho.star=1, tol= 1e-5, max.it=100, pow.scale=1.5, verbose=0)
 {
 	tau.low		<- cl <- cu	<- NA
 	error		<- curr.mx.pw	<- 0
-	tau.up.ub	<- tau.up.ub/2
+	tau.up.ub	<- tau.up.ub/2	
 	tmp			<- max.it		
 	while(curr.mx.pw<mx.pw && tmp>0)
 	{
 		tmp							<- tmp-1
 		tau.up.ub					<- 2*tau.up.ub
 		g(tau.low, cl, cu, error)	%<-%	nabc.chisqstretch.calibrate.taulow(tau.up.ub, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
-		curr.mx.pw					<- nabc.chisqstretch.pow(rho.star, scale, df, cl, cu)
-		if(verbose)	cat(paste("\ntrial upper bound",tau.up.ub,"with power at rho.star",curr.mx.pw))
+		rho							<- seq(tau.low*pow_scale, tau.up.ub*pow_scale, len=1024)
+		pw							<- nabc.chisqstretch.pow(rho, scale, df, cl, cu)
+		curr.mx.pw					<- max(pw)		
+		if(verbose)	cat(paste("\ntrial upper bound",tau.up.ub,"with power",curr.mx.pw,"at rho=",rho[ which.max(pw) ]))
 	}
 	if(tmp==0)	stop("could not find tau.up.ub")
-	if(verbose)	cat(paste("\nFound upper bound",tau.up.ub,"with power at rho.star",curr.mx.pw))
+	if(verbose)	cat(paste("\nFound upper bound",tau.up.ub,"with power",curr.mx.pw,"at rho=",rho[ which.max(pw) ]))
 	tau.up.lb	<- 1
 	error		<- 1	
+	
 	while(abs(error)>tol && round(tau.up.lb,d=10)!=round(tau.up.ub,d=10) && max.it>0)
 	{
 		max.it						<- max.it-1
 		tau.up						<- (tau.up.lb + tau.up.ub)/2
-		g(tau.low, cl, cu, error)	%<-%	nabc.chisqstretch.calibrate.taulow(tau.up, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)				
-		curr.mx.pw					<- nabc.chisqstretch.pow(rho.star, scale, df, cl, cu)
+		g(tau.low, cl, cu, error)	%<-%	nabc.chisqstretch.calibrate.taulow(tau.up, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
+		rho							<- seq(tau.low*pow_scale, tau.up*pow_scale, len=1024)		
+		pw							<- nabc.chisqstretch.pow(rho, scale, df, cl, cu)
+		curr.mx.pw					<- max(pw)		
 		error						<- curr.mx.pw - mx.pw
-		if(verbose)	cat(paste("\ntrial tau.u",tau.up,"with power at rho.star",curr.mx.pw,"search interval",tau.up.lb,tau.up.ub,"error",error))
-#print(c(curr.mx.pw, tau.low, tau.up, tau.up.lb, tau.up.ub, max.it))
+		if(verbose)	cat(paste("\ntrial tau.u",tau.up,"with power",curr.mx.pw,"at rho=",rho[ which.max(pw) ],"search interval",tau.up.lb,tau.up.ub,"error",error))
 		if(error<0)
 			tau.up.lb<- tau.up
 		else
@@ -294,7 +313,7 @@ nabc.chisqstretch.calibrate<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of
 	
 	n.of.y 										<- round(tmp$minimum)+1
 	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	nabc.chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, debug=0, calibrate.tau.u=T, plot=plot)
-	c(n.of.y=n.of.y, tau.l=tau.l, tau.u=tau.u, c.l=c.l, c.u=c.u, pw.cmx=pw.cmx, KL_div=KL_div)		
+	c(n.of.y=n.of.y, tau.l=tau.l, tau.u=tau.u, cl=c.l, cu=c.u, pw.cmx=pw.cmx, KL_div=KL_div)		
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Perform the exact test for dispersion equivalence when the summary values are normally distributed
