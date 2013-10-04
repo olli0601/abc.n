@@ -65,12 +65,14 @@ nabc.tosz.sulkl.norm<- function(Tsd, support= c(-Inf,Inf))
 #' 	\item{z}{Z-transformation of the autocorrelation (this is atanh of "cor")}
 #' 	\item{n}{Number of pairs (x_i,x_i-1) after thinning}
 #' @examples nabc.acf.equivalence.cor(rnorm(100,0,1), leave.out=2)
-nabc.acf.equivalence.cor<- function(x, leave.out=0)
+nabc.acf.equivalence.cor<- function(x, leave.out=0, len= ceiling(length(x)/(1+leave.out)) )
 {
-	tmp<-	rbind( x[-1], x[-length(x)]	)
-	tmp<-	tmp[,seq.int(1,ncol(tmp),by=1+leave.out)]
-	tmp2<-	cor(tmp[1,],tmp[2,])
-	ans<-	c(tmp2,		.5 * log( (1+tmp2)/(1-tmp2) ), 		ncol(tmp)	)
+	tmp	<- rbind( x[-1], x[-length(x)]	)
+	tmp	<- tmp[,seq.int(1,ncol(tmp),by=1+leave.out)]
+	tmp	<- tmp[,seq_len(len)]
+	if(any(is.na(tmp)))		stop("Unexpected NA in tmp")
+	tmp2<- cor(tmp[1,],tmp[2,])
+	ans	<- c(tmp2,		.5 * log( (1+tmp2)/(1-tmp2) ), 		ncol(tmp)	)
 	names(ans)<- c("cor","z","n")
 	ans
 }

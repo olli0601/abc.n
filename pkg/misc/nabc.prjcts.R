@@ -5675,6 +5675,8 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			yn			<- length(x)
 		else
 			yn			<- max( yn.sig2*(1+leave.out.sig2),yn.a*(1+leave.out.a) )
+		if(verbose)	cat(paste("\nyn.a=",yn.a))
+		if(verbose)	cat(paste("\nyn.sig2=",yn.sig2))
 		if(verbose)	cat(paste("\nNumber of simulated data points set to",yn))
 		if(yn<length(x))	stop("Unexpected yn<length(x)")
 		ans[["data"]]	<- sapply(1:N,function(i)
@@ -5685,11 +5687,13 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 					ysigma2	<- runif(1, xsig2.prior.l, xsig2.prior.u)										#uniform on rho
 					y		<- rnorm( yn+1, 0, sd=sqrt(ysigma2))
 					y		<- y[-1] + y[-(yn+1)]*ymapa
-					tmp		<- nabc.acf.equivalence.cor(y[seq_len(yn.a*(1+leave.out.a))], leave.out=xmapa.leave.out)									
+					tmp		<- nabc.acf.equivalence.cor(y, leave.out=xmapa.leave.out, len=yn.a)									
 					out.a			<- c(ymapa, 	nabc.acf.a2rho(ymapa),			(tmp["z"] - ans[["xa"]]))					
-					y				<- y[seq.int(1,length(y),by=1+xsig2.leave.out)]	
-					y				<- y[seq_len(yn.sig2*(1+leave.out.sig2))]
+					y				<- y[seq.int(1,length(y),by=1+xsig2.leave.out)]
+					y				<- y[seq_len(yn.sig2)]
 					out.v			<- c(ysigma2,	(1+ymapa*ymapa)*ysigma2,	 	var(y)*(length(y)-1) / (ans[["xv"]] * ceiling( length(x)/(1+xsig2.leave.out) ) )	)					
+					print(c(out.a,out.v))
+					stop()
 					c(out.a,out.v)
 				})	
 		rownames(ans[["data"]])	<- c("th.a","rho.a", "T.a", "th.s2", "rho.s2",  "T.s2")		
@@ -5751,7 +5755,21 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			save(ans.eq,file=f.name)
 		}
 		else
+		{
 			cat(paste("\nnABC.MA: resumed ",f.name))
+			x					<- ans.ok[["x"]]
+			zx					<- nabc.acf.equivalence.cor(x, leave.out=leave.out.a)
+			abc.param.a			<- nabc.tosz.calibrate(zx["n"], mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=F)					
+			vx					<- x[seq.int(1,length(x),by=1+leave.out.sig2)]
+			suppressWarnings({	
+				abc.param.sig2	<- nabc.chisqstretch.calibrate(length(vx), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
+			})
+			
+			acc.s2				<- which( ans.ok[["data"]]["T.s2",]>=abc.param.sig2["cl"]  &  ans.ok[["data"]]["T.s2",]<=abc.param.sig2["cu"] )
+	
+	
+		}
+			
 	}	
 	
 }
