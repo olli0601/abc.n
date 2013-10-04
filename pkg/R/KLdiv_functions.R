@@ -59,7 +59,7 @@ nabc.kl.optimize<- function(x_value, x_name, is_integer=FALSE, KL_divergence, KL
 #' @import stats
 #' @example inst/examples/ex.nabc.adjust.tau.lowup.KL.R
 #'
-nabc.calibrate.tau.nomxpw.yesKL <- function(test_name, KL_args, tau.u.lb=1, max.it=100,debug = 0, plot = F, plot_debug = FALSE) {
+old.nabc.calibrate.tau.nomxpw.yesKL <- function(test_name, KL_args, tau.u.lb=1, max.it=100,debug = 0, plot = F, plot_debug = FALSE) {
 	
 	stopifnot(tau.u.lb>0,max.it>0)
 
@@ -158,7 +158,7 @@ nabc.calibrate.tau.nomxpw.yesKL <- function(test_name, KL_args, tau.u.lb=1, max.
 #' @import stats
 #' @example inst/examples/ex.nabc.adjust.n.of.y.KL.R
 #' 
-nabc.calibrate.m.and.tau.yesmxpw.yesKL <- function(test_name, KL_args, max.it = 100, debug = 0, plot = FALSE, plot_debug = FALSE) {
+old.nabc.calibrate.m.and.tau.yesmxpw.yesKL <- function(test_name, KL_args, max.it = 100, debug = 0, plot = FALSE, plot_debug = FALSE) {
 	
 	stopifnot(max.it > 0)
 

@@ -439,12 +439,24 @@ project.nABC.movingavg.gethist<- function(x, theta, nbreaks= 20, breaks= NULL, w
 	ans.h
 }
 #------------------------------------------------------------------------------------------------------------------------
-project.nABC.movingavg.a2rho<- function(x) 
+nabc.acf.a2nu<- function(x) 
+{
+	x/(1+x*x)
+}
+#------------------------------------------------------------------------------------------------------------------------
+nabc.acf.nu2a<- function(x)
+{
+	x[x>.5]<- .5
+	x[x<-.5]<- -.5		
+	(1-sqrt(1-4*x*x))/(2*x)
+} 
+#------------------------------------------------------------------------------------------------------------------------
+nabc.acf.a2rho<- function(x) 
 {
 	atanh( x/(1+x*x) )
 }
 #------------------------------------------------------------------------------------------------------------------------
-project.nABC.movingavg.rho2a<- function(x)
+nabc.acf.rho2a<- function(x)
 {
 	x<- tanh(x)
 	x[x>.5]<- .5
@@ -475,14 +487,14 @@ project.nABC.movingavg.detJac<- function(a,sig2,ax,vx)
 #------------------------------------------------------------------------------------------------------------------------
 project.nABC.movingavg.avgdetJac<- function(a.tau.l, a.tau.u, ax, vx, s, alpha, empirical.rho= NULL, empirical.links=NULL, plot=0)
 {
-	rhox<- 	project.nABC.movingavg.a2rho(ax)
+	rhox<- 	nabc.acf.a2rho(ax)
 	#rhox<- ax	#the ax stored is actually hat(rho)_x
-	#ax	<- project.nABC.movingavg.rho2a(rhox)
+	#ax	<- nabc.acf.rho2a(rhox)
 #print(c(rhox,ax,vx))
 
 	sigma2<- 1
 	rho<- seq(rhox+a.tau.l, rhox+a.tau.u, by=0.001)	
-	a<- seq(project.nABC.movingavg.rho2a(rhox+a.tau.l),project.nABC.movingavg.rho2a(rhox+a.tau.u), by=0.001)
+	a<- seq(nabc.acf.rho2a(rhox+a.tau.l),nabc.acf.rho2a(rhox+a.tau.u), by=0.001)
 #print(range(a))
 	detjac<- abs(project.nABC.movingavg.detJac( a, sigma2, ax, vx))	
 	ax.idx	<- which.min(abs(a-ax))
@@ -490,8 +502,8 @@ project.nABC.movingavg.avgdetJac<- function(a.tau.l, a.tau.u, ax, vx, s, alpha, 
 	#print(mean(detjac[1:ax.idx]-detjac[ax.idx]))
 	#print(mean(detjac[ax.idx:length(detjac)]-detjac[ax.idx]))	
 	ans		<- c(ax, mean(detjac[ax.idx:length(detjac)]-detjac[ax.idx])-mean(detjac[1:ax.idx]-detjac[ax.idx]))	
-	#pw		<- nabc.acf.equivalence.pow(rho, a.tau.u, alpha, s)
-	dens.a	<- nabc.acf.equivalence.pow(project.nABC.movingavg.a2rho(a)-rhox, a.tau.u, alpha, s)
+	#pw		<- nabc.tosz.pow(rho, a.tau.u, alpha, s)
+	dens.a	<- nabc.tosz.pow(nabc.acf.a2rho(a)-rhox, a.tau.u, alpha, s)
 	dens.a	<- dens.a * detjac
 	dens.a	<- dens.a / sum(dens.a)		
 	ans		<- c(ans, a[which.max(dens.a)]-ax )
@@ -501,7 +513,7 @@ project.nABC.movingavg.avgdetJac<- function(a.tau.l, a.tau.u, ax, vx, s, alpha, 
 		detjac.j<- nabc.estimate.jac( empirical.links, cbind(th1=a, th2=rep(sigma2,length(a))), c(2e-3, 2e-2), ax, vx )
 		#print(detjac.j[150:160]); print(detjac[150:160]); print(detjac.j-detjac)
 
-		dens.a.j<- nabc.acf.equivalence.pow(project.nABC.movingavg.a2rho(a)-rhox, a.tau.u, alpha, s)
+		dens.a.j<- nabc.tosz.pow(nabc.acf.a2rho(a)-rhox, a.tau.u, alpha, s)
 		dens.a.j<- dens.a.j * detjac.j
 		dens.a.j<- dens.a.j / sum(dens.a.j, na.rm=1)		
 		tmp			<- names(ans)
@@ -511,7 +523,7 @@ project.nABC.movingavg.avgdetJac<- function(a.tau.l, a.tau.u, ax, vx, s, alpha, 
 	if(!is.null(empirical.rho))
 	{
 		#empirical.rho.d	<- density(empirical.rho, kernel="biweight",width = max(EPS,2*diff(summary(empirical.rho)[c(2,5)])))
-		dens.a.e	<- approx(empirical.rho$x,empirical.rho$y,xout=project.nABC.movingavg.a2rho(a)-rhox,rule=2)$y
+		dens.a.e	<- approx(empirical.rho$x,empirical.rho$y,xout=nabc.acf.a2rho(a)-rhox,rule=2)$y
 		dens.a.e	<- dens.a.e * detjac
 		dens.a.e	<- dens.a.e / sum(dens.a.e)		
 		tmp			<- names(ans)
@@ -564,7 +576,7 @@ project.nABC.changeofvariables<- function()
 	{
 		a0<- 0.1
 		sigma20<- 1		
-		rho0<- 	project.nABC.movingavg.a2rho(a0)
+		rho0<- 	nabc.acf.a2rho(a0)
 		
 		#plot det of Jacobian for MA(1) process
 		a<- seq(-0.1,0.3,0.001)
@@ -578,7 +590,7 @@ project.nABC.changeofvariables<- function()
 		
 		cov<- sapply(tau.u, function(x)
 				{					
-					project.nABC.movingavg.detJac(c(project.nABC.movingavg.rho2a(rho0-x/2), a0, project.nABC.movingavg.rho2a(rho0+x/2)), sigma2, a0, sigma20)	
+					project.nABC.movingavg.detJac(c(nabc.acf.rho2a(rho0-x/2), a0, nabc.acf.rho2a(rho0+x/2)), sigma2, a0, sigma20)	
 				})				
 		cov<- rbind(cov[1,]-cov[2,], cov[2,]-cov[3,])		
 		#get the max difference with increasing tau
@@ -613,14 +625,14 @@ project.nABC.changeofvariables<- function()
 			{
 				#r.sigma<- 0.2
 				#get link function
-				rho0<- 	project.nABC.movingavg.a2rho(a0)		#rho(x)
+				rho0<- 	nabc.acf.a2rho(a0)		#rho(x)
 				tau.u<- 1*r.sigma
 				cat(paste("\nprocess r.sigma",r.sigma,"tau.u",tau.u))
 				if(verbose) cat(paste("\ntrue rho0",rho0))		
-				if(verbose) plot( seq(-0.423,0.423,0.001), project.nABC.movingavg.rho2a(seq(-0.423,0.423,0.001)), type='l')
+				if(verbose) plot( seq(-0.423,0.423,0.001), nabc.acf.rho2a(seq(-0.423,0.423,0.001)), type='l')
 				
 				#evaluate difference quotient at boundary of interval hypothesis
-				a.differential<- project.nABC.movingavg.rho2a(c(rho0-tau.u,rho0,rho0+tau.u))
+				a.differential<- nabc.acf.rho2a(c(rho0-tau.u,rho0,rho0+tau.u))
 				a.differential<- c(-tau.u/(a.differential[2]-a.differential[1]), -tau.u/(a.differential[3]-a.differential[2]))
 				a.differential<- c(a.differential,diff(a.differential))
 		
@@ -633,7 +645,7 @@ project.nABC.changeofvariables<- function()
 				if(verbose) cat(paste("\nlength of rho",length(rho)))
 				
 				#estimate mode of 'a' for power centering on rho0
-				a<- project.nABC.movingavg.rho2a( rho )
+				a<- nabc.acf.rho2a( rho )
 				a.h<- project.nABC.movingavg.gethist(a, a0, nbreaks= 100)
 				if(verbose) plot(a.h, col=my.fade.col("black",0.3),border=NA)
 				if(verbose) abline(v=a0,lty=2)
@@ -653,29 +665,30 @@ project.nABC.changeofvariables<- function()
 	stop()
 }
 #------------------------------------------------------------------------------------------------------------------------
-project.nABC.movingavg.get.fixed.ts<- function(n,mu,a,sd, verbose=0, tol=1e-3)
+project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbose=0, tol=1e-3)
 {		
-	verbose<- 1
-	m		<- ceiling( max(1, n / 5000) )
-	m		<- 1e4 / m
-	rho0	<- project.nABC.movingavg.a2rho(a)
-	error	<- 1
+	verbose			<- 1
+	m				<- ceiling( max(1, n / 5000) )
+	m				<- 1e4 / m
+	rho0			<- nabc.acf.a2rho(a)
+	error			<- 1
+	leave.out.s2	<- seq.int(1,n,by=1+leave.out.s2)
 	while(error>tol)
 	{
-		x<-	rnorm(m*n+1,mu,sd=sd)
-		x<- x[-1] + x[-(m*n+1)]*a
-		x<- matrix(x,ncol=m)		
-		x<- sapply(seq_len(ncol(x)),function(i)		x[,i]/sd(x[,i])*sqrt((1+a*a)*sd*sd)	)		#get correct variance
+		x		<-	rnorm(m*n+1,mu,sd=sd)
+		x		<- x[-1] + x[-(m*n+1)]*a
+		x		<- matrix(x,ncol=m)	
+		x		<- sapply(seq_len(ncol(x)),function(i)		x[,i]/sd(x[leave.out.s2,i])*sqrt((1+a*a)*sd*sd)	)		#get correct variance
 		#rhox	<- apply(x,2,function(col)	atanh(acf(ts(col), plot=0,lag=1)[["acf"]][2,1,1]) )
-		rhox	<- apply(x,2,function(col)	nabc.acf.equivalence.cor(col, leave.out=2)["z"] )				
+		rhox	<- apply(x,2,function(col)	nabc.acf.equivalence.cor(col, leave.out=leave.out.a)["z"] )				
 		error	<- abs(rhox - rho0 )
 		ans		<- which.min(error)
 		error	<- error[ans]
 		if(verbose)	cat(paste("\ncurrent error is",error,"and should be <",tol))						
 	}	
 	ans<- x[,ans]
-	if(verbose)	cat(paste("\nrhox of time series is",nabc.acf.equivalence.cor(ans, leave.out=2)["z"],"and should be",rho0))	
-	if(verbose)	cat(paste("\nvar of time series is",var(ans),"and should be",(1+a*a)*sd*sd))
+	if(verbose)	cat(paste("\nrhox of leave-out time series is",nabc.acf.equivalence.cor(ans, leave.out=leave.out.a)["z"],"and should be",rho0))	
+	if(verbose)	cat(paste("\nvar of leave-out time series is",var(ans[leave.out.s2]),"and should be",(1+a*a)*sd*sd))
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
@@ -702,13 +715,7 @@ project.nABC.movingavg<- function()
 		if(length(tmp)>0) resume<- tmp[1]
 	}
 	
-	project.nABC.movingavg.a2nu<- function(x) x/(1+x*x) 
-	project.nABC.movingavg.nu2a<- function(x)
-	{
-		x[x>.5]<- .5
-		x[x<-.5]<- -.5		
-		(1-sqrt(1-4*x*x))/(2*x)
-	} 
+	
 	project.nABC.movingavg.getaccr<- function(c,x,acc,method="sym")
 	{
 		if(!method%in%c("sym","inv"))	stop("project.nABC.movingavg.getaccr: error at 1a")
@@ -740,12 +747,12 @@ project.nABC.movingavg<- function()
 		ans[["data"]]<- sapply(1:N,function(i)
 				{
 					#cat(paste("\nproject.nABC.movingavg.unifsigma.unifma iteration",i))					
-					ymapa<- project.nABC.movingavg.rho2a( runif(1, project.nABC.movingavg.a2rho( xmapa.prior.l ), project.nABC.movingavg.a2rho( xmapa.prior.u )) )					
+					ymapa<- nabc.acf.rho2a( runif(1, nabc.acf.a2rho( xmapa.prior.l ), nabc.acf.a2rho( xmapa.prior.u )) )					
 					ysigma2<- runif(1,xsig2.prior.l, xsig2.prior.u)
 					y<-	rnorm(ma.n+1,0,sd=sqrt(ysigma2))
 					y<- y[-1] + y[-(ma.n+1)]*ymapa
 					tmp<- nabc.acf.equivalence.cor(y, leave.out=xmapa.leave.out)				
-					out.a<- c(ymapa, project.nABC.movingavg.a2rho(ymapa), tmp["z"],	( tmp["z"] - ans[["xa"]] )*sqrt(tmp["n"]-3))
+					out.a<- c(ymapa, nabc.acf.a2rho(ymapa), tmp["z"],	( tmp["z"] - ans[["xa"]] )*sqrt(tmp["n"]-3))
 					names(out.a)<- c("a.theta","a.link","a.link.mc","a.error")
 #print(tmp["n"]); print(ans[["xa"]]); print(tmp); print(( tmp["z"] - ans[["xa"]] )*sqrt(tmp["n"]-3)); print(out.a); stop()					
 					out.v<- c(ysigma2,	(1+ymapa*ymapa)*ysigma2,	var(y[seq.int(1,length(y),by=1+xsig2.leave.out)])/ans[["xv"]])
@@ -801,8 +808,8 @@ project.nABC.movingavg<- function()
 			if(length(tmp)>0) m<- tmp[1]
 		}
 		xa<- 0.1 
-		r.xa<- project.nABC.movingavg.a2nu(xa)		#r for xa
-		z.xa<- project.nABC.movingavg.a2rho(xa)		#r for xa
+		r.xa<- nabc.acf.a2nu(xa)		#r for xa
+		z.xa<- nabc.acf.a2rho(xa)		#r for xa
 		xsigma2<- 1	#sqrt(2)
 		alpha<- 0.01
 		nbreaks<- 20		
@@ -818,10 +825,10 @@ project.nABC.movingavg<- function()
 		resume<- 1
 		verbose<- 1
 		if(verbose)	cat(paste("true xmapa, correlation scale",r.xa,"true xmapa, test scale",z.xa,"\n"))						
-		prior.u<- project.nABC.movingavg.rho2a( .423 )	#project.nABC.movingavg.rho2a( z.xa+tau.u )		
-		prior.l<- project.nABC.movingavg.rho2a( -.423 )	#project.nABC.movingavg.rho2a( z.xa+tau.l )
+		prior.u<- nabc.acf.rho2a( .423 )	#nabc.acf.rho2a( z.xa+tau.u )		
+		prior.l<- nabc.acf.rho2a( -.423 )	#nabc.acf.rho2a( z.xa+tau.l )
 		if(verbose)	cat(paste("prior mapa thresholds from test scale",prior.l,prior.u,"\n"))
-		if(verbose)	cat(paste("sym prior mapa thresholds from test scale",project.nABC.movingavg.rho2a( z.xa+tau.l ),project.nABC.movingavg.rho2a( z.xa+tau.u ),"\n"))
+		if(verbose)	cat(paste("sym prior mapa thresholds from test scale",nabc.acf.rho2a( z.xa+tau.l ),nabc.acf.rho2a( z.xa+tau.u ),"\n"))
 
 		if(!is.na(m))
 		{		
@@ -867,8 +874,8 @@ project.nABC.movingavg<- function()
 				#accept if both SD and ACF ok
 				cat(paste("\nnABC.MA generate",save.f.name))
 				f.name<- list.files(dir.name, pattern=paste("^nABC.MA1_ok_",'',sep=''), full.names = TRUE)
-				xa.symu<- project.nABC.movingavg.rho2a( z.xa+tau.u )
-				xa.syml<- project.nABC.movingavg.rho2a( z.xa+tau.l )
+				xa.symu<- nabc.acf.rho2a( z.xa+tau.u )
+				xa.syml<- nabc.acf.rho2a( z.xa+tau.l )
 				modes<- sapply(seq_along(f.name),function(i)
 						{
 							cat(paste("\nnABC.MA load",f.name[i]))
@@ -900,7 +907,7 @@ print(out)
 							if(1)
 							{
 #bookmarkMA						
-								ax<- project.nABC.movingavg.rho2a(ans[["xa"]])
+								ax<- nabc.acf.rho2a(ans[["xa"]])
 								sig2x	<- ans[["xv"]]/(1+ax*ax)
 print(c(ax,sig2x))								
 								#reconstruct link function for VAR
@@ -926,11 +933,11 @@ print(c(ax,sig2x))
 								cat(paste("\nplot to",f.name))
 								pdf(f.name,version="1.4",width=5,height=5)	
 								out<- plot.persplocfit(locfit(ACF~a:sigma2, data=m), pv= c("a","sigma2"), xlab= "a", ylab= expression(sigma^2), zlab= expression(rho[2]), palette="gray", theta=30, phi=30	)
-								z<- (project.nABC.movingavg.a2rho(out$x) - project.nABC.movingavg.a2rho(ax))
+								z<- (nabc.acf.a2rho(out$x) - nabc.acf.a2rho(ax))
 								lines (trans3d(out$x, min(out$y), z= z, pmat = out$pmat), col = "black", lty=4)
-								z<- project.nABC.movingavg.a2rho(min(out$x)) - project.nABC.movingavg.a2rho(ax)
+								z<- nabc.acf.a2rho(min(out$x)) - nabc.acf.a2rho(ax)
 								lines (trans3d(min(out$x), out$y, z= z, pmat = out$pmat), col = "black", lty=4)								
-								lines (trans3d(project.nABC.movingavg.rho2a(ans[["xa"]]), out$y, z= 0, pmat = out$pmat), col = "white", lty=1, lwd=1.5)		
+								lines (trans3d(nabc.acf.rho2a(ans[["xa"]]), out$y, z= 0, pmat = out$pmat), col = "white", lty=1, lwd=1.5)		
 								dev.off()
 								
 								#plot posterior for SD					
@@ -973,10 +980,10 @@ print(c(ax,sig2x))
 			print(modes[,1:5])			
 			modes<- modes[, !is.na(modes[1,]) ]
 			cat(paste("\nlength of ABC repetitions is",ncol(modes)))
-			ax		<- project.nABC.movingavg.rho2a(modes["xa",])
-			sig2x	<- modes["xv",]/(1+project.nABC.movingavg.rho2a(modes["xa",])^2)
-			sig2map	<- modes["xv",]*(xn-1)/(xn)/(1+project.nABC.movingavg.rho2a(modes["xa",])^2)
-			sig2me	<- modes["xv",]*(xn-1)/(xn-4)/(1+project.nABC.movingavg.rho2a(modes["xa",])^2)
+			ax		<- nabc.acf.rho2a(modes["xa",])
+			sig2x	<- modes["xv",]/(1+nabc.acf.rho2a(modes["xa",])^2)
+			sig2map	<- modes["xv",]*(xn-1)/(xn)/(1+nabc.acf.rho2a(modes["xa",])^2)
+			sig2me	<- modes["xv",]*(xn-1)/(xn-4)/(1+nabc.acf.rho2a(modes["xa",])^2)
 			errmap	<- 	(	abs(modes["ya.dmode.sdacf",]-ax)	+	abs(modes["yv.dmode.sdacf",]-sig2map)	)
 			errme	<- 	(	abs(modes["ya.dmode.sdacf",]-ax)	+	abs(modes["yv.dmode.sdacf",]-sig2me)	)
 			cat(paste("\n mean v1",mean(modes["xv",])))
@@ -1045,8 +1052,8 @@ print(c(ax,sig2x))
 			if(length(tmp)>0) N<- tmp[1]
 		}
 		xa<- 0.1 
-		r.xa<- project.nABC.movingavg.a2nu(xa)		#r for xa
-		z.xa<- project.nABC.movingavg.a2rho(xa)		#r for xa
+		r.xa<- nabc.acf.a2nu(xa)		#r for xa
+		z.xa<- nabc.acf.a2rho(xa)		#r for xa
 		xsigma2<- 1	#sqrt(2)
 		alpha<- 0.01
 		nbreaks<- 20		
@@ -1056,8 +1063,8 @@ print(c(ax,sig2x))
 		
 		tau.u<- 0.1
 		tau.l<- -tau.u
-		prior.u<- project.nABC.movingavg.rho2a( z.xa+.199 )		
-		prior.l<- project.nABC.movingavg.rho2a( z.xa-.199 )
+		prior.u<- nabc.acf.rho2a( z.xa+.199 )		
+		prior.l<- nabc.acf.rho2a( z.xa-.199 )
 		
 		xsig2.tau.u<- 1.1
 		xsig2.tau.l<- 1/xsig2.tau.u
@@ -1067,7 +1074,7 @@ print(c(ax,sig2x))
 		verbose<- 1
 		if(verbose)	cat(paste("true xmapa, correlation scale",r.xa,"true xmapa, test scale",z.xa,"\n"))						
 		if(verbose)	cat(paste("prior mapa thresholds from test scale",prior.l,prior.u,"\n"))
-		if(verbose)	cat(paste("sym prior mapa thresholds from test scale",project.nABC.movingavg.rho2a( z.xa+tau.l ),project.nABC.movingavg.rho2a( z.xa+tau.u ),"\n"))
+		if(verbose)	cat(paste("sym prior mapa thresholds from test scale",nabc.acf.rho2a( z.xa+tau.l ),nabc.acf.rho2a( z.xa+tau.u ),"\n"))
 		
 		if(!is.na(xn))
 		{		
@@ -1121,7 +1128,7 @@ print(c(ax,sig2x))
 							if(inherits(readAttempt, "try-error"))	return(out)
 							xn<- f.name.n$x[i]				
 							
-							out[2,c("xa","xv")]<- out[1,c("xa","xv")]<- c(project.nABC.movingavg.rho2a( ans[["xa"]] ),	ans[["xv"]])
+							out[2,c("xa","xv")]<- out[1,c("xa","xv")]<- c(nabc.acf.rho2a( ans[["xa"]] ),	ans[["xv"]])
 							#consider fixed tau							
 							out[1,c("acf.cl","acf.cu")]		<- nabc.acf.equivalence.abctol(fixed.tau["a","tau.l"],fixed.tau["a","tau.u"], floor(xn / (1+xmapa.leave.out)), alpha)
 							out[1,c("sd.cl","sd.cu")]		<- .Call("abcScaledChiSq",	c(	floor(xn / (1+xsig2.leave.out))-1, floor(xn / (1+xsig2.leave.out))-1,	fixed.tau["v","tau.l"], fixed.tau["v","tau.u"],	alpha,1e-10,100,0.05)	)[1:2]
@@ -1186,7 +1193,7 @@ print(c(ax,sig2x))
 								tmp<- project.nABC.movingavg.gethist(ans[["data"]]["a.link",acc]-ans[["xa"]], 0, nbreaks= 50, width= 0.5, plot=1)
 								abline(v=0)
 								#plot(	seq(out[1,"acf.tau.l"],out[1,"acf.tau.u"],by=0.001), 
-								#		nabc.acf.equivalence.pow(seq(out[1,"acf.tau.l"],out[1,"acf.tau.u"],by=0.001), out[1,"acf.tau.u"], alpha, 1/sqrt(floor(xn / (1+xmapa.leave.out))-3)), type='l')
+								#		nabc.tosz.pow(seq(out[1,"acf.tau.l"],out[1,"acf.tau.u"],by=0.001), out[1,"acf.tau.u"], alpha, 1/sqrt(floor(xn / (1+xmapa.leave.out))-3)), type='l')
 								tmp<- project.nABC.movingavg.gethist(ans[["data"]]["a.theta",acc], ans[["xa"]], nbreaks= 50, width= 0.5, plot=1)
 								print(tmp[["dmode"]])
 								tmp<- project.nABC.movingavg.gethist(ans[["data"]]["v.link",acc], ans[["xv"]], nbreaks= 50, width= 0.5, plot=1)
@@ -1419,7 +1426,7 @@ stop()
 			a.ftau.h<- project.nABC.movingavg.gethist(ans["a.ytheta",acc], 0.1, nbreaks= 50)				
 			tmp<- density(ans["a.ytheta",acc], kernel="biweight",width = max(EPS,0.5*diff(summary(ans["a.ytheta",acc])[c(2,5)])))
 			a.ftau.m<- tmp[["x"]][which.max( tmp[["y"]])]
-			tmp<- project.nABC.movingavg.a2rho(ans["a.ytheta",acc]) - project.nABC.movingavg.a2rho(0.1)
+			tmp<- nabc.acf.a2rho(ans["a.ytheta",acc]) - nabc.acf.a2rho(0.1)
 			r.ftau.h<- project.nABC.movingavg.gethist(tmp, 0, nbreaks= 50)
 			tmp<- density(tmp, kernel="biweight",width = max(EPS,0.5*diff(summary(tmp)[c(2,5)])))
 			r.ftau.m<- tmp[["x"]][which.max( tmp[["y"]])]																		
@@ -1431,7 +1438,7 @@ stop()
 			a.facc.h<- project.nABC.movingavg.gethist(ans["a.ytheta",acc], 0.1, nbreaks= 50)								
 			tmp<- density(ans["a.ytheta",acc], kernel="biweight",width = max(EPS,0.5*diff(summary(ans["a.ytheta",acc])[c(2,5)])))
 			a.facc.m<- tmp[["x"]][which.max( tmp[["y"]])]
-			tmp<- project.nABC.movingavg.a2rho(ans["a.ytheta",acc]) - project.nABC.movingavg.a2rho(0.1)
+			tmp<- nabc.acf.a2rho(ans["a.ytheta",acc]) - nabc.acf.a2rho(0.1)
 			r.facc.h<- project.nABC.movingavg.gethist(tmp, 0, nbreaks= 50)
 			tmp<- density(tmp, kernel="biweight",width = max(EPS,0.5*diff(summary(tmp)[c(2,5)])))
 			r.facc.m<- tmp[["x"]][which.max( tmp[["y"]])]																		
@@ -1504,8 +1511,8 @@ stop()
 		}
 		
 		
-		r.xma.pa<- project.nABC.movingavg.a2nu(xma.pa)		#r for xma.pa
-		z.xma.pa<- project.nABC.movingavg.a2rho(xma.pa)		#r for xma.pa						
+		r.xma.pa<- nabc.acf.a2nu(xma.pa)		#r for xma.pa
+		z.xma.pa<- nabc.acf.a2rho(xma.pa)		#r for xma.pa						
 		xma.tau.l<- -xma.tau.u
 		xsig2.tau.l<- 1/xsig2.tau.u
 		if(verbose)	cat(paste("true xmapa, correlation scale",r.xma.pa,"true xmapa, test scale",z.xma.pa,"\n"))
@@ -1514,21 +1521,21 @@ stop()
 		{
 			xsig2.prior.u<- xsig2.tau.u 
 			xsig2.prior.l<- xsig2.tau.l			
-			xma.prior.u<- project.nABC.movingavg.rho2a( z.xma.pa+xma.tau.u )		
-			xma.prior.l<- project.nABC.movingavg.rho2a( z.xma.pa+xma.tau.l )			
+			xma.prior.u<- nabc.acf.rho2a( z.xma.pa+xma.tau.u )		
+			xma.prior.l<- nabc.acf.rho2a( z.xma.pa+xma.tau.l )			
 		}
 		else if(0)
 		{
 			xsig2.prior.u<- xsig2.tau.u 
 			xsig2.prior.l<- xsig2.tau.l			
-			xma.prior.u<- project.nABC.movingavg.rho2a( z.xma.pa+xma.tau.u*15 )		
-			xma.prior.l<- project.nABC.movingavg.rho2a( z.xma.pa+xma.tau.l*15 )			
+			xma.prior.u<- nabc.acf.rho2a( z.xma.pa+xma.tau.u*15 )		
+			xma.prior.l<- nabc.acf.rho2a( z.xma.pa+xma.tau.l*15 )			
 		}
 		else{
 			xsig2.prior.u<- 4#1.2 
 			xsig2.prior.l<- 0.2#0.8			
-			xma.prior.u<- project.nABC.movingavg.rho2a( .423 )		
-			xma.prior.l<- project.nABC.movingavg.rho2a( -.423 )
+			xma.prior.u<- nabc.acf.rho2a( .423 )		
+			xma.prior.l<- nabc.acf.rho2a( -.423 )
 		}
 		if(verbose)	cat(paste("prior mapa thresholds from test scale",xma.prior.l,xma.prior.u,"\n"))	
 			
@@ -1604,9 +1611,9 @@ stop()
 		lnk.df<- lnk.df[seq.int(1,nrow(lnk.df),by=thin),]
 		x<- locfit(rhomc~mapa:sig2, data=lnk.df)
 		out<- plot.persplocfit(x, pv= c("mapa","sig2"), xlab= "a", ylab= expression(sigma^2), zlab= expression(rho2), theta=-50, phi=10	)					
-		lines (trans3d(out$x, min(out$y), z= project.nABC.movingavg.a2rho(out$x), pmat = out$pmat), col = "black", lty=4)
-		lines (trans3d(min(out$x), out$y, z= project.nABC.movingavg.a2rho(min(out$x)), pmat = out$pmat), col = "black", lty=4)
-		lines (trans3d(project.nABC.movingavg.rho2a(z.xma.pa), out$y, z= z.xma.pa, pmat = out$pmat), col = "red", lty=1, lwd=1.5)		
+		lines (trans3d(out$x, min(out$y), z= nabc.acf.a2rho(out$x), pmat = out$pmat), col = "black", lty=4)
+		lines (trans3d(min(out$x), out$y, z= nabc.acf.a2rho(min(out$x)), pmat = out$pmat), col = "black", lty=4)
+		lines (trans3d(nabc.acf.rho2a(z.xma.pa), out$y, z= z.xma.pa, pmat = out$pmat), col = "red", lty=1, lwd=1.5)		
 		dev.off()
 stop()		
 		tmp<- project.nABC.movingavg.get.2D.mode(ans["a.ytheta",acc],ans["v.ytheta",acc], xlim= c(-0.2,0.4),ylim=c(0.8,1.2), plot=0)
@@ -1653,24 +1660,24 @@ stop()
 		}
 		
 		
-		r.xma.pa<- project.nABC.movingavg.a2nu(xma.pa)		#r for xma.pa
-		z.xma.pa<- project.nABC.movingavg.a2rho(xma.pa)		#r for xma.pa
+		r.xma.pa<- nabc.acf.a2nu(xma.pa)		#r for xma.pa
+		z.xma.pa<- nabc.acf.a2rho(xma.pa)		#r for xma.pa
 		xsig2.tau.l<- 1/xsig2.tau.u
 		xma.tau.l<- -xma.tau.u		
 		if(verbose)	cat(paste("true xmapa, correlation scale",r.xma.pa,"true xmapa, test scale",z.xma.pa,"true sigma",(1+xma.pa*xma.pa)*xsig2,"\nN is",N,"\nma.n is",ma.n))
 		
 		if(1)
 		{
-			xma.prior.u<- project.nABC.movingavg.rho2a( .423 )			
-			xma.prior.l<- project.nABC.movingavg.rho2a( -.423 )
+			xma.prior.u<- nabc.acf.rho2a( .423 )			
+			xma.prior.l<- nabc.acf.rho2a( -.423 )
 			
 			xsig2.prior.u<- 1.2 
 			xsig2.prior.l<- 0.8
 		}	
 		else
 		{
-			xma.prior.u<- project.nABC.movingavg.rho2a( z.xma.pa+xma.tau.u*15 )		
-			xma.prior.l<- project.nABC.movingavg.rho2a( z.xma.pa+xma.tau.l*15 )
+			xma.prior.u<- nabc.acf.rho2a( z.xma.pa+xma.tau.u*15 )		
+			xma.prior.l<- nabc.acf.rho2a( z.xma.pa+xma.tau.l*15 )
 			xsig2.prior.u<- xsig2.tau.u 
 			xsig2.prior.l<- xsig2.tau.l
 		}
@@ -1799,24 +1806,24 @@ stop()
 		}
 		
 		
-		r.xma.pa<- project.nABC.movingavg.a2nu(xma.pa)		#r for xma.pa
-		z.xma.pa<- project.nABC.movingavg.a2rho(xma.pa)		#r for xma.pa						
+		r.xma.pa<- nabc.acf.a2nu(xma.pa)		#r for xma.pa
+		z.xma.pa<- nabc.acf.a2rho(xma.pa)		#r for xma.pa						
 		tau.l<- -tau.u		
 		if(verbose)	cat(paste("true xmapa, correlation scale",r.xma.pa,"true xmapa, test scale",z.xma.pa,"\n"))		
 		
-		#prior.u<- project.nABC.movingavg.nu2a( r.xma.pa+tau.u )		
-		#prior.l<- project.nABC.movingavg.nu2a( r.xma.pa+tau.l )
+		#prior.u<- nabc.acf.nu2a( r.xma.pa+tau.u )		
+		#prior.l<- nabc.acf.nu2a( r.xma.pa+tau.l )
 		#if(verbose)	cat(paste("prior mapa thresholds from correlation scale",prior.l,prior.u,"\n"))
 		
-		prior.u<- project.nABC.movingavg.rho2a( z.xma.pa+tau.u )		
-		prior.l<- project.nABC.movingavg.rho2a( z.xma.pa+tau.l )
+		prior.u<- nabc.acf.rho2a( z.xma.pa+tau.u )		
+		prior.l<- nabc.acf.rho2a( z.xma.pa+tau.l )
 		if(verbose)	cat(paste("prior mapa thresholds from test scale",prior.l,prior.u,"\n"))	
 		
 		prior.u<- 0.4 + 0.035
 		prior.l<- 0.4 - 0.035
-		tau.u<- project.nABC.movingavg.a2rho(prior.u)-z.xma.pa
-		tau.l<- project.nABC.movingavg.a2rho(prior.l)-z.xma.pa
-		print(c(project.nABC.movingavg.a2rho( prior.l )-z.xma.pa, project.nABC.movingavg.a2rho( prior.u )-z.xma.pa))
+		tau.u<- nabc.acf.a2rho(prior.u)-z.xma.pa
+		tau.l<- nabc.acf.a2rho(prior.l)-z.xma.pa
+		print(c(nabc.acf.a2rho( prior.l )-z.xma.pa, nabc.acf.a2rho( prior.u )-z.xma.pa))
 		
 		f.name<- paste(dir.name,"/nABC.MA.test_",N,"_",round(tau.u,d=6),"_",ma.n,".R",sep='')
 		cat(paste("\nnABC.StretchedF: attempt to read ",f.name))
@@ -1854,7 +1861,7 @@ stop()
 		abline(v=xma.pa,lty=3)
 		abline(h=z.xma.pa,lty=3)		
 		tmp<- seq(min(ans["ytheta",acc]),max(ans["ytheta",acc]),0.001)
-		lines(tmp, project.nABC.movingavg.a2rho( tmp ),col="red")
+		lines(tmp, nabc.acf.a2rho( tmp ),col="red")
 		library(KernSmooth)
 		h <- dpill(ans["ytheta",acc], ans["link.mc",acc])
 		lines( locpoly(ans["ytheta",acc], ans["link.mc",acc], bandwidth = h, degree=1), col="blue" )
@@ -1870,8 +1877,8 @@ stop()
 		ltys<- c(1,2,4)
 		cols<- c(my.fade.col("black",1),my.fade.col("black",1),my.fade.col("black",0.3))
 		a<- seq(-0.5,0.5,0.001)
-		nu2<- project.nABC.movingavg.a2nu(a)
-		rho2<- project.nABC.movingavg.a2rho(a)
+		nu2<- nabc.acf.a2nu(a)
+		rho2<- nabc.acf.a2rho(a)
 		jac<- checkjac(a,xsig2,xa,xv)
 		jac<- apply(matrix(jac,ncol=length(a),byrow=1),2,function(c)	det(matrix(c,ncol=2,byrow=1))	)
 		jac<- -jac
@@ -1913,13 +1920,13 @@ stop()
 	
 		
 		#power of test stat
-		#print(project.nABC.movingavg.a2nu(c(prior.u,xma.pa,prior.l)))
-		#print(project.nABC.movingavg.a2rho(c(prior.u,xma.pa,prior.l)))
-		print(project.nABC.movingavg.rho2a(c(prior.l,prior.u)))
+		#print(nabc.acf.a2nu(c(prior.u,xma.pa,prior.l)))
+		#print(nabc.acf.a2rho(c(prior.u,xma.pa,prior.l)))
+		print(nabc.acf.rho2a(c(prior.l,prior.u)))
 		tmp<- nabc.acf.equivalence.cor(rnorm(ma.n,0,1), leave.out=2)['n']
 		print(tmp)
 		rho<- seq(tau.l,tau.u,0.001)
-		y<- nabc.acf.equivalence.pow(rho, tau.u, alpha, 1/sqrt(tmp-3))
+		y<- nabc.tosz.pow(rho, tau.u, alpha, 1/sqrt(tmp-3))
 		
 		plot(rho,y,type='l',ylim=c(0,1))
 		
@@ -1935,7 +1942,7 @@ stop()
 					z.sim<- .5 * log( (1+cor.sim)/(1-cor.sim) )					
 				})
 		hist(link.mc)
-		abline(v=project.nABC.movingavg.a2rho(xma.pa))
+		abline(v=nabc.acf.a2rho(xma.pa))
 		
 stop()		
 		
@@ -2744,7 +2751,7 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.increasing.m<- function()		#
 	pdf.width	<- 4
 	pdf.height	<- 5	
 	resume		<- 1
-	m			<- 60	
+	m			<- NA	
 	xn			<- yn	<- 60
 	df			<- yn-1
 	alpha		<- 0.01		
@@ -2809,6 +2816,89 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.increasing.m<- function()		#
 			cat(paste("\nnABC.MA: resumed ",f.name))
 		}
 	}
+	else
+	{
+		f.name	<- list.files(dir.name, pattern=paste("^nABC.Chisq_mle_incrm_",sep=''), full.names = TRUE)
+		tmp		<- sapply( strsplit(f.name,'_',fixed=1), function(x) tail(x,1) )
+		tmp		<- as.numeric( sapply( tmp, function(x) substr(x[1], 2, nchar(x[1])-2) ) )
+		tmp		<- sort(tmp, index.return=1)
+		yns		<- tmp$x
+		f.name	<- f.name[ tmp$ix ]
+				
+		cat(paste("\nfound data, n=", length(f.name)))
+		ans		<- sapply(seq_along(f.name),function(j)
+				{
+					#j<- 46
+					#j<- 3; plot<- 1
+					load(f.name[j])
+					if(verbose)	cat(paste("\nprocess", f.name[j]))
+					
+					yn												<- yns[j]
+					x												<- ans.m[["x"]]
+					abc.param										<- nabc.chisqstretch.calibrate.tauup(0.9, 3*sd(x), length(x), yn-1, alpha=alpha)					
+					#compute (theoretical KL and) abc parameters
+					abc.param										<- nabc.chisqstretch.calibrate.tolerances.getkl(length(x), sd(x), length(x), yn-1, 3*sd(x), mx.pw=0.9, alpha=0.01, pow_scale=1.5, debug = 0, calibrate.tau.u=T, plot = F)
+					#
+					#	clean up empirical abc posterior density
+					#
+					acc												<- which( ans.m[["data"]]["T",]>=abc.param["c.l"]  &  ans.m[["data"]]["T",]<=abc.param["c.u"] )					
+					tmp												<- range(ans.m[["data"]]["ysigma2",acc])
+					acc.h											<- project.nABC.movingavg.gethist(ans.m[["data"]]["ysigma2",acc], ans.m[["xsigma2"]], breaks= seq(tmp[1],tmp[2],len=50), width= 0.5, plot=plot, rtn.dens=1)
+					acc.h$dens$y[acc.h$dens$y<1e-3]					<- 0	
+					tmp												<- range(which(acc.h$dens$y!=0))
+					acc.h$dens$x									<- acc.h$dens$x[seq.int(tmp[1],tmp[2])]
+					acc.h$dens$y									<- acc.h$dens$y[seq.int(tmp[1],tmp[2])]
+					#
+					#	need summary likelihood to compute KL
+					#
+					lkl_norm										<- integrate(nabc.chisqstretch.sulkl, lower= min(acc.h$dens$x), upper= max(acc.h$dens$x),  n.of.x=length(x), s.of.x=sd(x), trafo=1, support=range(acc.h$dens$x), log=FALSE)$value
+					if(plot)
+					{
+						lkl											<- nabc.chisqstretch.sulkl(acc.h$dens$x, length(x), sd(x), trafo=1, norm=lkl_norm, support= range(acc.h$dens$x), log=FALSE)
+						lines(acc.h$dens$x,lkl,col="green")	
+					}
+					lkl_arg											<- list(n.of.x= length(x), s.of.x= sd(x), norm = lkl_norm, trafo=1, support=range(acc.h$dens$x))					
+					#
+					#	compute theoretical KL
+					#
+					pow_norm 										<- integrate(nabc.chisqstretch.pow, lower=min(acc.h$dens$x), upper=max(acc.h$dens$x), scale=length(x), df=yn-1, c.l=abc.param["c.l"], c.u=abc.param["c.u"], norm=1, trafo=(length(x)-1)/length(x)*sd(x)*sd(x), support= range(acc.h$dens$x), log=FALSE)$value
+					if(plot)
+					{
+						pw												<- nabc.chisqstretch.pow(seq(min(acc.h$dens$x),max(acc.h$dens$x),len=1000), length(x), yn-1, abc.param["c.l"], abc.param["c.u"], norm=pow_norm, trafo=(length(x)-1)/length(x)*sd(x)*sd(x) )
+						lines(seq(min(acc.h$dens$x),max(acc.h$dens$x),len=1000),pw, col="red")						
+					}
+					pow_arg											<- list(scale=length(x), df=yn-1, c.l=abc.param["c.l"], c.u=abc.param["c.u"], norm=pow_norm, support=range(acc.h$dens$x), trafo=(length(x)-1)/length(x)*sd(x)*sd(x))
+					suppressWarnings({ #suppress numerical inaccuracy warnings if any								
+								KL.div.th									<- integrate(nabc.kl.integrand, lower=min(acc.h$dens$x), upper=max(acc.h$dens$x), dP=nabc.chisqstretch.sulkl, dQ=nabc.chisqstretch.pow, P_arg=lkl_arg, Q_arg=pow_arg)
+							})
+					#
+					#	compute empirical KL between summary lkl (uniform prior so this is posterior on prior support) and ABC posterior
+					#
+					acc.mc.dens										<- approxfun(x= acc.h$dens$x, y= acc.h$dens$y, method="linear", yleft=0, yright=0, rule=2 )
+					tmp												<- min(acc.h$dens$y[acc.h$dens$y!=0])
+					acc.h$dens$y[acc.h$dens$y==0]					<- tmp
+					acc.mc.dens.log									<- approxfun(x= acc.h$dens$x, y= log(acc.h$dens$y), method="linear", yleft=-Inf, yright=-Inf, rule=2 )
+					tmp												<- function(x, log=T){ if(log){ acc.mc.dens.log(x)	}else{	acc.mc.dens(x)	}	}										
+					suppressWarnings({ #suppress numerical inaccuracy warnings
+						KL.div.mc 									<- integrate(nabc.kl.integrand, lower=min(acc.h$dens$x), upper=max(acc.h$dens$x), dP=nabc.chisqstretch.sulkl, dQ=tmp, P_arg=lkl_arg, Q_arg=list())						
+					})
+			
+					c(yn=yn, KL.div.th=KL.div.th$value, KL.div.mc=KL.div.mc$value)					
+				})
+		
+		f.name<- paste(dir.name,"/nABC.Chisq_mle_incrm_",N,"_",xn,"_",prior.u,"_",prior.l,"_",prior.u,".pdf",sep='')
+		print(f.name)
+		pdf(f.name,version="1.4",width=4,height=5)
+		par(mar=c(5,5,0.5,0.5))				
+		plot(1,1,type="n",bty='n',xlim=range(ans["yn",]),ylim=range(ans[2:3,]),xlab="m",ylab="KL divergence")		
+		cols		<- rev(c(my.fade.col("black",0.6),my.fade.col("black",0.2)))
+		pch			<- 15:16
+		cex			<- 0.6
+		points(ans["yn",], ans["KL.div.th",], pch=pch[1], col=cols[1], cex=cex)
+		points(ans["yn",], ans["KL.div.mc",], pch=pch[2], col=cols[2], cex=cex)		
+		legend("topleft",bty='n',pch=pch,legend=c("value used for calibration","Monte Carlo estimate\nafter ABC run"),col=cols)
+		dev.off()			
+	}
 }
 #------------------------------------------------------------------------------------------------------------------------
 nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m<- function()		#check MLE, yn>xn
@@ -2870,7 +2960,6 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m<- function()		#check MLE, 
 		options(show.error.messages = TRUE)						
 		if(!resume || inherits(readAttempt, "try-error"))
 		{
-			stop()
 			x		<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 			x 		<- (x - mean(x))/sd(x) * sqrt(xsigma2) + xmu			
 			
@@ -5449,68 +5538,71 @@ nabc.test.chi2stretch.calibrate<- function()
 	calibrate.tau.u<- F
 	mx.pw		<- 0.9
 	pow_scale	<- 1.5
-	
-	df		<- n.of.y-1
+		
 	scale	<- n.of.x
 	#nabc.chisqstretch.calibrate.taulow(tau.u, scale, df, alpha, rho.star=1, tol= 1e-5, max.it=100)
 	if(1)
 	{
-		tmp			<- .Call("abcScaledChiSq",	c(scale,299, 1/2.2, 2.2, alpha,1e-10,100,0.05)	)
+		df			<- 299
+		tmp			<- .Call("abcScaledChiSq",	c(scale,df, 1/2.2, 2.2, alpha,1e-10,100,0.05)	)
 		rho			<- seq(0.1, 5, len=1024)
-		pw			<- nabc.chisqstretch.pow(rho, length(x), 299, tmp[1], tmp[2])
+		pw			<- nabc.chisqstretch.pow(rho, length(x), df, tmp[1], tmp[2])
 		plot(rho,pw,col="red", type='l')
 		lines(rho,pw,col="red")
 	}
 	if(1)
 	{
-		tmp			<- .Call("abcScaledChiSq",	c(scale,299, 1/2.2, 2.2, alpha,1e-10,100,0.05)	)
+		df			<- 299
+		tmp			<- .Call("abcScaledChiSq",	c(scale,df, 1/2.2, 2.2, alpha,1e-10,100,0.05)	)
 		rho			<- seq(0.1, 5, len=1024)
-		pw			<- nabc.chisqstretch.pow(rho, length(x), 299, tmp[1], tmp[2])
+		pw			<- nabc.chisqstretch.pow(rho, length(x), df, tmp[1], tmp[2])
 		plot(rho,pw,col="black", type='l')
-		tmp			<- .Call("abcScaledChiSq",	c(scale,299, 0.8, 2.2, alpha,1e-10,100,0.05)	)
-		pw			<- nabc.chisqstretch.pow(rho, length(x), 299, tmp[1], tmp[2])
+		tmp			<- .Call("abcScaledChiSq",	c(scale,df, 0.8, 2.2, alpha,1e-10,100,0.05)	)
+		pw			<- nabc.chisqstretch.pow(rho, length(x), df, tmp[1], tmp[2])
 		lines(rho,pw,col="red")
-		tmp			<- .Call("abcScaledChiSq",	c(scale,299, 0.99, 2.2, alpha,1e-10,100,0.05)	)
-		pw			<- nabc.chisqstretch.pow(rho, length(x), 299, tmp[1], tmp[2])
+		tmp			<- .Call("abcScaledChiSq",	c(scale,df, 0.99, 2.2, alpha,1e-10,100,0.05)	)
+		pw			<- nabc.chisqstretch.pow(rho, length(x), df, tmp[1], tmp[2])
 		lines(rho,pw,col="green")
-		tmp			<- .Call("abcScaledChiSq",	c(scale,299, 1.3, 2.2, alpha,1e-10,100,0.05)	)
-		pw			<- nabc.chisqstretch.pow(rho, length(x), 299, tmp[1], tmp[2])
+		tmp			<- .Call("abcScaledChiSq",	c(scale,df, 1.3, 2.2, alpha,1e-10,100,0.05)	)
+		pw			<- nabc.chisqstretch.pow(rho, length(x), df, tmp[1], tmp[2])
 		lines(rho,pw,col="yellow")		
 	}
 	if(1)
 	{
-		tmp			<- nabc.chisqstretch.calibrate.taulow(2.2, scale, 299, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
+		df			<- 299
+		tmp			<- nabc.chisqstretch.calibrate.taulow(2.2, scale, df, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
 		rho			<- seq(0.1, 5, len=1024)
-		pw			<- nabc.chisqstretch.pow(rho, length(x), 299, tmp["cl"], tmp["cu"])
+		pw			<- nabc.chisqstretch.pow(rho, length(x), df, tmp["cl"], tmp["cu"])
 		plot(rho,pw,col="black", type='l')		
 	}
 	if(1)
 	{
-		tmp			<- nabc.chisqstretch.calibrate.taulow(2, scale, 299, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
+		df			<- 299
+		tmp			<- nabc.chisqstretch.calibrate.taulow(2, scale, df, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
 		rho			<- seq(0.1, 5, len=1024)
-		pw			<- nabc.chisqstretch.pow(rho, length(x), 299, tmp["cl"], tmp["cu"])
+		pw			<- nabc.chisqstretch.pow(rho, length(x), df, tmp["cl"], tmp["cu"])
 		plot(rho,pw,col="black", type='l')
-		tmp			<- nabc.chisqstretch.calibrate.taulow(1.8, scale, 299, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
-		pw			<- nabc.chisqstretch.pow(rho, length(x), 299, tmp["cl"], tmp["cu"])
+		tmp			<- nabc.chisqstretch.calibrate.taulow(1.8, scale, df, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
+		pw			<- nabc.chisqstretch.pow(rho, length(x), df, tmp["cl"], tmp["cu"])
 		lines(rho,pw,col="blue")
-		tmp			<- nabc.chisqstretch.calibrate.taulow(1.5, scale, 299, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
-		pw			<- nabc.chisqstretch.pow(rho, length(x), 299, tmp["cl"], tmp["cu"])
+		tmp			<- nabc.chisqstretch.calibrate.taulow(1.5, scale, df, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
+		pw			<- nabc.chisqstretch.pow(rho, length(x), df, tmp["cl"], tmp["cu"])
 		lines(rho,pw,col="red")
-		tmp			<- nabc.chisqstretch.calibrate.taulow(1.3, scale, 299, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
-		pw			<- nabc.chisqstretch.pow(rho, length(x), 299, tmp["cl"], tmp["cu"])
+		tmp			<- nabc.chisqstretch.calibrate.taulow(1.3, scale, df, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
+		pw			<- nabc.chisqstretch.pow(rho, length(x), df, tmp["cl"], tmp["cu"])
 		lines(rho,pw,col="green")		
 		#tau.up should be within 1.3,1.5  resulting rej region is a bit larger than [4.6655219802 5.3111693847]
 							   
-		tmp			<- nabc.chisqstretch.calibrate.tauup(mx.pw, 3*s.of.y, scale, 299, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
+		tmp			<- nabc.chisqstretch.calibrate.tauup(mx.pw, 3*s.of.y, scale, df, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
 		rho			<- seq(0.1, 5, len=1024)
-		pw			<- nabc.chisqstretch.pow(rho, length(x), 299, tmp["cl"], tmp["cu"])		
+		pw			<- nabc.chisqstretch.pow(rho, length(x), df, tmp["cl"], tmp["cu"])		
 		lines(rho,pw,col="black",lty=2)		
 	}
 	if(1)
 	{
 		tmp			<- nabc.chisqstretch.calibrate.tauup(mx.pw, 3*s.of.y, scale, 299, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=0)
 		rho			<- seq(0.1, 5, len=1024)
-		pw			<- nabc.chisqstretch.pow(rho, length(x), 299, tmp["cl"], tmp["cu"])
+		pw			<- nabc.chisqstretch.pow(rho, length(x), df, tmp["cl"], tmp["cu"])
 		plot(rho,pw,col="black", type='l')
 		tmp			<- nabc.chisqstretch.calibrate.tauup(mx.pw, 3*s.of.y, scale, 149, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=0)
 		rho			<- seq(0.1, 5, len=1024)
@@ -5523,10 +5615,195 @@ nabc.test.chi2stretch.calibrate<- function()
 		
 		tmp			<- nabc.chisqstretch.calibrate(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=T)	
 	}
+	if(1)
+	{
+		n.of.x		<- 100
+		s.of.x		<- 1
+		tmp			<- nabc.chisqstretch.calibrate(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=T)
+	}
+	if(1)
+	{
+		n.of.x		<- 150
+		s.of.x		<- 1
+		tmp			<- nabc.chisqstretch.calibrate(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=T)
+	}
+	if(1)
+	{
+		n.of.x		<- 200
+		s.of.x		<- 1
+		tmp			<- nabc.chisqstretch.calibrate(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=T)
+	}
+	if(1)
+	{
+		n.of.x		<- 150
+		s.of.x		<- sqrt(1.01)
+		tmp			<- nabc.chisqstretch.calibrate(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=T)
+	}
 	
 	stop()
 	
 	
+}
+#------------------------------------------------------------------------------------------------------------------------
+nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
+{
+	my.mkdir(DATA,"nABC.acf")
+	dir.name	<- paste(DATA,"nABC.acf",sep='/')	
+	pdf.width	<- 4
+	pdf.height	<- 5
+	nbreaks		<- 20			
+	resume		<- 0
+	verbose		<- 1
+			
+	m			<- 1
+	if(exists("argv"))
+	{
+		tmp<- na.omit(sapply(argv,function(arg)
+						{	switch(substr(arg,2,2),
+									m= return(as.numeric(substr(arg,3,nchar(arg)))),NA)	}))
+		if(length(tmp)>0) m<- tmp[1]
+	}
+	
+	simu.acf.fixx.unifrho<- function(	N, x, yn.a=NA, yn.sig2=NA, xmapa.prior.l=-0.3,xmapa.prior.u=0.3, xsig2.prior.l=0.5,xsig2.prior.u=2, xmapa.leave.out=2, xsig2.leave.out=1, verbose=0	)
+	{
+		ans				<- vector("list",4)
+		names(ans)		<- c("x","xv","xa","data")
+		ans[["x"]]		<- x
+		ans[["xv"]]		<- var( x[seq.int(1,length(x),by=1+xsig2.leave.out)] )
+		ans[["xa"]]		<- nabc.acf.equivalence.cor(x, leave.out=xmapa.leave.out)["z"]
+		if(any(is.na(c(yn.a,yn.sig2))))
+			yn			<- length(x)
+		else
+			yn			<- max( yn.sig2*(1+leave.out.sig2),yn.a*(1+leave.out.a) )
+		if(verbose)	cat(paste("\nNumber of simulated data points set to",yn))
+		if(yn<length(x))	stop("Unexpected yn<length(x)")
+		ans[["data"]]	<- sapply(1:N,function(i)
+				{
+					#cat(paste("\nproject.nABC.movingavg.unifsigma.unifma iteration",i))
+					ymapa	<- runif(1, nabc.acf.a2rho( xmapa.prior.l ), nabc.acf.a2rho( xmapa.prior.u ))	#uniform on rho
+					ymapa	<- nabc.acf.rho2a( ymapa )					
+					ysigma2	<- runif(1, xsig2.prior.l, xsig2.prior.u)										#uniform on rho
+					y		<- rnorm( yn+1, 0, sd=sqrt(ysigma2))
+					y		<- y[-1] + y[-(yn+1)]*ymapa
+					tmp		<- nabc.acf.equivalence.cor(y[seq_len(yn.a*(1+leave.out.a))], leave.out=xmapa.leave.out)									
+					out.a			<- c(ymapa, 	nabc.acf.a2rho(ymapa), 	tmp["z"], 	tmp["n"], 									(tmp["z"] - ans[["xa"]]))					
+					y				<- y[seq.int(1,length(y),by=1+xsig2.leave.out)]	
+					y				<- y[seq_len(yn.sig2*(1+leave.out.sig2))]
+					out.v			<- c(ysigma2,	(1+ymapa*ymapa)*ysigma2,			ceiling( length(x)/(1+xsig2.leave.out) ), 	var(y)*(length(y)-1) / (ans[["xv"]] * ceiling( length(x)/(1+xsig2.leave.out) ) )	)					
+					c(out.a,out.v)
+				})	
+		rownames(ans[["data"]])	<- c("th.a","rho.a","rho.mc.a", "n.a", "T.a", "th.s2", "rho.s2", "n.s2", "T.s2")		
+		ans
+	}
+	
+	xa		<- 0.1 
+	r.xa	<- nabc.acf.a2nu(xa)		#r for xa
+	z.xa	<- nabc.acf.a2rho(xa)		#r for xa
+	xsigma2	<- 1	#sqrt(2)
+	xn		<- 3e2		
+	if(verbose)	cat(paste("\ntrue xmapa=",xa,", true correlation=",r.xa,"true z=",z.xa,"\n"))
+	
+	tau.u			<- 0.1
+	tau.l			<- -tau.u
+	xsig2.tau.u		<- 1.1
+	xsig2.tau.l		<- 1/xsig2.tau.u
+	prior.u.sig2	<- 1.15 
+	prior.l.sig2	<- 0.8
+	prior.u.a		<- nabc.acf.rho2a( .423 )	#nabc.acf.rho2a( z.xa+tau.u )		
+	prior.l.a		<- nabc.acf.rho2a( -.423 )	#nabc.acf.rho2a( z.xa+tau.l )
+	leave.out.a		<- 2
+	leave.out.sig2	<- 1
+	alpha			<- 0.01
+	N				<- 2e6								
+	if(verbose)	cat(paste("\nprior bounds on mapa",prior.l.a,prior.u.a,"\n"))
+	if(verbose)	cat(paste("\nprior bounds on sig2",prior.l.sig2,prior.u.sig2,"\n"))	
+	
+	if(!is.na(m))
+	{		
+		f.name<- paste(dir.name,"/nABC.MA1_yncalibrated_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')
+		cat(paste("\nnABC.MA: compute ",f.name))
+		options(show.error.messages = FALSE, warn=1)		
+		readAttempt<-try(suppressWarnings(load(f.name)))						
+		options(show.error.messages = TRUE)						
+		if(!resume || inherits(readAttempt, "try-error"))
+		{
+			#
+			# calibrated run
+			#
+			f.name			<- paste(dir.name,"/nABC.MA1_yncalibrated_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')			
+			x				<- project.nABC.movingavg.get.fixed.ts(xn, 0, xa, xsigma2, leave.out.a=leave.out.a, leave.out.s2=leave.out.sig2, verbose=0)
+			zx				<- nabc.acf.equivalence.cor(x, leave.out=leave.out.a)
+			abc.param.a		<- nabc.tosz.calibrate(zx["n"], mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=F)					
+			vx				<- x[seq.int(1,length(x),by=1+leave.out.sig2)]
+			suppressWarnings({	
+				abc.param.sig2	<- nabc.chisqstretch.calibrate(length(vx), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=T)
+			})
+			#print(abc.param.a)	;	print(abc.param.sig2)			
+			ans.ok			<- simu.acf.fixx.unifrho(	N, x, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
+			cat(paste("\nnABC.MA: save ",f.name))
+			save(ans.ok,file=f.name)			
+			#
+			# run with equal yn=xn
+			#
+			f.name			<- paste(dir.name,"/nABC.MA1_yneqxn_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')									
+			ans.eq			<- simu.acf.fixx.unifrho(	N, x, yn.sig2=ceiling( length(x)/(1+leave.out.sig2) ), yn.a=ceiling( length(x)/(1+leave.out.a) ), prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
+			cat(paste("\nnABC.MA: save ",f.name))
+			save(ans.eq,file=f.name)
+		}
+		else
+			cat(paste("\nnABC.MA: resumed ",f.name))
+	}	
+	
+}
+#------------------------------------------------------------------------------------------------------------------------
+nabc.test.tosz.calibrate<- function()
+{
+	n.of.x		<- 5e3
+	n.of.y		<- 5e3	
+	sigma		<- 1
+	a			<- 0.1
+	
+	tau.u		<- 0.09
+	alpha		<- 0.01
+	leave.out	<- 2
+	pow_scale	<- 3
+	
+	x			<- rnorm(n.of.x+1,0,sigma)
+	x			<- x[-1] + x[-(n.of.x+1)]*a 
+	y			<- rnorm(n.of.y+1,0,sigma)
+	y			<- y[-1] + y[-(n.of.x+1)]*a			
+	zx			<- nabc.acf.equivalence.cor(x, leave.out=leave.out)
+	zy			<- nabc.acf.equivalence.cor(y, leave.out=leave.out)
+	Tsd			<- 1/sqrt(zy["n"]-3)
+	
+	if(1)
+	{
+		rho			<- seq(-tau.u*pow_scale,tau.u*pow_scale, len=1024)	
+		pw			<- nabc.tosz.pow(rho, tau.u, alpha, Tsd, norm=nabc.tosz.pow.norm(tau.u, Tsd, alpha=alpha, support=range(rho)), support=range(rho), log=FALSE)		
+		lkl			<- nabc.tosz.sulkl(rho, Tsd, norm=nabc.tosz.sulkl.norm(Tsd, support=range(rho)), support=range(rho), log=FALSE)
+		plot(1,1,xlim=range(rho),ylim=range(c(rho,lkl)),type='n',bty='n')
+		lines(rho,pw)
+		lines(rho,lkl,col="red")
+	}
+	if(1)
+	{
+		abc.param	<- nabc.tosz.calibrate.tolerances(0.9, 3*Tsd, Tsd, alpha=0.01, rho.star=0, tol= 1e-5, max.it=100, pow_scale=2, verbose=0)
+		tau.u		<- abc.param["tau.u"]
+		
+		rho			<- seq(-tau.u*pow_scale,tau.u*pow_scale, len=1024)	
+		pw			<- nabc.tosz.pow(rho, tau.u, alpha, Tsd, norm=1, support=range(rho), log=FALSE)						
+		plot(rho,pw, type='l')
+	}
+	if(1)
+	{
+		s.of.T		<- Tsd
+		s.of.x		<- 1/sqrt(zx["n"]-3)
+		nabc.tosz.calibrate.tolerances.getkl(s.of.x, s.of.T, 3*s.of.T, mx.pw=0.9, alpha=0.01, pow_scale=2, debug = 0, calibrate.tau.u=T, plot=T, verbose=0)
+	}
+	if(1)
+	{				
+		abc.param	<- nabc.tosz.calibrate(zx["n"], mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=T)
+	}
 }
 #------------------------------------------------------------------------------------------------------------------------
 nabc.test.mutost.calibrate<- function()

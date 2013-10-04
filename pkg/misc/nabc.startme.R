@@ -47,6 +47,7 @@ default.fun	<- "nabc.test.mutost.calibrate"
 default.fun	<- "nabc.test.chi2stretch.calibrate"
 #default.fun	<- "nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m"
 default.fun	<- "nabc.test.chi2stretch.montecarlo.calibrated.tau.and.increasing.m"
+default.fun	<- "nabc.test.acf.montecarlo.calibrated.tau.and.m"
 #default.fun<- "project.nABC.movingavg"
 ###############################################################################
 #if(length(args) && !is.loaded("tipc_tabulate_after_sample"))

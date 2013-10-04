@@ -111,7 +111,7 @@ old.nabc.mutost.pow<- function(rho, df, tau.u, s.of.T, alpha, rtn.fun= FALSE,for
 #' \code{support=s.of.x/sqrt(n.of.x)*qt(c(1-norm,1+norm)/2,n.of.x-1)} and \code{norm=diff(pt(support/(s.of.x/sqrt(n.of.x)),n.of.x-1))}.
 #' @export	
 #'
-nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), log=FALSE,debug=0) 
+nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), log=FALSE, debug=0) 
 {
 	
 	stopifnot(n.of.x>0,s.of.x>0,norm<=1,norm>0,support[1]<=support[2])

@@ -22,6 +22,12 @@ nabc.chisqstretch.pow <- function(rho, scale, df, c.l, c.u, norm=1, trafo=1, sup
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
+nabc.chisqstretch.pow.norm<- function(scale, df, c.l, c.u, trafo= 1, support=c(0,Inf))
+{
+	ans <- integrate(nabc.chisqstretch.pow, lower=support[1], upper=support[2], scale=scale, df=df, c.l=c.l, c.u=c.u, norm=1, trafo=trafo, support=support, log=FALSE)
+	ans$value
+}	
+#------------------------------------------------------------------------------------------------------------------------
 #' Compute the density of the (possibly truncated) summary likelihood for population dispersion of normal summary values
 #' @param rho vector of quantile
 #' @param norm scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
@@ -42,11 +48,18 @@ nabc.chisqstretch.sulkl<- function(rho, n.of.x, s.of.x, trafo=(n.of.x-1)/n.of.x*
 	in_support 			<- (rho >= support[1] & rho <= support[2])
 	ans[!in_support]	<- 0
 	#to match to sulkl, need to apply transformation nu=trafo_fun(rho)= rho*trafo where trafo= mle.nux= (n.of.x-1)/n.of.x * s.of.x
-	if (any(in_support)) 	
-		ans[in_support]	<- densigamma(rho[in_support] * trafo, alpha, beta)/norm	
+	#dput(alpha); dput(beta); dput(rho[in_support] * trafo)
+	if (any(in_support)) 			
+		ans[in_support]	<- densigamma(rho[in_support] * trafo, alpha, beta)/norm
 	if(log)
 		ans				<- log(ans)
 	return(ans)
+}
+#------------------------------------------------------------------------------------------------------------------------
+nabc.chisqstretch.su.lkl.norm	<- function(n.of.x, s.of.x, trafo=1, support=c(0,Inf))
+{
+	ans	<- integrate(nabc.chisqstretch.sulkl, lower=support[1], upper=support[2],  n.of.x=n.of.x, s.of.x=s.of.x, norm=1, trafo=trafo , support=support, log=FALSE)	
+	ans$value
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Compute Kullback-Leibler divergence between the summary likelihood and the power function of chisqstretch 
@@ -92,14 +105,11 @@ nabc.chisqstretch.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, scale, 
 	
 	#truncate pow and compute pow_norm	
 	pow_support <- c(tau.l/pow_scale, tau.u*pow_scale) 	
-	pow_norm 	<- integrate(nabc.chisqstretch.pow, lower = pow_support[1], upper = pow_support[2], scale=scale, df=df, c.l=c.l, c.u=c.u, norm=1, trafo= 1, support= pow_support, log=FALSE)
-	pow_norm 	<- pow_norm$value
-	
+	pow_norm 	<- nabc.chisqstretch.pow.norm(scale, df, c.l, c.u, trafo=1, support=pow_support)
 	#compute the norm of lkl, given its support 
 	lkl_support	<- pow_support	
-	lkl_norm	<- integrate(nabc.chisqstretch.sulkl, lower = lkl_support[1], upper = lkl_support[2],  n.of.x=n.of.x, s.of.x=s.of.x, norm=1, trafo= (n.of.x-1)/n.of.x*s.of.x*s.of.x, support= lkl_support, log=FALSE)	
-	lkl_norm 	<- lkl_norm$value
-	
+	#print(c(n.of.x, s.of.x, (n.of.x-1)/n.of.x*s.of.x*s.of.x)); print(lkl_support)
+	lkl_norm	<- nabc.chisqstretch.su.lkl.norm(n.of.x, s.of.x, trafo=(n.of.x-1)/n.of.x*s.of.x*s.of.x, support=lkl_support)
 	integral_range	<- pow_support			
 	lkl_arg			<- list(n.of.x= n.of.x, s.of.x= s.of.x, trafo= (n.of.x-1)/n.of.x*s.of.x*s.of.x, norm = lkl_norm, support = lkl_support)
 	pow_arg			<- list(scale = scale, df = df, c.l=c.l, c.u=c.u, norm=pow_norm, support=pow_support, trafo= 1)	
@@ -289,7 +299,7 @@ nabc.chisqstretch.calibrate<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of
 {	
 	KL.of.yn_ub<- KL.of.yn<- error <- curr.mx.pw <- tau.low <- cl <- cu	<- NA		
 	#KL for initial n.of.y
-	KL.of.yn		<- nabc.chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, debug=0, calibrate.tau.u=T, plot=F)["KL_div"]
+	KL.of.yn		<- nabc.chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, debug=0, calibrate.tau.u=T, plot=F)["KL_div"]	
 	#KL always decreases from n.of.x. Find upper bound yn.ub such that KL first increases again.	
 	curr.it 		<- max.it
 	yn.ub 			<- 2 * n.of.y		
