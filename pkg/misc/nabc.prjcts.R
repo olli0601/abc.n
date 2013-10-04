@@ -439,6 +439,16 @@ project.nABC.movingavg.gethist<- function(x, theta, nbreaks= 20, breaks= NULL, w
 	ans.h
 }
 #------------------------------------------------------------------------------------------------------------------------
+nabc.acf.sig22rho<- function(x, a, vx=1)
+{
+	(1+a*a)*x/vx
+}
+#------------------------------------------------------------------------------------------------------------------------
+nabc.acf.rho2sig2<- function(x, a, vx=1)
+{
+	x*vx / (1+a*a)
+}
+#------------------------------------------------------------------------------------------------------------------------
 nabc.acf.a2nu<- function(x) 
 {
 	x/(1+x*x)
@@ -5652,7 +5662,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 	pdf.width	<- 4
 	pdf.height	<- 5
 	nbreaks		<- 20			
-	resume		<- 0
+	resume		<- 1
 	verbose		<- 1
 			
 	m			<- 1
@@ -5683,8 +5693,9 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 				{
 					#cat(paste("\nproject.nABC.movingavg.unifsigma.unifma iteration",i))
 					ymapa	<- runif(1, nabc.acf.a2rho( xmapa.prior.l ), nabc.acf.a2rho( xmapa.prior.u ))	#uniform on rho
-					ymapa	<- nabc.acf.rho2a( ymapa )					
-					ysigma2	<- runif(1, xsig2.prior.l, xsig2.prior.u)										#uniform on rho
+					ymapa	<- nabc.acf.rho2a( ymapa )						
+					ysigma2	<- runif(1, nabc.acf.sig22rho(xsig2.prior.l, a=ymapa), nabc.acf.sig22rho(xsig2.prior.u), a=ymapa)										#uniform on rho
+					ysigma2	<- nabc.acf.rho2sig2( ysigma2 )
 					y		<- rnorm( yn+1, 0, sd=sqrt(ysigma2))
 					y		<- y[-1] + y[-(yn+1)]*ymapa
 					tmp		<- nabc.acf.equivalence.cor(y, leave.out=xmapa.leave.out, len=yn.a)									
@@ -5764,8 +5775,21 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			})
 			
 			acc.s2				<- which( ans.ok[["data"]]["T.s2",]>=abc.param.sig2["cl"]  &  ans.ok[["data"]]["T.s2",]<=abc.param.sig2["cu"] )
-	
-	
+			acc.s2a				<- which( 	ans.ok[["data"]]["T.s2",]>=abc.param.sig2["cl"]  &  ans.ok[["data"]]["T.s2",]<=abc.param.sig2["cu"]	&
+											ans.ok[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)>=abc.param.a["cl"]  &  ans.ok[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)<=abc.param.a["cu"]
+											)
+			acc.s2.rho			<- ans.ok[["data"]]["rho.s2",acc.s2]								
+			acc.s2.h			<- project.nABC.movingavg.gethist(acc.s2.rho, ans.ok[["xv"]]*(length(vx)-1)/length(vx), nbreaks= 50, width= 0.5, plot=1, ylim=c(0,4))
+			sig2				<- seq(min(acc.s2.rho),max(acc.s2.rho),len=1000)
+			su.lkl.norm			<- nabc.chisqstretch.su.lkl.norm(length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), support=range(acc.s2.rho))
+			su.lkl				<- nabc.chisqstretch.sulkl(sig2, length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), norm=su.lkl.norm, support= range(acc.s2.rho), log=FALSE)
+			lines(sig2,su.lkl,col="red")
+			abline(v=ans.ok[["xv"]]*(length(vx)-1)/length(vx), col="red", lty=2)
+			
+			
+			acc.s2a.h			<- project.nABC.movingavg.gethist(ans.ok[["data"]]["th.s2",acc.s2a], ans.ok[["xv"]]*(length(vx)-1)/length(vx), nbreaks= 50, width= 0.5, plot=1, ylim=c(0,4))
+			
+			
 		}
 			
 	}	
