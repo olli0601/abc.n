@@ -5686,13 +5686,13 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 					y		<- rnorm( yn+1, 0, sd=sqrt(ysigma2))
 					y		<- y[-1] + y[-(yn+1)]*ymapa
 					tmp		<- nabc.acf.equivalence.cor(y[seq_len(yn.a*(1+leave.out.a))], leave.out=xmapa.leave.out)									
-					out.a			<- c(ymapa, 	nabc.acf.a2rho(ymapa), 	tmp["z"], 	tmp["n"], 									(tmp["z"] - ans[["xa"]]))					
+					out.a			<- c(ymapa, 	nabc.acf.a2rho(ymapa),			(tmp["z"] - ans[["xa"]]))					
 					y				<- y[seq.int(1,length(y),by=1+xsig2.leave.out)]	
 					y				<- y[seq_len(yn.sig2*(1+leave.out.sig2))]
-					out.v			<- c(ysigma2,	(1+ymapa*ymapa)*ysigma2,			ceiling( length(x)/(1+xsig2.leave.out) ), 	var(y)*(length(y)-1) / (ans[["xv"]] * ceiling( length(x)/(1+xsig2.leave.out) ) )	)					
+					out.v			<- c(ysigma2,	(1+ymapa*ymapa)*ysigma2,	 	var(y)*(length(y)-1) / (ans[["xv"]] * ceiling( length(x)/(1+xsig2.leave.out) ) )	)					
 					c(out.a,out.v)
 				})	
-		rownames(ans[["data"]])	<- c("th.a","rho.a","rho.mc.a", "n.a", "T.a", "th.s2", "rho.s2", "n.s2", "T.s2")		
+		rownames(ans[["data"]])	<- c("th.a","rho.a", "T.a", "th.s2", "rho.s2",  "T.s2")		
 		ans
 	}
 	
