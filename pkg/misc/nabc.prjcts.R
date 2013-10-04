@@ -5694,8 +5694,8 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 					#cat(paste("\nproject.nABC.movingavg.unifsigma.unifma iteration",i))
 					ymapa	<- runif(1, nabc.acf.a2rho( xmapa.prior.l ), nabc.acf.a2rho( xmapa.prior.u ))	#uniform on rho
 					ymapa	<- nabc.acf.rho2a( ymapa )						
-					ysigma2	<- runif(1, nabc.acf.sig22rho(xsig2.prior.l, a=ymapa), nabc.acf.sig22rho(xsig2.prior.u), a=ymapa)										#uniform on rho
-					ysigma2	<- nabc.acf.rho2sig2( ysigma2 )
+					ysigma2	<- runif(1, nabc.acf.sig22rho(xsig2.prior.l, a=ymapa), nabc.acf.sig22rho(xsig2.prior.u, a=ymapa) )										#uniform on rho
+					ysigma2	<- nabc.acf.rho2sig2( ysigma2, a=ymapa )
 					y		<- rnorm( yn+1, 0, sd=sqrt(ysigma2))
 					y		<- y[-1] + y[-(yn+1)]*ymapa
 					tmp		<- nabc.acf.equivalence.cor(y, leave.out=xmapa.leave.out, len=yn.a)									
