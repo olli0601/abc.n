@@ -227,7 +227,7 @@ nabc.chisqstretch.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=
 		tmp							<- tmp-1
 		tau.up.ub					<- 2*tau.up.ub
 		g(tau.low, cl, cu, error)	%<-%	nabc.chisqstretch.calibrate.taulow(tau.up.ub, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
-		rho							<- seq(tau.low*pow_scale, tau.up.ub*pow_scale, len=1024)
+		rho							<- seq(tau.low*pow.scale, tau.up.ub*pow.scale, len=1024)
 		pw							<- nabc.chisqstretch.pow(rho, scale, df, cl, cu)
 		curr.mx.pw					<- max(pw)		
 		if(verbose)	cat(paste("\ntrial upper bound",tau.up.ub,"with power",curr.mx.pw,"at rho=",rho[ which.max(pw) ]))
@@ -242,7 +242,7 @@ nabc.chisqstretch.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=
 		max.it						<- max.it-1
 		tau.up						<- (tau.up.lb + tau.up.ub)/2
 		g(tau.low, cl, cu, error)	%<-%	nabc.chisqstretch.calibrate.taulow(tau.up, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
-		rho							<- seq(tau.low*pow_scale, tau.up*pow_scale, len=1024)		
+		rho							<- seq(tau.low*pow.scale, tau.up*pow.scale, len=1024)		
 		pw							<- nabc.chisqstretch.pow(rho, scale, df, cl, cu)
 		curr.mx.pw					<- max(pw)		
 		error						<- curr.mx.pw - mx.pw
