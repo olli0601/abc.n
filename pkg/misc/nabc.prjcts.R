@@ -5692,8 +5692,6 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 					y				<- y[seq.int(1,length(y),by=1+xsig2.leave.out)]
 					y				<- y[seq_len(yn.sig2)]
 					out.v			<- c(ysigma2,	(1+ymapa*ymapa)*ysigma2,	 	var(y)*(length(y)-1) / (ans[["xv"]] * ceiling( length(x)/(1+xsig2.leave.out) ) )	)					
-					print(c(out.a,out.v))
-					stop()
 					c(out.a,out.v)
 				})	
 		rownames(ans[["data"]])	<- c("th.a","rho.a", "T.a", "th.s2", "rho.s2",  "T.s2")		
