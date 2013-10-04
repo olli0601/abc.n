@@ -178,6 +178,8 @@ nabc.tosz.calibrate.tolerances.getkl <- function(s.of.x, s.of.T, tau.u, mx.pw=0.
 	
 	if (plot) 
 	{
+		library(ggplot2)
+		library(reshape2)
 		df_lkl 				<- data.frame(x=rho, yes=lkl, no=lkl*lkl.norm )
 		df_lkl$distribution <- "summary likelihood"
 		df_pow 				<- data.frame(x=rho, yes=pw, no=pw*pw.norm)

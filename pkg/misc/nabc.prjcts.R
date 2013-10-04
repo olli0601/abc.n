@@ -5736,7 +5736,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			abc.param.a		<- nabc.tosz.calibrate(zx["n"], mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=F)					
 			vx				<- x[seq.int(1,length(x),by=1+leave.out.sig2)]
 			suppressWarnings({	
-				abc.param.sig2	<- nabc.chisqstretch.calibrate(length(vx), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=T)
+				abc.param.sig2	<- nabc.chisqstretch.calibrate(length(vx), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
 			})
 			#print(abc.param.a)	;	print(abc.param.sig2)			
 			ans.ok			<- simu.acf.fixx.unifrho(	N, x, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					

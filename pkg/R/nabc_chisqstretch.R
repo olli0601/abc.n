@@ -121,6 +121,8 @@ nabc.chisqstretch.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, scale, 
 	}
 	if (plot) 
 	{
+		library(ggplot2)
+		library(reshape2)
 		rho_lkl 			<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
 		lkl					<- nabc.chisqstretch.sulkl(rho_lkl, n.of.x, s.of.x, trafo= (n.of.x-1)/n.of.x*s.of.x*s.of.x, norm=lkl_norm, support=lkl_support)
 		df_lkl 				<- data.frame(x = rho_lkl, yes = lkl, no = lkl*lkl_norm )
