@@ -5694,7 +5694,8 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 					#cat(paste("\nproject.nABC.movingavg.unifsigma.unifma iteration",i))
 					ymapa	<- runif(1, nabc.acf.a2rho( xmapa.prior.l ), nabc.acf.a2rho( xmapa.prior.u ))	#uniform on rho
 					ymapa	<- nabc.acf.rho2a( ymapa )						
-					ysigma2	<- runif(1, nabc.acf.sig22rho(xsig2.prior.l, a=ymapa), nabc.acf.sig22rho(xsig2.prior.u, a=ymapa) )										#uniform on rho
+					#ysigma2	<- runif(1, nabc.acf.sig22rho(xsig2.prior.l, a=ymapa), nabc.acf.sig22rho(xsig2.prior.u, a=ymapa) )										#uniform on rho
+					ysigma2	<- runif(1, xsig2.prior.l, xsig2.prior.u )										#uniform on rho
 					ysigma2	<- nabc.acf.rho2sig2( ysigma2, a=ymapa )
 					y		<- rnorm( yn+1, 0, sd=sqrt(ysigma2))
 					y		<- y[-1] + y[-(yn+1)]*ymapa
@@ -5720,8 +5721,8 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 	tau.l			<- -tau.u
 	xsig2.tau.u		<- 1.1
 	xsig2.tau.l		<- 1/xsig2.tau.u
-	prior.u.sig2	<- 1.15 
-	prior.l.sig2	<- 0.8
+	prior.u.sig2	<- 1.5		#1.15 
+	prior.l.sig2	<- 0.6		#0.8
 	prior.u.a		<- nabc.acf.rho2a( .423 )	#nabc.acf.rho2a( z.xa+tau.u )		
 	prior.l.a		<- nabc.acf.rho2a( -.423 )	#nabc.acf.rho2a( z.xa+tau.l )
 	leave.out.a		<- 2
@@ -5740,21 +5741,24 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 		options(show.error.messages = TRUE)						
 		if(!resume || inherits(readAttempt, "try-error"))
 		{
-			#
-			# calibrated run
-			#
-			f.name			<- paste(dir.name,"/nABC.MA1_yncalibrated_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')			
-			x				<- project.nABC.movingavg.get.fixed.ts(xn, 0, xa, xsigma2, leave.out.a=leave.out.a, leave.out.s2=leave.out.sig2, verbose=0)
-			zx				<- nabc.acf.equivalence.cor(x, leave.out=leave.out.a)
-			abc.param.a		<- nabc.tosz.calibrate(zx["n"], mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=F)					
-			vx				<- x[seq.int(1,length(x),by=1+leave.out.sig2)]
-			suppressWarnings({	
-				abc.param.sig2	<- nabc.chisqstretch.calibrate(length(vx), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
-			})
-			#print(abc.param.a)	;	print(abc.param.sig2)			
-			ans.ok			<- simu.acf.fixx.unifrho(	N, x, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
-			cat(paste("\nnABC.MA: save ",f.name))
-			save(ans.ok,file=f.name)			
+			if(xn<=3e2)
+			{
+				#
+				# calibrated run
+				#			
+				f.name			<- paste(dir.name,"/nABC.MA1_yncalibrated_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')			
+				x				<- project.nABC.movingavg.get.fixed.ts(xn, 0, xa, xsigma2, leave.out.a=leave.out.a, leave.out.s2=leave.out.sig2, verbose=0)
+				zx				<- nabc.acf.equivalence.cor(x, leave.out=leave.out.a)
+				abc.param.a		<- nabc.tosz.calibrate(zx["n"], mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=F)					
+				vx				<- x[seq.int(1,length(x),by=1+leave.out.sig2)]
+				suppressWarnings({	
+					abc.param.sig2	<- nabc.chisqstretch.calibrate(length(vx), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
+				})
+				#print(abc.param.a)	;	print(abc.param.sig2)			
+				ans.ok			<- simu.acf.fixx.unifrho(	N, x, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
+				cat(paste("\nnABC.MA: save ",f.name))
+				save(ans.ok,file=f.name)
+			}
 			#
 			# run with equal yn=xn
 			#
