@@ -374,7 +374,7 @@ project.nABC.plotGAUSSresults<- function()
 	stop()
 }
 #------------------------------------------------------------------------------------------------------------------------
-project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,n.hists=5,nbin=2, nlevels=5, width.infl=0.25, gridsize=c(100,100), method="kde",plot=0)
+project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,n.hists=5,nbin=2, nlevels=5, width.infl=0.25, gridsize=c(100,100), method="kde", plot=0, ...)
 {
 	if(!method%in%c("kde","ash"))	stop("project.nABC.movingavg.get.2D.mode: error at 1a")
 	if(any(is.na(xlim)))	xlim<- range(x)*1.05
@@ -390,7 +390,7 @@ project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,n.hists=5,nbin
 					mean( f$y[ c(mxidx[2],ifelse(mxidx[2]<length(f$y),mxidx[2]+1,mxidx[2])) ] )		)
 		if(plot)
 		{
-			image(f$x,f$y,f$z, col=head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50))				
+			image(f$x,f$y,f$z, col=head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50), ...)				
 			contour(f$x,f$y,f$z,add=TRUE, nlevels= nlevels)
 			points(mx, col="red", pch=19)
 		}
@@ -409,7 +409,7 @@ project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,n.hists=5,nbin
 					mean( f$x2[ c(mxidx[2],ifelse(mxidx[2]<length(f$x2),mxidx[2]+1,mxidx[2])) ] )		)
 		if(plot)
 		{
-			image(f$x1,f$x2,f$fhat, col=head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50))
+			image(f$x1,f$x2,f$fhat, col=head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50), ...)
 			contour(f$x1, f$x2, f$fhat, nlevels= nlevels, add=1)			
 		}
 	}	
@@ -5657,6 +5657,7 @@ nabc.test.chi2stretch.calibrate<- function()
 #------------------------------------------------------------------------------------------------------------------------
 nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 {
+	
 	my.mkdir(DATA,"nABC.acf")
 	dir.name	<- paste(DATA,"nABC.acf",sep='/')	
 	pdf.width	<- 4
@@ -5674,6 +5675,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 		if(length(tmp)>0) m<- tmp[1]
 	}
 	
+	#nABC - simulates data sets and pre-computes the test statistics for required length of simulated time series
 	simu.acf.fixx.unifrho<- function(	N, x, yn.a=NA, yn.sig2=NA, xmapa.prior.l=-0.3,xmapa.prior.u=0.3, xsig2.prior.l=0.5,xsig2.prior.u=2, xmapa.leave.out=2, xsig2.leave.out=1, verbose=0	)
 	{
 		ans				<- vector("list",4)
@@ -5694,7 +5696,6 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 					#cat(paste("\nproject.nABC.movingavg.unifsigma.unifma iteration",i))
 					ymapa	<- runif(1, nabc.acf.a2rho( xmapa.prior.l ), nabc.acf.a2rho( xmapa.prior.u ))	#uniform on rho
 					ymapa	<- nabc.acf.rho2a( ymapa )						
-					#ysigma2	<- runif(1, nabc.acf.sig22rho(xsig2.prior.l, a=ymapa), nabc.acf.sig22rho(xsig2.prior.u, a=ymapa) )										#uniform on rho
 					ysigma2	<- runif(1, xsig2.prior.l, xsig2.prior.u )										#uniform on rho
 					ysigma2	<- nabc.acf.rho2sig2( ysigma2, a=ymapa )
 					y		<- rnorm( yn+1, 0, sd=sqrt(ysigma2))
@@ -5709,14 +5710,18 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 		rownames(ans[["data"]])	<- c("th.a","rho.a", "T.a", "th.s2", "rho.s2",  "T.s2")		
 		ans
 	}
-	
+	#
+	# parameters to simulate data x
+	#
 	xa		<- 0.1 
 	r.xa	<- nabc.acf.a2nu(xa)		#r for xa
 	z.xa	<- nabc.acf.a2rho(xa)		#r for xa
 	xsigma2	<- 1	#sqrt(2)
 	xn		<- 3e2		
 	if(verbose)	cat(paste("\ntrue xmapa=",xa,", true correlation=",r.xa,"true z=",z.xa,"\n"))
-	
+	#
+	# ABC parameters
+	#
 	tau.u			<- 0.1
 	tau.l			<- -tau.u
 	xsig2.tau.u		<- 1.1
@@ -5741,7 +5746,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 		options(show.error.messages = TRUE)						
 		if(!resume || inherits(readAttempt, "try-error"))
 		{
-			if(xn<=3e2)
+			if(xn<=3e2)		#calibrating m does not work for chi2stretch for xn>3e2 because summary likelihood is based on densigamma which has a call to gamma that is Inf for xn>3e2
 			{
 				#
 				# calibrated run
@@ -5777,22 +5782,34 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			suppressWarnings({	
 				abc.param.sig2	<- nabc.chisqstretch.calibrate(length(vx), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
 			})
-			
+			#	get ABC accepted values
+			acc.a				<- which( 	ans.ok[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)>=abc.param.a["cl"]  &  
+											ans.ok[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)<=abc.param.a["cu"])
 			acc.s2				<- which( ans.ok[["data"]]["T.s2",]>=abc.param.sig2["cl"]  &  ans.ok[["data"]]["T.s2",]<=abc.param.sig2["cu"] )
 			acc.s2a				<- which( 	ans.ok[["data"]]["T.s2",]>=abc.param.sig2["cl"]  &  ans.ok[["data"]]["T.s2",]<=abc.param.sig2["cu"]	&
 											ans.ok[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)>=abc.param.a["cl"]  &  ans.ok[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)<=abc.param.a["cu"]
 											)
+			#	plot marginal of rho_corr	-- OK								
+			acc.a.rho			<- ans.ok[["data"]]["rho.a",acc.a]-z.xa
+			acc.a.h				<- project.nABC.movingavg.gethist(acc.a.rho, ans.ok[["xa"]], nbreaks= 50, width= 0.5, plot=1, ylim=c(0,6))
+			rho					<- seq(min(acc.a.rho),max(acc.a.rho),len=1000)
+			su.lkl.norm			<- nabc.tosz.sulkl.norm(1/sqrt(zx["n"]-3), support=range(rho))
+			su.lkl				<- nabc.tosz.sulkl(rho, 1/sqrt(zx["n"]-3), norm=su.lkl.norm, support=range(rho), log=FALSE)
+			lines(rho,su.lkl,col="red")
+			abline(v=0, col="red", lty=2)
+			#	plot marginal of rho_var	-- not quite OK -- prior range?		
 			acc.s2.rho			<- ans.ok[["data"]]["rho.s2",acc.s2]								
 			acc.s2.h			<- project.nABC.movingavg.gethist(acc.s2.rho, ans.ok[["xv"]]*(length(vx)-1)/length(vx), nbreaks= 50, width= 0.5, plot=1, ylim=c(0,4))
-			sig2				<- seq(min(acc.s2.rho),max(acc.s2.rho),len=1000)
+			rho					<- seq(min(acc.s2.rho),max(acc.s2.rho),len=1000)
 			su.lkl.norm			<- nabc.chisqstretch.su.lkl.norm(length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), support=range(acc.s2.rho))
-			su.lkl				<- nabc.chisqstretch.sulkl(sig2, length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), norm=su.lkl.norm, support= range(acc.s2.rho), log=FALSE)
-			lines(sig2,su.lkl,col="red")
-			abline(v=ans.ok[["xv"]]*(length(vx)-1)/length(vx), col="red", lty=2)
-			
-			
-			acc.s2a.h			<- project.nABC.movingavg.gethist(ans.ok[["data"]]["th.s2",acc.s2a], ans.ok[["xv"]]*(length(vx)-1)/length(vx), nbreaks= 50, width= 0.5, plot=1, ylim=c(0,4))
-			
+			su.lkl				<- nabc.chisqstretch.sulkl(rho, length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), norm=su.lkl.norm, support= range(acc.s2.rho), log=FALSE)
+			lines(rho,su.lkl,col="red")
+			abline(v=1, col="red", lty=2)
+			#	plot ABC approximation to posterior
+			tmp	<- acc.s2a
+			tmp	<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
+			abline(h=xsigma2, lty=2)
+			abline(v=xa, lty=2)
 			
 		}
 			
