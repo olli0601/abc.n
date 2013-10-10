@@ -1,8 +1,9 @@
 #library(profr)
 
 DIR_PKG<-"~/Documents/GitProjects/nABC/git_abc.n/pkg/"
-DIR_PKG<- "/Users/Oliver/git/abc.n/pkg"
+#DIR_PKG<- "/Users/Oliver/git/abc.n/pkg"
 
+#load_all(DIR_PKG)
 
 
 if(0)
