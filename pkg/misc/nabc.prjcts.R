@@ -640,17 +640,18 @@ project.nABC.changeofvariables<- function()
 	stop()
 }
 #------------------------------------------------------------------------------------------------------------------------
-project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbose=0, tol=1e-3)
+project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbose=0, tol=1e-3,return_eps_0=FALSE)
 {		
 	verbose			<- 1
 	m				<- ceiling( max(1, n / 5000) )
 	m				<- 1e4 / m
-	rho0			<- nabc.acf.a2rho(a)
+	rho0			<- 	nabc.acf.a2rho(a)
 	error			<- 1
 	leave.out.s2	<- seq.int(1,n,by=1+leave.out.s2)
 	while(error>tol)
 	{
 		x		<-	rnorm(m*n+1,mu,sd=sd)
+		eps_0 <- x[seq(1,m*n+1,by=n)]
 		x		<- x[-1] + x[-(m*n+1)]*a
 		x		<- matrix(x,ncol=m)	
 		x		<- sapply(seq_len(ncol(x)),function(i)		x[,i]/sd(x[leave.out.s2,i])*sqrt((1+a*a)*sd*sd)	)		#get correct variance
@@ -659,11 +660,15 @@ project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leav
 		error	<- abs(rhox - rho0 )
 		ans		<- which.min(error)
 		error	<- error[ans]
+		eps_0 <- eps_0[ans]
 		if(verbose)	cat(paste("\ncurrent error is",error,"and should be <",tol))						
 	}	
 	ans<- x[,ans]
 	if(verbose)	cat(paste("\nrhox of leave-out time series is",nabc.acf.equivalence.cor(ans, leave.out=leave.out.a)["z"],"and should be",rho0))	
 	if(verbose)	cat(paste("\nvar of leave-out time series is",var(ans[leave.out.s2]),"and should be",(1+a*a)*sd*sd))
+	if(return_eps_0){
+		ans <- list(x=ans,eps_0=eps_0)
+	}
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
