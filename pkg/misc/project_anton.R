@@ -694,7 +694,7 @@ run_MCMC_MA1 <- function(n_iter=1000,a_true=0.1,sig2_true=1,n_x=2000,a_bounds=c(
 	covmat_mvn_proposal <- matrix(c(1e-3, 1e-5, 0, 1e-5, 1e-3, 0, 0, 0, 0), nrow = length(theta_init), byrow = T, dimnames = list(names(theta_init), names(theta_init)))	
 	
 	##adaptive run
-	dir_pdf <- paste0("~/Documents/GitProjects/nABC/pdf/mcmc_MA1_a=",a_true,"_sig2=",sig2_true,"_nIter=",n_iter)
+	dir_pdf <- paste0("~/Documents/GitProjects/nABC/pdf/mcmc_MA1_a=",a_true,"_sig2=",sig2_true,"_nx=",n_x,"_nIter=",n_iter)
 	dir.create(dir_pdf)
 
 	iter_adapt <- n_iter/10
@@ -714,6 +714,7 @@ main <- function() {
 	require(reshape2)
 	require(RColorBrewer)
 	require(plyr)
+	require(devtools)
 
 	dev_mode()
 	NABC_PKG <- "~/Documents/GitProjects/nABC/git_abc.n/pkg/"
@@ -722,6 +723,7 @@ main <- function() {
 	dir_pdf <- "~/Documents/GitProjects/nABC/pdf/"
 	dir.create(dir_pdf)
 
+	if(0){
 	#plot prior
 	a_0 <- 0
 	sig2_0 <- 1
@@ -744,13 +746,15 @@ main <- function() {
 	dir_pdf_check <- file.path(dir_pdf,"check_sampler")
 	dir.create(dir_pdf_check)
 	check_MCMC_sampler(a_true=0.1, sig2_true=1, a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.9, 1.1),n_iter=10000,dir_pdf= dir_pdf_check) 
+	}
 	
 	#run sampler
-	run_MCMC_MA1(n_iter=100000,a_true=0.1,sig2_true=1,n_x=5000,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2))
+	run_MCMC_MA1(n_iter=50000,a_true=0.1,sig2_true=1,n_x=5000,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2))
 
 			
 }
-#main()
+
+main()
 
 
 
