@@ -651,10 +651,12 @@ project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leav
 	while(error>tol)
 	{
 		x		<-	rnorm(m*n+1,mu,sd=sd)
-		eps_0 <- x[seq(1,m*n+1,by=n)]
+		eps_0 <- x[seq(1,m*n,by=n)]
 		x		<- x[-1] + x[-(m*n+1)]*a
 		x		<- matrix(x,ncol=m)	
-		x		<- sapply(seq_len(ncol(x)),function(i)		x[,i]/sd(x[leave.out.s2,i])*sqrt((1+a*a)*sd*sd)	)		#get correct variance
+		x_std_cte <- sapply(seq_len(ncol(x)),function(i)	sqrt((1+a*a)*sd*sd)/sd(x[leave.out.s2,i]))
+		x		<- sapply(seq_len(ncol(x)),function(i)		x[,i]*x_std_cte[i]	)		#get correct variance
+		eps_0 <- eps_0/x_std_cte		#eps_0 must also be standardized
 		#rhox	<- apply(x,2,function(col)	atanh(acf(ts(col), plot=0,lag=1)[["acf"]][2,1,1]) )
 		rhox	<- apply(x,2,function(col)	nabc.acf.equivalence.cor(col, leave.out=leave.out.a)["z"] )				
 		error	<- abs(rhox - rho0 )
