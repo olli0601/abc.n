@@ -142,7 +142,7 @@ nabc_MA1_dprior <- function(a,sig2,a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5,
 
 
 
-nabc_plot_density2d <- function(data=NULL,var_names=NULL,x_lab=NULL,y_lab=NULL, mode=FALSE, smoothing = c("none","ash", "kde"), ash_smooth = c(5, 5), ash_kopt = c(2, 2), kde_width_infl = 0.25, grid_size = c(100, 100),plot=TRUE) {
+nabc_plot_density2d <- function(data=NULL,var_names=NULL,x_lab=NULL,y_lab=NULL, contour=TRUE, mode=FALSE, smoothing = c("none","ash", "kde"), ash_smooth = c(5, 5), ash_kopt = c(2, 2), kde_width_infl = 0.25, grid_size = NULL, plot=TRUE) {
 
 	
 	smoothing <- match.arg(smoothing)
@@ -163,10 +163,14 @@ nabc_plot_density2d <- function(data=NULL,var_names=NULL,x_lab=NULL,y_lab=NULL, 
 	xlim <- range(x) 
 	ylim <- range(y)
 
+	if(is.null(grid_size)){
+		grid_size=c(nclass.Sturges(x), nclass.Sturges(y))
+	}
+	
 	if (smoothing == "ash") {
 		
 		require(ash)
-		bins <- bin2(cbind(x, y), ab = rbind(xlim, ylim), nbin = c(nclass.Sturges(x), nclass.Sturges(y)))
+		bins <- bin2(cbind(x, y), ab = rbind(xlim, ylim), nbin = grid_size)
 		f <- ash2(bins, ash_smooth,ash_kopt)
 		f <- rename(f, c(z = "density"))
 
@@ -176,8 +180,8 @@ nabc_plot_density2d <- function(data=NULL,var_names=NULL,x_lab=NULL,y_lab=NULL, 
 		require(KernSmooth)
 
 		#fit kde
-		x_bw <- width_infl * diff(summary(x)[c(2, 5)])
-		y_bw <- width_infl * diff(summary(y)[c(2, 5)])
+		x_bw <- kde_width_infl * diff(summary(x)[c(2, 5)])
+		y_bw <- kde_width_infl * diff(summary(y)[c(2, 5)])
 		f <- bkde2D(cbind(x, y), range.x = list(xlim, ylim), bandwidth = c(x_bw, y_bw), gridsize = grid_size)
 		f <- rename(f, c(fhat = "density", x1 = "x", x2 = "y"))
 
@@ -216,12 +220,15 @@ nabc_plot_density2d <- function(data=NULL,var_names=NULL,x_lab=NULL,y_lab=NULL, 
 	#my plot	
 	p <- ggplot(df_density2d, aes(x = x, y = y))
 	p <- p + geom_tile(aes(fill = density), alpha = 0.85)
-	p <- p + geom_contour(aes(z = density, linetype = factor(..level..)), colour = "black")
+	if(contour){
+		p <- p + geom_contour(aes(z = density, linetype = factor(..level..)), colour = "black")
+		p <- p + scale_linetype("contour")	
+	}
 	if(mode){
 		p <- p + geom_point(data = df_summary, aes(x = x, y = y, shape = summary))		
 	}
 	p <- p + scale_fill_gradientn("density", colours = rev(brewer.pal(11, "Spectral")))
-	p <- p + scale_linetype("contour") + guides(fill = guide_colourbar(order = 1), linetype = guide_legend(reverse = T, 
+	p <- p + guides(fill = guide_colourbar(order = 1), linetype = guide_legend(reverse = T, 
 		keywidth = 2, order = 2))
 	p <- p + xlab(ifelse(is.null(x_lab), var_names[1], x_lab)) + ylab(ifelse(is.null(y_lab), var_names[2], y_lab))
 	
@@ -411,15 +418,38 @@ nabc_rpropwgausskernel<- function(theta, covmat, support)
 	return(theta)
 }
 
-nabc_MA1_simulate <- function(n=1000,a=0.1,sig2=1,eps_0=NULL,plot=F){
+nabc_MA1_simulate <- function(n=1000,a=0.1,sig2=1,eps_0=NULL,plot=F,tol=NULL,leave.out.a=0,leave.out.s2=0){
 	
-	if(is.null(eps_0)){
-		eps_0 <- rnorm(1,sd=sqrt(sig2))
+	if(is.null(tol)){
+		#no tolerance on MLE vs true_value
+		#possibility to fix eps_0 to a given value, sample otherwise
+		if(is.null(eps_0)){
+			eps_0 <- rnorm(1,sd=sqrt(sig2))
+		}
+	
+		eps <- rnorm(n,sd=sqrt(sig2))	
+		x <- eps + a*c(eps_0,eps[-n])
+	}else{
+		
+		#use olli's function
+		tmp <- project.nABC.movingavg.get.fixed.ts(n=n, mu=0, a=a, sd=sqrt(sig2), leave.out.a= leave.out.a, leave.out.s2= leave.out.s2, verbose=0, tol=tol,return_eps_0=T)
+		x <- tmp$x
+		eps_0 <- tmp$eps_0
+		
 	}
 	
-	eps <- rnorm(n,sd=sqrt(sig2))	
-	x <- eps + a*c(eps_0,eps[-n])
+	x_cor_thinned <- nabc.acf.equivalence.cor(x,leave=leave.out.a)["cor"]
+	x_var_thinned <- var(x[seq.int(1,n,by=1+leave.out.s2)])
 	
+	a_MLE_thinned <- nabc.acf.nu2a(x_cor_thinned)
+	sig2_MLE_thinned <- x_var_thinned/(1+ a_MLE_thinned^2)
+	
+	x_cor <- nabc.acf.equivalence.cor(x)["cor"]
+	x_var <- var(x)
+	
+	a_MLE <- nabc.acf.nu2a(x_cor)
+	sig2_MLE <- x_var/(1+a_MLE^2)
+
 	if(plot){
 		df <- data.frame(t=1:n,x=x)
 		p <- ggplot(data=df,aes(x=t,y=x))+geom_line()+scale_y_continuous(expression(x[t]))
@@ -427,7 +457,45 @@ nabc_MA1_simulate <- function(n=1000,a=0.1,sig2=1,eps_0=NULL,plot=F){
 	}
 	
 	
-	return(list(param=data.frame(a=a,sig2=sig2),eps_0=eps_0,n=n,s_stat=data.frame(variance=var(x),autocorr=cor(x[-1],x[-n])),x=x))
+	return(list(param=data.frame(a=a,sig2=sig2),eps_0=eps_0,n=n,leave_out=data.frame(a=leave.out.a,sig2=leave.out.s2),s_stat=data.frame(variance=x_var,autocorr=x_cor),s_stat_thinned =data.frame(variance=x_var_thinned,autocorr=x_cor_thinned),MLE=data.frame(a=a_MLE,sig2=sig2_MLE),MLE_thinned=data.frame(a=a_MLE_thinned,sig2=sig2_MLE_thinned),x=x))
+}
+
+check_MA1_simulator <- function(n_replicate = 10000, n_x = 5000, a = 0.1, sig2 = 1, dir_save = ".", RDS_file=NULL, dir_pdf= dir_save, grid_size=NULL, contour=FALSE,mode=FALSE) {
+
+	if (!file.exists(dir_save)) {
+		dir.create(dir_save)
+	}
+
+	if(is.null(RDS_file)){
+		RDS_file <- file.path(dir_save, paste0("check_MA1_simulator_nx=", n_x, "_a=", a, "_sig2=", sig2, "_nrep=", n_replicate, 
+			".rds"))
+	}
+		
+	if (!file.exists(RDS_file)) {
+
+		df_replicate <- ldply(1:n_replicate, function(i) {
+
+			simu <- nabc_MA1_simulate(n = n_x, a = a, sig2 = sig2)
+			return(data.frame(t(simu$MLE)))
+
+		}, .progress = "text")
+
+		saveRDS(df_replicate, file = RDS_file)
+	} else {
+		df_replicate <- readRDS(file = RDS_file)
+	}
+
+	p <- nabc_plot_density2d(data = df_replicate, var_names = c("a", "sig2"), y_lab = expression(sigma^2), contour = contour, 
+		mode = mode, smoothing = "ash", ash_smooth = c(5, 5), plot = F,grid_size=grid_size)
+	p <- p + geom_hline(yintercept = sig2) + geom_vline(xintercept = a)
+	
+	pdf_file <- file.path(dir_pdf, paste0("hist2D_MLE_nx=", n_x, "_a=", a, "_sig2=", sig2, "_nrep=", n_replicate, ".pdf"))
+
+	cairo_pdf(pdf_file, width = 7, height = 6)	
+	print(p)
+	dev.off()
+
+	return(df_replicate)
 }
 
 
@@ -446,9 +514,20 @@ nabc_MA1_conditional_loglikelihood <- function(a, sig2, x, eps_0) {
 }
 
 
-nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,a_true=0.1,sig2_true=1,eps_0_true=NULL,n_x=1000,a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2), prior_dist=c("uniform","uniform_on_rho"),n_iter=1000,iter_adapt=n_iter,beta_adapt=0.5,plot=FALSE,dir_pdf=NULL,sample_from_prior= FALSE){
+nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,mcmc=NULL,a_true=0.1,sig2_true=1,eps_0_true=NULL,n_x=1000,a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2), prior_dist=c("uniform","uniform_on_rho"),n_iter=1000,iter_adapt=n_iter,beta_adapt=0.5,plot=FALSE,dir_pdf=NULL,sample_from_prior= FALSE){
 	
 	prior_dist <- match.arg(prior_dist)
+	
+	if(!is.null(mcmc)){
+		#go on mcmc
+		data <- mcmc$data
+		posterior <- mcmc$posterior
+		theta_init <- posterior[[length(posterior)]]
+		theta_init <- theta_init[setdiff(names(theta_init),"weight")]
+		covmat_mvn_proposal <- mcmc$covmat_mvn_proposal
+		a_bounds <- mcmc$bounds$a
+		sig2_bounds <- mcmc$bounds$sig2
+	}
 	
 	if(is.null(data)){
 		#simulate data and compute variance and autocorr
@@ -501,7 +580,9 @@ nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,
 	#run n_iterations
 	progress_bar <- txtProgressBar(min = 1, max = n_iter, style = 3)
 	
-	posterior <- list(c(theta_curr,weight=0))
+	if(is.null(mcmc)){
+		posterior <- list(c(theta_curr,weight=0))		
+	}
 	
 	time_start <- proc.time()[3]
 
@@ -562,7 +643,7 @@ nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,
 	
 }
 
-analyse_MCMC_MA1 <- function(mcmc,dir_pdf, smoothing=c("ash","kde"), ash_smooth=c(5,5),thin_every=0,burn=0){
+analyse_MCMC_MA1 <- function(mcmc,dir_pdf, smoothing=c("ash","kde"), ash_smooth=c(5,5),thin_every=0,burn=0,grid_size=NULL){
 	
 	require(coda)
 	smoothing <- match.arg(smoothing)
@@ -572,9 +653,12 @@ analyse_MCMC_MA1 <- function(mcmc,dir_pdf, smoothing=c("ash","kde"), ash_smooth=
 	sig2_true <- mcmc$data$param$sig2
 	x <- mcmc$data$x
 	n <- mcmc$data$n
-	a_MLE <- nabc.acf.nu2a(cov(x[-n],x[-1]))
-	sig2_MLE <- var(x)/(1+a_MLE^2)
-	df_estimate <- data.frame(type=c("true value","MLE"),a=c(a_true, a_MLE),sig2=c(sig2_true,sig2_MLE))
+	a_MLE <- mcmc$data$MLE$a
+	sig2_MLE <- mcmc$data$MLE$sig2
+	a_MLE_thinned <- mcmc$data$MLE_thinned$a
+	sig2_MLE_thinned <- mcmc$data$MLE_thinned$sig2
+	
+	df_estimate <- data.frame(type=c("true value","MLE","MLE_thinned"),a=c(a_true, a_MLE, a_MLE_thinned),sig2=c(sig2_true,sig2_MLE, sig2_MLE_thinned))
 	cat("mvn_proposal_init:\n")
 	print(mcmc$covmat_mvn_proposal)
 	cat("\nmvn_proposal_adapted:\n")
@@ -632,7 +716,7 @@ analyse_MCMC_MA1 <- function(mcmc,dir_pdf, smoothing=c("ash","kde"), ash_smooth=
 	#plot posterior 2d
 	pdf(file = file.path(dir_pdf, "full_posterior.pdf"), 6, 6)
 	p <- nabc_plot_density2d(data = df_posterior, var_names = c("a", "sig2"), y_lab = expression(sigma^2), smoothing = smoothing, 
-		ash_smooth = ash_smooth,plot=F)
+		ash_smooth = ash_smooth,plot=F,grid_size= grid_size)
 	#add MLE and true value
 	p <- p+geom_point(data=df_estimate,aes(x=a,y=sig2,shape=type))
 	p <- p+scale_shape("estimates")
@@ -672,7 +756,7 @@ check_MCMC_sampler <- function(a_true=0.1, sig2_true=1, a_bounds=c(-0.3, 0.3),si
 }
 
 
-run_MCMC_MA1 <- function(n_iter=1000,a_true=0.1,sig2_true=1,n_x=2000,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2)){
+run_MCMC_MA1 <- function(n_iter=1000,a_true=0.1,sig2_true=1,n_x=2000,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2),leave.out.a=0,leave.out.s2=0){
 	
 	if(0){
 	a_true <- 0.1
@@ -683,30 +767,61 @@ run_MCMC_MA1 <- function(n_iter=1000,a_true=0.1,sig2_true=1,n_x=2000,a_bounds=c(
 	sig2_bounds <- c(0.5, 2)
 	
 	}
+	
+	
 
-	eps_0_true <- rnorm(1,sd=sqrt(sig2_true))
+	##
+	dir_pdf <- paste0("~/Documents/GitProjects/nABC/pdf/mcmc_MA1_a=",a_true,"_sig2=",sig2_true,"_nx=",n_x,"_nIter=",n_iter,"_louta=", leave.out.a,"_louts2=", leave.out.s2)
+	dir.create(dir_pdf)
 	
 	#create data
-	data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,eps_0=eps_0_true,plot=F)	
+	data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,plot=F,tol=1e-3,leave.out.a= leave.out.a,leave.out.s2= leave.out.s2)	
 	#theta_init
-	theta_init <- c(a=data$param$a,sig2=data$param$sig2,eps_0=data$eps_0)	
-	#covmat (based on a preliminary run, same order of magnitude)
-	covmat_mvn_proposal <- matrix(c(1e-3, 1e-5, 0, 1e-5, 1e-3, 0, 0, 0, 0), nrow = length(theta_init), byrow = T, dimnames = list(names(theta_init), names(theta_init)))	
+	theta_init <- c(a=data$param$a,sig2=data$param$sig2,eps_0=data$eps_0)		
 	
-	##adaptive run
-	dir_pdf <- paste0("~/Documents/GitProjects/nABC/pdf/mcmc_MA1_a=",a_true,"_sig2=",sig2_true,"_nx=",n_x,"_nIter=",n_iter)
-	dir.create(dir_pdf)
-
+	#default proposal
+	covmat_mvn_proposal <- matrix(c(1e-3, 1e-5, 0, 1e-5, 1e-3, 0, 0, 0, 0), nrow = length(theta_init), byrow = T, dimnames = list(names(theta_init), names(theta_init)))	
+	#covmat of a and sig2 based on the likelihood surface
+	tmp <- check_MA1_simulator(n_replicate=10000,n_x=n_x,a=a_true,sig2=sig2_true,dir_save="~/Documents/GitProjects/nABC/pdf/covmat_MLE",dir_pdf= dir_pdf,RDS_file=NULL,contour=T,grid_size=c(50,50))
+	cov_a_sig2_MLE <- cov(tmp)
+	print(cov_a_sig2_MLE)
+	covmat_mvn_proposal[rownames(cov_a_sig2_MLE),colnames(cov_a_sig2_MLE)] <- cov_a_sig2_MLE
+	print(covmat_mvn_proposal)
 	iter_adapt <- n_iter/10
 
 	mcmc <- nabc_MA1_MCMC_MH(data= data, theta_init= theta_init, covmat_mvn_proposal= covmat_mvn_proposal, a_bounds = a_bounds, sig2_bounds = sig2_bounds, prior_dist = "uniform_on_rho", n_iter = n_iter, iter_adapt = iter_adapt, plot = T, dir_pdf=dir_pdf)
 	saveRDS(mcmc,file=file.path(dir_pdf,"mcmc.rds"))
+	
 	#mcmc <- readRDS(file=file.path(dir_pdf,"mcmc.rds"))
 	
 	analyse_MCMC_MA1(mcmc, dir_pdf,smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0)
 
 	
 } 
+
+continue_MCMC_MA1 <- function(mcmc,n_iter_more=1000){
+	
+	a_true <- mcmc$data$param$a
+	sig2_true <- mcmc$data$param$sig2
+	n_x <- mcmc$data$n
+   	df_posterior <- ldply(mcmc$posterior)
+	n_iter <- sum(df_posterior$weight)+n_iter_more
+	leave.out.a <- mcmc$data$leave_out$a
+	leave.out.s2 <- mcmc$data$leave_out$sig2
+	
+	dir_pdf <- paste0("~/Documents/GitProjects/nABC/pdf/mcmc_MA1_a=",a_true,"_sig2=",sig2_true,"_nx=",n_x,"_nIter=",n_iter,"_louta=", leave.out.a,"_louts2=", leave.out.s2)
+	dir.create(dir_pdf)
+	
+	mcmc <- nabc_MA1_MCMC_MH(mcmc= mcmc, prior_dist = "uniform_on_rho", n_iter = n_iter_more, iter_adapt = 0, beta_adapt=0.8, plot = T, dir_pdf=dir_pdf)
+	saveRDS(mcmc,file=file.path(dir_pdf,"mcmc.rds"))
+	
+	#mcmc <- readRDS(file=file.path(dir_pdf,"mcmc.rds"))
+	
+	analyse_MCMC_MA1(mcmc, dir_pdf,smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0)
+
+	
+}
+
 
 main <- function() {
 	
@@ -717,10 +832,13 @@ main <- function() {
 	require(devtools)
 
 	dev_mode()
-	NABC_PKG <- "~/Documents/GitProjects/nABC/git_abc.n/pkg/"
+	NABC_PKG <- "~/Documents/GitProjects/nABC/git_abc.n/pkg"
 	load_all(NABC_PKG)
 
-	dir_pdf <- "~/Documents/GitProjects/nABC/pdf/"
+	#source Olli's prjct:
+	source(file.path(NABC_PKG,"misc","nabc.prjcts.R"))
+	
+	dir_pdf <- "~/Documents/GitProjects/nABC/pdf"
 	dir.create(dir_pdf)
 
 	if(0){
@@ -748,13 +866,40 @@ main <- function() {
 	check_MCMC_sampler(a_true=0.1, sig2_true=1, a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.9, 1.1),n_iter=10000,dir_pdf= dir_pdf_check) 
 	}
 	
-	#run sampler
-	run_MCMC_MA1(n_iter=50000,a_true=0.1,sig2_true=1,n_x=5000,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2))
+	#check simulator of MA1
+	#check_MA1_simulator(n_replicate=100000,n_x=300,a=0.1,sig2=1,dir_save=file.path(dir_pdf,"check_simulator_MA1"),contour=T,grid_size=c(50,50))
 
-			
+	#run sampler
+	#run_MCMC_MA1(n_iter=50000,a_true=0.1,sig2_true=1,n_x=300,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2),leave.out.a=2,leave.out.s2=1)
+
+	#continue
+	mcmc <- readRDS(file=file.path(dir_pdf,"mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=21000_louta=0_louts2=0","mcmc.rds"))
+	continue_MCMC_MA1(mcmc,50000)
+	
+	#mcmc <- readRDS(file=file.path(dir_pdf,"mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=10000_louta=2_louts2=1","mcmc.rds"))
+
+	
+	if(0){
+	mcmc <- readRDS(file=file.path(dir_pdf,"mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=10000_louta=2_louts2=1","mcmc.rds"))
+	analyse_MCMC_MA1(mcmc, dir_pdf=file.path(dir_pdf,"mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=10000_louta=2_louts2=1"),smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0)
+
+	mcmc <- readRDS(file=file.path(dir_pdf,"mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=21000_louta=0_louts2=0","mcmc.rds"))
+	analyse_MCMC_MA1(mcmc, dir_pdf=file.path(dir_pdf,"mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=21000_louta=0_louts2=0"),smoothing="ash",ash_smooth=c(5,5),thin_every=1,burn=0,grid_size=c(100,100))
+
+	x <- mcmc$data$x
+	
+	leave.out.a <- 2
+	leave.out.s2 <- 1
+
+	x_cor <- nabc.acf.equivalence.cor(x,leave=leave.out.a)["cor"]
+	x_var <- var(x[seq.int(1,length(x),by=1+leave.out.s2)])
+	
+	a_MLE <- nabc.acf.nu2a(x_cor)
+	sig2_MLE <- x_var/(1+a_MLE^2)
+	}
 }
 
-main()
+#main()
 
 
 
