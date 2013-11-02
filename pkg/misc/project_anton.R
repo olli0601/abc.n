@@ -1004,7 +1004,7 @@ main <- function() {
 	n_x <- 300
 	a_true <- 0.1
 	sig2_true <- 1
-	data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a=1e-2,sig2=1e-2),variance_thin=1,autocorr_thin= 2)			
+	data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a=1e-1,sig2=1e-1),variance_thin=1,autocorr_thin= 2)			
 	}
 
 	#parallel
