@@ -957,7 +957,7 @@ main <- function() {
 	load_all(NABC_PKG)
 
 	#source Olli's prjct:
-	source(file.path(NABC_PKG,"misc","nabc.prjcts.R"))
+	#source(file.path(NABC_PKG,"misc","nabc.prjcts.R"))
 	
 	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_exact","~/Documents/GitProjects/nABC/pdf")
 	dir.create(dir_pdf,rec=T)
