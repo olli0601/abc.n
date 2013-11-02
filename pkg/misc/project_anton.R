@@ -1004,7 +1004,7 @@ main <- function() {
 	n_x <- 300
 	a_true <- 0.1
 	sig2_true <- 1
-	a_tol <- 1e-2
+	a_tol <- 1e-3
 	sig2_tol <- 1e-2
 	data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)			
 	saveRDS(data,file=file.path(dir_pdf,paste0("data_with_tol_a=", a_tol,"_sig2=", sig2_tol,".rds")))
