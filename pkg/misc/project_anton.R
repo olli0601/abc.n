@@ -950,7 +950,7 @@ main <- function() {
 	require(plyr)
 	require(devtools)
 
-	USE_CLUSTER <- F
+	USE_CLUSTER <- T
 	
 	dev_mode()
 	NABC_PKG <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/GitProjects/abc.n/pkg","~/Documents/GitProjects/nABC/git_abc.n/pkg")
