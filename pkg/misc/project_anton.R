@@ -842,7 +842,7 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 	
 	if(is.null(data)){
 		#create data
-		data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a=1e-3,sig2=1e-3),variance_thin= variance_thin,autocorr_thin= variance_thin)			
+		data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a=1e-2,sig2=1e-2),variance_thin= variance_thin,autocorr_thin= variance_thin)			
 	 }
 	
 	##
@@ -1004,11 +1004,14 @@ main <- function() {
 	n_x <- 300
 	a_true <- 0.1
 	sig2_true <- 1
-	data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a=1e-1,sig2=1e-1),variance_thin=1,autocorr_thin= 2)			
+	a_tol <- 1e-2
+	sig2_tol <- 1e-2
+	data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)			
+	saveRDS(data,file=file.path(dir_pdf,paste0("data_with_tol_a=", a_tol,"_sig2=", sig2_tol,".rds")))
 	}
 
 	#parallel
-	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,10,2), use_cluster= USE_CLUSTER, data=data, n_iter=1000,a_true=0.1,sig2_true=1,n_x=300,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2),variance_thin=2,autocorr_thin=1, dir_pdf=dir_pdf) 
+	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,10,2), use_cluster= USE_CLUSTER, data=data, n_iter=100000,a_true=0.1,sig2_true=1,n_x=300,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2),variance_thin=2,autocorr_thin=1, dir_pdf=dir_pdf) 
 
 	#mcmc <- readRDS(file.path("/Users/tonton/Documents/GitProjects/nABC/pdf/1_mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=1000_thinVar=1_thinCor=2_nChains=2","all_chains.rds"))
 	
