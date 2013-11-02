@@ -660,6 +660,10 @@ analyse_MCMC_MA1 <- function(mcmc,dir_pdf, smoothing=c("ash","kde"), ash_smooth=
 	require(coda)
 	smoothing <- match.arg(smoothing)
 	
+	if(!file.exists(dir_pdf)){
+		dir.create(dir_pdf,rec=T)
+	}
+	
 	#true value and MLE	
 	df_estimate <- rbind(mcmc$data$param,mcmc$data$unthinned$MLE,mcmc$data$thinned$MLE)
 	df_estimate$type <- c("true value","MLE","MLE_thinned")
@@ -712,7 +716,8 @@ analyse_MCMC_MA1 <- function(mcmc,dir_pdf, smoothing=c("ash","kde"), ash_smooth=
 	gdf_a <- subset(gdf_posterior,variable=="a")
 	p <- ggplot(gdf_a,aes(x=value))
 	p <- p+geom_histogram(aes(y=..density..),binwidth=0.005,alpha=0.5)
-	p <- p+stat_function(fun=nabc_MA1_dprior_a,args=list(a_bounds= mcmc$bounds$a,prior_dist="uniform_on_rho",autocorr= mcmc$data$s_stat$autocorr),col="red")
+	p <- p+geom_density()
+	p <- p+stat_function(fun=nabc_MA1_dprior_a,args=list(a_bounds= mcmc$bounds$a,prior_dist="uniform_on_rho",autocorr= mcmc$data$unthinned$s_stat$autocorr),col="red")
 	p <- p+geom_vline(data= df_estimate,aes(xintercept=a,linetype=type))
 	pdf(file = file.path(dir_pdf, "marginal_posterior_a.pdf"), 4, 4)	
 	print(p)
@@ -870,15 +875,22 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 	dev.off()
 	
 
-    res<-mclapply(stream_names,FUN=run_foo_on_RNGstream, foo_name="nabc_MA1_MCMC_MH", data= data, theta_init= theta_init, covmat_mvn_proposal= covmat_mvn_proposal, a_bounds = a_bounds, sig2_bounds = sig2_bounds, prior_dist = "uniform_on_rho", n_iter = n_iter, iter_adapt = iter_adapt, plot = F)
+    all_chains<-mclapply(stream_names,FUN=run_foo_on_RNGstream, foo_name="nabc_MA1_MCMC_MH", data= data, theta_init= theta_init, covmat_mvn_proposal= covmat_mvn_proposal, a_bounds = a_bounds, sig2_bounds = sig2_bounds, prior_dist = "uniform_on_rho", n_iter = n_iter, iter_adapt = iter_adapt, plot = F)
 
 	#combine
 
-	saveRDS(res,file=file.path(dir_mcmc,"all_chains.rds"))
+	saveRDS(all_chains,file=file.path(dir_mcmc,"all_chains.rds"))
 	
-	#mcmc <- readRDS(file=file.path(dir_pdf,"mcmc.rds"))
+	#combine posterior
+	mcmc <- all_chains[[1]]
+	for(i in 2:length(all_chains)){	
+		mcmc$posterior <- c(mcmc$posterior,all_chains[[i]]$posterior)
+	}
+	saveRDS(mcmc,file=file.path(dir_mcmc,"mcmc_combined.rds"))
+
+	#mcmc <- readRDS(file=file.path(dir_pdf,"mcmc_combined.rds"))
 	
-	#analyse_MCMC_MA1(mcmc, dir_pdf,smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0)
+	analyse_MCMC_MA1(mcmc, dir_mcmc,smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0)
 
 	
 } 
@@ -1006,15 +1018,34 @@ main <- function() {
 	sig2_true <- 1
 	a_tol <- 1e-3
 	sig2_tol <- 1e-2
-	data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)			
-	saveRDS(data,file=file.path(dir_pdf,paste0("data_with_tol_a=", a_tol,"_sig2=", sig2_tol,".rds")))
+	file_data <- file.path(dir_pdf,paste0("data_with_tol_a=", a_tol,"_sig2=", sig2_tol,".rds"))
+	if(!file.exists(file_data)){
+		data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)				
+		saveRDS(data,file= file_data)
+	}else{
+		data <- readRDS(file= file_data)
+	}
+	
 	}
 
 	#parallel
-	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,10,2), use_cluster= USE_CLUSTER, data=data, n_iter=50000,a_true=0.1,sig2_true=1,n_x=300,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2),variance_thin=2,autocorr_thin=1, dir_pdf=dir_pdf) 
+	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter=100000,a_true=0.1,sig2_true=1,n_x=300,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2),variance_thin=2,autocorr_thin=1, dir_pdf=dir_pdf) 
 
-	#mcmc <- readRDS(file.path("/Users/tonton/Documents/GitProjects/nABC/pdf/1_mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=1000_thinVar=1_thinCor=2_nChains=2","all_chains.rds"))
+	if(0){
+	dir_mcmc <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=50000_thinVar=1_thinCor=2_nChains=10")
+	#combine mcmc
+	all_chains <- readRDS(file.path(dir_mcmc,"all_chains.rds"))
 	
+	#combine posterior
+	mcmc <- all_chains[[1]]
+	for(i in 2:length(all_chains)){	
+		mcmc$posterior <- c(mcmc$posterior,all_chains[[i]]$posterior)
+	}
+	saveRDS(mcmc,file=file.path(dir_mcmc,"mcmc.rds"))
+	#
+	analyse_MCMC_MA1(mcmc, dir_pdf=dir_mcmc,smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0)
+	analyse_MCMC_MA1(mcmc, dir_pdf=file.path(dir_mcmc,"no_trim_big_grid"),smoothing="ash",ash_smooth=c(5,5),thin_every=1,burn=0,grid_size=c(100,100))
+	}
 }
 
 main()
