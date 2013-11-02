@@ -1011,7 +1011,7 @@ main <- function() {
 	}
 
 	#parallel
-	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,10,2), use_cluster= USE_CLUSTER, data=data, n_iter=100000,a_true=0.1,sig2_true=1,n_x=300,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2),variance_thin=2,autocorr_thin=1, dir_pdf=dir_pdf) 
+	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,10,2), use_cluster= USE_CLUSTER, data=data, n_iter=50000,a_true=0.1,sig2_true=1,n_x=300,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2),variance_thin=2,autocorr_thin=1, dir_pdf=dir_pdf) 
 
 	#mcmc <- readRDS(file.path("/Users/tonton/Documents/GitProjects/nABC/pdf/1_mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=1000_thinVar=1_thinCor=2_nChains=2","all_chains.rds"))
 	
