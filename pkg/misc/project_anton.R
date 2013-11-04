@@ -991,7 +991,7 @@ main <- function() {
 	#source Olli's prjct:
 	#source(file.path(NABC_PKG,"misc","nabc.prjcts.R"))
 	
-	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_exact","~/Documents/GitProjects/nABC/pdf")
+	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_exact_lowtol","~/Documents/GitProjects/nABC/pdf")
 	dir.create(dir_pdf,rec=T)
 
 	if(0){
@@ -1033,12 +1033,12 @@ main <- function() {
 	#continue_MCMC_MA1(mcmc,50000)
 	if(1){
 	#foo n CPU
-	n_x <- 300
+	n_x <- 150
 	a_true <- 0.1
 	sig2_true <- 1
-	a_tol <- 1e-3
+	a_tol <- 1e-2
 	sig2_tol <- 1e-2
-	file_data <- file.path(dir_pdf,paste0("data_with_tol_a=", a_tol,"_sig2=", sig2_tol,".rds"))
+	file_data <- file.path(dir_pdf,paste0("data_with_nx=",n_x,"_tol_a=", a_tol,"_sig2=", sig2_tol,".rds"))
 	if(!file.exists(file_data)){
 		data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)				
 		saveRDS(data,file= file_data)
@@ -1049,7 +1049,21 @@ main <- function() {
 	}
 
 	#parallel
-	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter=100000,a_true=0.1,sig2_true=1,n_x=300,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2),variance_thin=2,autocorr_thin=1, dir_pdf=dir_pdf) 
+	
+	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter=200000,a_true=0.1,sig2_true=1,n_x=300,a_bounds=c(-0.4, 0.4),sig2_bounds=c(0.4, 1.7),variance_thin=2,autocorr_thin=1, dir_pdf=dir_pdf) 
+
+	if(0){
+	dir_mcmc1 <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=50000_thinVar=1_thinCor=2_nChains=10")
+	mcmc1 <- readRDS(file=file.path(dir_mcmc1,"mcmc.rds"))
+	dir_mcmc2 <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=1e+05_thinVar=1_thinCor=2_nChains=12")
+	mcmc <- readRDS(file=file.path(dir_mcmc2,"mcmc_combined.rds"))
+	mcmc$posterior <- c(mcmc$posterior,mcmc1$posterior)
+	saveRDS(mcmc,file=file.path(dir_mcmc2,"mcmc_combined_all.rds"))
+	analyse_MCMC_MA1(mcmc, dir_pdf=file.path(dir_mcmc2,"all_combined"),smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0)
+	analyse_MCMC_MA1(mcmc, dir_pdf=file.path(dir_mcmc2,"big_grid"),smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0,grid_size=c(100,100))
+	analyse_MCMC_MA1(mcmc, dir_pdf=file.path(dir_mcmc2,"no_trim"),smoothing="ash",ash_smooth=c(5,5),thin_every=1,burn=0,grid_size=c(100,100))
+	}
+	
 
 	if(0){
 	dir_mcmc <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=50000_thinVar=1_thinCor=2_nChains=10")
