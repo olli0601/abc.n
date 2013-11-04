@@ -59,7 +59,7 @@ default.fun	<- "nabc.test.acf.montecarlo.calibrated.tau.and.m"
 #cat(paste("is.loaded('tipcr')->",is.loaded("tipc_tabulate_after_sample"),'\n'))
 ###############################################################################
 function.list<-c(list.files(path= paste(CODE.HOME,"R",sep='/'), pattern = ".R$", all.files = FALSE,
-		full.names = TRUE, recursive = FALSE),paste(CODE.HOME,"misc","nabc.prjcts.R",sep='/'),paste(CODE.HOME,"misc","profiling.R",sep='/'))
+		full.names = TRUE, recursive = FALSE),paste(CODE.HOME,"misc","nabc.prjcts.R",sep='/'),paste(CODE.HOME,"misc","profiling.R",sep='/'),paste(CODE.HOME,"misc","project_anton.R",sep='/'))
 sapply(function.list,function(x) source(x,echo=FALSE,print.eval=FALSE, verbose=FALSE))
 ###############################################################################
 my.mkdir<-function(root,data.name)
