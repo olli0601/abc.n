@@ -654,6 +654,27 @@ nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,
 	
 }
 
+analyse_MCMC_MA1_cast2datatable<- function(mcmc)
+{
+	require(plyr)
+	require(data.table)
+	mcmc$posterior 			<- ldply(mcmc$posterior)			
+	mcmc$posterior 			<- as.data.frame(apply(mcmc$posterior, 2, rep, times = mcmc$posterior$weight))
+	mcmc$posterior$weight	<- NULL
+	#remove fixed param
+	ind 					<- names(which(sapply(mcmc$posterior,function(x){length(unique(x))!=1})))
+	mcmc$posterior	 		<- mcmc$posterior[,ind,drop=F]
+	mcmc$posterior 			<- as.data.table(mcmc$posterior)
+	mcmc
+}
+
+analyse_MCMC_MA1_burn.and.thin<- function(posterior,thin_every=0,burn=0)
+{
+	require(data.table)
+	posterior				<- posterior[ seq.int(burn,nrow(posterior)), ]
+	posterior				<- posterior[ seq.int(1,nrow(posterior),thin_every),]
+	posterior
+}
 
 analyse_MCMC_MA1 <- function(mcmc,dir_pdf, smoothing=c("ash","kde"), ash_smooth=c(5,5),thin_every=0,burn=0,grid_size=NULL){
 	
@@ -673,12 +694,11 @@ analyse_MCMC_MA1 <- function(mcmc,dir_pdf, smoothing=c("ash","kde"), ash_smooth=
 	cat("\nmvn_proposal_adapted:\n")
 	print(mcmc$covmat_mvn_proposal_adapted)
 	
-	df_posterior <- ldply(mcmc$posterior)
-	
+	df_posterior <- ldply(mcmc$posterior)		
 	cat("\nmcmc acceptance rate:",100*round(nrow(df_posterior)/sum(df_posterior$weight),3),"%\n")
 	df_posterior <- as.data.frame(apply(df_posterior, 2, rep, times = df_posterior$weight))
 	df_posterior["weight"] <- NULL
-
+	
 	#remove fixed param
 	ind <- names(which(sapply(df_posterior,function(x){length(unique(x))!=1})))
 	df_posterior <- df_posterior[,ind,drop=F]

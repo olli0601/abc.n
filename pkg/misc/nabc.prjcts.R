@@ -374,7 +374,7 @@ project.nABC.plotGAUSSresults<- function()
 	stop()
 }
 #------------------------------------------------------------------------------------------------------------------------
-project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,n.hists=5,nbin=2, nlevels=5, width.infl=0.25, gridsize=c(100,100), method="kde", plot=0, ...)
+project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,n.hists=5,nbin=2, nlevels=5, width.infl=0.25, gridsize=c(100,100), method="kde", plot=0, contour.col="black", ...)
 {
 	if(!method%in%c("kde","ash"))	stop("project.nABC.movingavg.get.2D.mode: error at 1a")
 	if(any(is.na(xlim)))	xlim<- range(x)*1.05
@@ -388,10 +388,10 @@ project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,n.hists=5,nbin
 		mxidx<- c( (which.max(f$z)-1)%%nrow(f$z)+1, (which.max(f$z)-1)%/%ncol(f$z)+1 ) #row, col
 		mx<- c(		mean( f$x[ c(mxidx[1],ifelse(mxidx[1]<length(f$x),mxidx[1]+1,mxidx[1])) ] ),
 					mean( f$y[ c(mxidx[2],ifelse(mxidx[2]<length(f$y),mxidx[2]+1,mxidx[2])) ] )		)
-		if(plot)
+		if(plot==1)
 		{
 			image(f$x,f$y,f$z, col=head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50), ...)				
-			contour(f$x,f$y,f$z,add=TRUE, nlevels= nlevels)
+			contour(f$x,f$y,f$z,add=TRUE, nlevels= nlevels, col=contour.col)
 			points(mx, col="red", pch=19)
 		}
 	}
@@ -410,10 +410,24 @@ project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,n.hists=5,nbin
 		if(plot)
 		{
 			image(f$x1,f$x2,f$fhat, col=head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50), ...)
-			contour(f$x1, f$x2, f$fhat, nlevels= nlevels, add=1)			
+			contour(f$x1, f$x2, f$fhat, nlevels= nlevels, add=1, col=contour.col)			
 		}
 	}	
 	mx
+}
+#------------------------------------------------------------------------------------------------------------------------
+project.nABC.movingavg.add.contour<- function(x,y,xlim=NA,ylim=NA, nlevels=5, width.infl=0.25, gridsize=c(100,100), contour.col="black", ...)
+{
+	if(any(is.na(xlim)))	xlim<- range(x)*1.05
+	if(any(is.na(ylim)))	ylim<- range(y)*1.05
+	
+	require(KernSmooth)
+	require(fields)
+	
+	x.bw<- width.infl*diff(summary(x)[c(2,5)])
+	y.bw<- width.infl*diff(summary(y)[c(2,5)])
+	f <- bkde2D(cbind(x, y), range.x=list(xlim,ylim), bandwidth=c(x.bw,y.bw), gridsize=gridsize)	
+	contour(f$x1, f$x2, f$fhat, nlevels= nlevels, add=1, col=contour.col)						
 }
 #------------------------------------------------------------------------------------------------------------------------
 project.nABC.movingavg.gethist<- function(x, theta, nbreaks= 20, breaks= NULL, width= 0.5, plot=0, rtn.dens=0,...)
@@ -5685,21 +5699,25 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 	#
 	# parameters to simulate data x
 	#
-	xa		<- 0.1 
-	r.xa	<- nabc.acf.a2nu(xa)		#r for xa
-	z.xa	<- nabc.acf.a2rho(xa)		#r for xa
-	xsigma2	<- 1	#sqrt(2)
-	xn		<- 3e2		
+	xa				<- 0.1 
+	r.xa			<- nabc.acf.a2nu(xa)		#r for xa
+	z.xa			<- nabc.acf.a2rho(xa)		#r for xa
+	xsigma2			<- 1	#sqrt(2)
+	xn				<- 3e2		
 	if(verbose)	cat(paste("\ntrue xmapa=",xa,", true correlation=",r.xa,"true z=",z.xa,"\n"))
+	#	load exact posterior from MCMC
+	moving.avg				<- readRDS(file= paste(dir.name,'/',"131102_anton_mcmc_combined_all.rds",sep='') )	
+	moving.avg				<- analyse_MCMC_MA1_cast2datatable(moving.avg)	
+	moving.avg$posterior	<- analyse_MCMC_MA1_burn.and.thin(moving.avg$posterior, thin_every=10, burn=0)
 	#
 	# ABC parameters
 	#
 	tau.u			<- 0.1
 	tau.l			<- -tau.u
-	xsig2.tau.u		<- 1.1
-	xsig2.tau.l		<- 1/xsig2.tau.u
-	prior.u.sig2	<- 1.5		#1.15 
-	prior.l.sig2	<- 0.6		#0.8
+	#xsig2.tau.u		<- 1.1
+	#xsig2.tau.l		<- 1/xsig2.tau.u
+	prior.u.sig2	<- moving.avg$bounds$sig2[2] #1.5		#1.15 		# moving.avg$bounds$sig2[1]
+	prior.l.sig2	<- moving.avg$bounds$sig2[1] #0.6		#0.8		# moving.avg$bounds$sig2[2]
 	prior.u.a		<- nabc.acf.rho2a( .423 )	#nabc.acf.rho2a( z.xa+tau.u )		
 	prior.l.a		<- nabc.acf.rho2a( -.423 )	#nabc.acf.rho2a( z.xa+tau.l )
 	leave.out.a		<- 2
@@ -5717,12 +5735,36 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 		readAttempt<-try(suppressWarnings(load(f.name)))						
 		options(show.error.messages = TRUE)						
 		if(!resume || inherits(readAttempt, "try-error"))
-		{
-			if(xn<=3e2)		#calibrating m does not work for chi2stretch for xn>3e2 because summary likelihood is based on densigamma which has a call to gamma that is Inf for xn>3e2
+		{			
+			if(xn==300)
 			{
 				#
 				# calibrated run
 				#			
+				f.name			<- paste(dir.name,"/nABC.MA1_yncalibrated_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')			
+				x				<- moving.avg$data$x
+				moving.avg		<- NULL
+				gc()
+				zx				<- nabc.acf.equivalence.cor(x, leave.out=leave.out.a)
+				abc.param.a		<- nabc.tosz.calibrate(zx["n"], mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=F)					
+				vx				<- x[seq.int(1,length(x),by=1+leave.out.sig2)]
+				suppressWarnings({	
+							abc.param.sig2	<- nabc.chisqstretch.calibrate(length(vx), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
+						})
+				#print(abc.param.a)	;	print(abc.param.sig2)			
+				ans.ok			<- simu.acf.fixx.unifrho(	N, x, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
+				cat(paste("\nnABC.MA: save ",f.name))
+				save(ans.ok,file=f.name)
+				ans.ok			<- NULL
+				gc()
+			}
+			else if(xn<3e2)		#calibrating m does not work for chi2stretch for xn>3e2 because summary likelihood is based on densigamma which has a call to gamma that is Inf for xn>3e2
+			{
+				#
+				# calibrated run
+				#			
+				moving.avg		<- NULL
+				gc()
 				f.name			<- paste(dir.name,"/nABC.MA1_yncalibrated_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')			
 				x				<- project.nABC.movingavg.get.fixed.ts(xn, 0, xa, xsigma2, leave.out.a=leave.out.a, leave.out.s2=leave.out.sig2, verbose=0)
 				zx				<- nabc.acf.equivalence.cor(x, leave.out=leave.out.a)
@@ -5735,14 +5777,19 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 				ans.ok			<- simu.acf.fixx.unifrho(	N, x, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
 				cat(paste("\nnABC.MA: save ",f.name))
 				save(ans.ok,file=f.name)
+				ans.ok			<- NULL
+				gc()
 			}
-			#
-			# run with equal yn=xn
-			#
-			f.name			<- paste(dir.name,"/nABC.MA1_yneqxn_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')									
-			ans.eq			<- simu.acf.fixx.unifrho(	N, x, yn.sig2=ceiling( length(x)/(1+leave.out.sig2) ), yn.a=ceiling( length(x)/(1+leave.out.a) ), prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
-			cat(paste("\nnABC.MA: save ",f.name))
-			save(ans.eq,file=f.name)
+			if(1)
+			{
+				#
+				# run with equal yn=xn
+				#
+				f.name			<- paste(dir.name,"/nABC.MA1_yneqxn_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')									
+				ans.eq			<- simu.acf.fixx.unifrho(	N, x, yn.sig2=ceiling( length(x)/(1+leave.out.sig2) ), yn.a=ceiling( length(x)/(1+leave.out.a) ), prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
+				cat(paste("\nnABC.MA: save ",f.name))
+				save(ans.eq,file=f.name)
+			}
 		}
 		else
 		{
@@ -5777,9 +5824,11 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			su.lkl				<- nabc.chisqstretch.sulkl(rho, length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), norm=su.lkl.norm, support= range(acc.s2.rho), log=FALSE)
 			lines(rho,su.lkl,col="red")
 			abline(v=1, col="red", lty=2)
+			
 			#	plot ABC approximation to posterior
 			tmp	<- acc.s2a
-			tmp	<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
+			tmp	<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))			
+			project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], nlevels=5, contour.col="red")			
 			abline(h=xsigma2, lty=2)
 			abline(v=xa, lty=2)
 			
