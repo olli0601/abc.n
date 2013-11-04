@@ -5641,6 +5641,28 @@ nabc.test.chi2stretch.calibrate<- function()
 	
 }
 #------------------------------------------------------------------------------------------------------------------------
+analyse_MCMC_MA1_cast2datatable<- function(mcmc)
+{
+	require(plyr)
+	require(data.table)
+	mcmc$posterior 			<- ldply(mcmc$posterior)			
+	mcmc$posterior 			<- as.data.frame(apply(mcmc$posterior, 2, rep, times = mcmc$posterior$weight))
+	mcmc$posterior$weight	<- NULL
+	#remove fixed param
+	ind 					<- names(which(sapply(mcmc$posterior,function(x){length(unique(x))!=1})))
+	mcmc$posterior	 		<- mcmc$posterior[,ind,drop=F]
+	mcmc$posterior 			<- as.data.table(mcmc$posterior)
+	mcmc
+}
+#------------------------------------------------------------------------------------------------------------------------
+analyse_MCMC_MA1_burn.and.thin<- function(posterior,thin_every=0,burn=0)
+{
+	require(data.table)
+	posterior				<- posterior[ seq.int(burn,nrow(posterior)), ]
+	posterior				<- posterior[ seq.int(1,nrow(posterior),thin_every),]
+	posterior
+}
+#------------------------------------------------------------------------------------------------------------------------
 nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 {
 	
