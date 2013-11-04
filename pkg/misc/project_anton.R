@@ -1030,7 +1030,7 @@ main <- function() {
 
 	#parallel
 	
-	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter=100000,a_true=0.1,sig2_true=1,n_x=300,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2),variance_thin=2,autocorr_thin=1, dir_pdf=dir_pdf) 
+	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter=100000,a_true=0.1,sig2_true=1,n_x=300,a_bounds=c(-0.4, 0.4),sig2_bounds=c(0.4, 1.7),variance_thin=2,autocorr_thin=1, dir_pdf=dir_pdf) 
 
 	if(0){
 	dir_mcmc1 <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=50000_thinVar=1_thinCor=2_nChains=10")
