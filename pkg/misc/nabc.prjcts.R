@@ -5736,8 +5736,8 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 	#
 	tau.u			<- 0.1
 	tau.l			<- -tau.u
-	#xsig2.tau.u		<- 1.1
-	#xsig2.tau.l		<- 1/xsig2.tau.u
+	xsig2.tau.u		<- 1.1
+	xsig2.tau.l		<- 1/xsig2.tau.u
 	prior.u.sig2	<- moving.avg$bounds$sig2[2] #1.5		#1.15 		# moving.avg$bounds$sig2[1]
 	prior.l.sig2	<- moving.avg$bounds$sig2[1] #0.6		#0.8		# moving.avg$bounds$sig2[2]
 	prior.u.a		<- nabc.acf.rho2a( .423 )	#nabc.acf.rho2a( z.xa+tau.u )		
