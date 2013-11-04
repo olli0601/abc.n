@@ -971,7 +971,7 @@ main <- function() {
 	#source Olli's prjct:
 	#source(file.path(NABC_PKG,"misc","nabc.prjcts.R"))
 	
-	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_exact","~/Documents/GitProjects/nABC/pdf")
+	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_exact_lowtol","~/Documents/GitProjects/nABC/pdf")
 	dir.create(dir_pdf,rec=T)
 
 	if(0){
@@ -1016,7 +1016,7 @@ main <- function() {
 	n_x <- 150
 	a_true <- 0.1
 	sig2_true <- 1
-	a_tol <- 1e-3
+	a_tol <- 1e-2
 	sig2_tol <- 1e-2
 	file_data <- file.path(dir_pdf,paste0("data_with_nx=",n_x,"_tol_a=", a_tol,"_sig2=", sig2_tol,".rds"))
 	if(!file.exists(file_data)){
