@@ -1044,7 +1044,7 @@ main <- function() {
 
 	if(1){
 		#foo n CPU
-		file_data <- file.path(dir_pdf,"data",paste0("data_with_nx=",n_x,"_tol_a=", a_tol,"_sig2=", sig2_tol,".rds"))
+		file_data <- file.path(dir_pdf,paste0("data_with_nx=",n_x,"_tol_a=", a_tol,"_sig2=", sig2_tol,".rds"))
 		if(!file.exists(file_data)){
 			data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)				
 			saveRDS(data,file= file_data)
