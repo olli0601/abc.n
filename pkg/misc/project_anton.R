@@ -1036,7 +1036,7 @@ main <- function() {
 	sig2_true <- 1
 	a_tol <- 1e-3
 	sig2_tol <- 1e-2
-	n_iter <- 100000
+	n_iter <- 200000
 	iter_adapt <- n_iter
 	a_bounds <- c(-0.4, 0.4)
 	sig2_bounds <- c(0.3, 1.7)
