@@ -536,7 +536,7 @@ nabc_MA1_conditional_loglikelihood <- function(a, sig2, x, eps_0) {
 	for (i in 2:length(eps_hat)) {
 		eps_hat[i] <- eps_hat[i] - a * eps_hat[i - 1]
 	}
-
+	eps_hat <- eps_hat[-1]
 	loglike <- -(sum(eps_hat^2)/sig2 + length(x) * log(sig2))/2
 	names(loglike) <- "loglike"
 
@@ -1036,7 +1036,7 @@ main <- function() {
 	sig2_true <- 1
 	a_tol <- 1e-3
 	sig2_tol <- 1e-2
-	n_iter <- 200000
+	n_iter <- 100000
 	iter_adapt <- n_iter
 	a_bounds <- c(-0.4, 0.4)
 	sig2_bounds <- c(0.3, 1.7)
