@@ -5792,10 +5792,10 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 							abc.param.sig2	<- nabc.chisqstretch.calibrate(xn, sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
 						})
 				#print(abc.param.a)	;	print(abc.param.sig2)			
-				ans.ok			<- simu.acf.fixx.unifrho(	N, x, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
+				ans.upper		<- simu.acf.fixx.unifrho(	N, x, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
 				cat(paste("\nnABC.MA: save ",f.name))
-				save(ans.ok,file=f.name)
-				ans.ok			<- NULL
+				save(ans.upper,file=f.name)
+				ans.upper		<- NULL
 				gc()
 			}
 			else if(xn<3e2)		#calibrating m does not work for chi2stretch for xn>3e2 because summary likelihood is based on densigamma which has a call to gamma that is Inf for xn>3e2
