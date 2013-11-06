@@ -16,7 +16,9 @@ nabc_MA1_rprior <- function(sample_size=1, a_bounds = c(-0.3, 0.3), sig2_bounds 
 	prior_dist <- match.arg(prior_dist)
 	
 	if(prior_dist=="uniform"){
-		stop("not yet implemented")
+		a <- runif(sample_size,min=min(a_bounds),max=max(a_bounds))
+		sig2 <- runif(sample_size,min=min(sig2_bounds),max=max(sig2_bounds))
+
 	}
 		
 	if(prior_dist=="uniform_on_rho"){
@@ -34,10 +36,10 @@ nabc_MA1_rprior <- function(sample_size=1, a_bounds = c(-0.3, 0.3), sig2_bounds 
 		#sample sig2 from uniform
 		rho_1 <- runif(sample_size, rho_bounds$rho_1[1], rho_bounds$rho_1[2]) #uniform on rho
 		sig2 <- nabc.acf.rho2sig2(rho_1, a = a, vx=  variance)
-
-		ans <- data.frame(a=a,sig2=sig2)
 				
 	}
+
+	ans <- data.frame(a=a,sig2=sig2)
 
 	return(ans)	
 	
@@ -53,7 +55,10 @@ nabc_MA1_is_within_prior_support <- function(a,sig2,a_bounds = c(-0.3, 0.3), sig
 	prior_dist <- match.arg(prior_dist)
 	
 	if(prior_dist=="uniform"){
-		stop("not yet implemented")
+		if(!is_within_bounds(a, a_bounds) || !is_within_bounds(sig2, sig2_bounds)){
+			return(FALSE)
+		}
+	
 	}
 		
 	if(prior_dist=="uniform_on_rho"){
@@ -114,9 +119,14 @@ nabc_MA1_dprior_a <- function(a,a_bounds= c(-0.3, 0.3),prior_dist=c("uniform","u
 nabc_MA1_dprior <- function(a,sig2,a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2), prior_dist=c("uniform","uniform_on_rho"),variance=NULL,autocorr=NULL,give_log=FALSE,test_support=TRUE){
 	
 	prior_dist <- match.arg(prior_dist)
+	stopifnot(length(a)==1,length(sig2)==1)
+	
+	if(test_support && !nabc_MA1_is_within_prior_support(a,sig2,a_bounds, sig2_bounds, prior_dist,variance,autocorr)){
+		return(ifelse(give_log,log(0),0))
+	}
 	
 	if(prior_dist=="uniform"){
-		stop("not yet implemented")
+		dprior <- 1/abs(diff(a_bounds)*diff(sig2_bounds))	
 	}
 		
 	if(prior_dist=="uniform_on_rho"){
@@ -124,19 +134,16 @@ nabc_MA1_dprior <- function(a,sig2,a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5,
 		#estimate of nu must be provided to compute rho
 		stopifnot(!is.null(variance),!is.null(autocorr))
 
-		if(test_support && !nabc_MA1_is_within_prior_support(a,sig2,a_bounds, sig2_bounds, prior_dist,variance,autocorr)){
-			return(ifelse(give_log,log(0),0))
-		}
-		
 		#compute bounds on rho
 		rho_bounds <- nabc_MA1_compute_rho_bounds(a_bounds, sig2_bounds, variance, autocorr)
 
 		#compute dprior
 		dprior <- (1-a^4)/(1+a^2+a^4)/abs(prod(sapply(rho_bounds,diff)))/variance
-		
-		return(ifelse(give_log,log(dprior),dprior))
-		
+				
 	}
+	
+	return(ifelse(give_log,log(dprior),dprior))
+
 	
 }
 
@@ -261,6 +268,11 @@ nabc_MA1_plot_prior <- function(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2)
 
 	}
 
+	if (prior_dist == "uniform") {
+		new_sig2_bounds <- sig2_bounds
+	}
+
+	
 	if (method == "monte-carlo") {
 
 		df_prior <- nabc_MA1_rprior(sample_size, a_bounds, sig2_bounds, prior_dist, variance, autocorr)
@@ -278,7 +290,14 @@ nabc_MA1_plot_prior <- function(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2)
 		sig2 <- seq(new_sig2_bounds[1], new_sig2_bounds[2], length = grid_size[2])
 
 		if (prior_dist == "uniform") {
-			stop("not yet implemented")
+			
+			d_a <- 1/abs(diff(a_bounds))
+			d_sig2 <- 1/abs(diff(sig2_bounds))
+			f <- list()
+			f$a <- a
+			f$sig2 <- sig2
+			f$density <- rep(d_sig2 * d_a, length(a)*length(sig2))
+
 		}
 
 		if (prior_dist == "uniform_on_rho") {
@@ -313,7 +332,7 @@ nabc_MA1_plot_prior <- function(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2)
 			df_limits <- melt(df_limits, id.vars = "a", value.name = "sig2")
 
 		}
-		p <- nabc_plot_density2d(data = df_prior, var_names = c("a", "sig2"), y_lab = expression(sigma^2), mode = T, 
+		p <- nabc_plot_density2d(data = df_prior, var_names = c("a", "sig2"), y_lab = expression(sigma^2), mode =F, 
 			smoothing = "none", plot = F)
 		if (prior_dist == "uniform_on_rho") {
 			p <- p + geom_line(data = df_limits, aes(x = a, y = sig2, group = variable), colour = "white")
@@ -650,7 +669,7 @@ nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,
 	time_end <- proc.time()[3]
 	cat("MCMC with",n_iter,"iterations lasted", round((time_end-time_start)/60,digits=2),"min\n")
 	
-	return(list(data=data,theta_init= theta_init,bounds=list(a=a_bounds,sig2=sig2_bounds),posterior= posterior,covmat_mvn_proposal= covmat_mvn_proposal,covmat_mvn_proposal_adapted= covmat_mvn_proposal_adapted))	
+	return(list(data=data,theta_init= theta_init,bounds=list(a=a_bounds,sig2=sig2_bounds),prior_dist= prior_dist,posterior= posterior,covmat_mvn_proposal= covmat_mvn_proposal,covmat_mvn_proposal_adapted= covmat_mvn_proposal_adapted))	
 	
 }
 
@@ -716,7 +735,7 @@ analyse_MCMC_MA1 <- function(mcmc,dir_pdf, smoothing=c("ash","kde"), ash_smooth=
 	p <- ggplot(gdf_a,aes(x=value))
 	p <- p+geom_histogram(aes(y=..density..),binwidth=0.005,alpha=0.5)
 	p <- p+geom_density()
-	p <- p+stat_function(fun=nabc_MA1_dprior_a,args=list(a_bounds= mcmc$bounds$a,prior_dist="uniform_on_rho",autocorr= mcmc$data$unthinned$s_stat$autocorr),col="red")
+	p <- p+stat_function(fun=nabc_MA1_dprior_a,args=list(a_bounds= mcmc$bounds$a,prior_dist=mcmc$prior_dist,autocorr= mcmc$data$unthinned$s_stat$autocorr),col="red")
 	p <- p+geom_vline(data= df_estimate,aes(xintercept=a,linetype=type))
 	pdf(file = file.path(dir_pdf, "marginal_posterior_a.pdf"), 4, 4)	
 	print(p)
@@ -783,7 +802,7 @@ run_MCMC_MA1 <- function(data=NULL,n_iter=1000,a_true=0.1,sig2_true=1,n_x=2000,a
 	
 	if(is.null(data)){
 		#create data
-		data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a=1e-3,sig2=1e-3),variance_thin= variance_thin,autocorr_thin= variance_thin)			
+		data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a=1e-3,sig2=1e-3),variance_thin= variance_thin,autocorr_thin= autocorr_thin)			
 	}
 	#theta_init
 	theta_init <- c(a=data$param$a,sig2=data$param$sig2,eps_0=data$eps_0)		
@@ -830,9 +849,10 @@ continue_MCMC_MA1 <- function(mcmc,n_iter_more=1000){
 }
 
 
-run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_iter=1000,a_true=0.1,sig2_true=1,n_x=2000,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2),variance_thin=0,autocorr_thin=0, dir_pdf){
+run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_iter=1000, iter_adapt= n_iter,a_true=0.1,sig2_true=1,n_x=2000,a_bounds=c(-0.3, 0.3),sig2_bounds=c(0.5, 2), prior_dist=c("uniform","uniform_on_rho"),variance_thin=0,autocorr_thin=0, dir_pdf){
 	
 	library(multicore)
+	prior_dist <- match.arg(prior_dist)
 
 	if(0){
 	a_true <- 0.1
@@ -846,11 +866,11 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 	
 	if(is.null(data)){
 		#create data
-		data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a=1e-2,sig2=1e-2),variance_thin= variance_thin,autocorr_thin= variance_thin)			
+		data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a=1e-2,sig2=1e-2),variance_thin= variance_thin,autocorr_thin= autocorr_thin)			
 	 }
 	
 	##
-	dir_mcmc <- file.path(dir_pdf,paste0(i_process,"_mcmc_MA1_a=",data$param$a,"_sig2=",data$param$sig2,"_nx=",data$n,"_nIter=",n_iter,"_thinVar=", data$thin$variance,"_thinCor=", data$thin$autocorr,"_nChains=",n_CPU))
+	dir_mcmc <- file.path(dir_pdf,paste0(i_process,"_mcmc_MA1_a=",data$param$a,"_sig2=",data$param$sig2,"_prior=",prior_dist,"_nx=",data$n,"_nIter=",n_iter,"_thinVar=", data$thin$variance,"_thinCor=", data$thin$autocorr,"_nChains=",n_CPU))
 	dir.create(dir_mcmc,rec=T)
 	
 		
@@ -864,17 +884,16 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 	cov_a_sig2_MLE <- cov(tmp)
 	covmat_mvn_proposal[rownames(cov_a_sig2_MLE),colnames(cov_a_sig2_MLE)] <- cov_a_sig2_MLE
 
-	iter_adapt <- n_iter/10
 
 
 	#plot prior
 	pdf(file = file.path(dir_mcmc, paste0("full_prior_analytic.pdf")), 6, 6)
-	nabc_MA1_plot_prior(a_bounds, sig2_bounds, prior_dist="uniform_on_rho", variance = data$unthinned$s_stat$variance, 
+	nabc_MA1_plot_prior(a_bounds, sig2_bounds, prior_dist= prior_dist, variance = data$unthinned$s_stat$variance, 
 		autocorr = data$unthinned$s_stat$autocorr, method = "analytic",grid_size = c(100, 100))
 	dev.off()
 	
 
-    all_chains<-mclapply(stream_names,FUN=run_foo_on_RNGstream, foo_name="nabc_MA1_MCMC_MH", data= data, theta_init= theta_init, covmat_mvn_proposal= covmat_mvn_proposal, a_bounds = a_bounds, sig2_bounds = sig2_bounds, prior_dist = "uniform_on_rho", n_iter = n_iter, iter_adapt = iter_adapt, plot = F)
+    all_chains<-mclapply(stream_names,FUN=run_foo_on_RNGstream, foo_name="nabc_MA1_MCMC_MH", data= data, theta_init= theta_init, covmat_mvn_proposal= covmat_mvn_proposal, a_bounds = a_bounds, sig2_bounds = sig2_bounds, prior_dist = prior_dist, n_iter = n_iter, iter_adapt = iter_adapt, plot = F)
 
 	#combine
 
@@ -889,7 +908,7 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 
 	#mcmc <- readRDS(file=file.path(dir_pdf,"mcmc_combined.rds"))
 	
-	analyse_MCMC_MA1(mcmc, dir_mcmc,smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0)
+	analyse_MCMC_MA1(mcmc, dir_mcmc,smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0,grid_size=c(100,100))
 
 	
 } 
@@ -961,7 +980,7 @@ main <- function() {
 	require(plyr)
 	require(devtools)
 
-	USE_CLUSTER <- F
+	USE_CLUSTER <- T
 	
 	dev_mode()
 	NABC_PKG <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/GitProjects/abc.n/pkg","~/Documents/GitProjects/nABC/git_abc.n/pkg")
@@ -1010,31 +1029,36 @@ main <- function() {
 	
 	#mcmc <- readRDS(file=file.path(dir_pdf,"mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=10000_louta=2_louts2=1","mcmc.rds"))
 	#continue_MCMC_MA1(mcmc,50000)
-	if(0){
-	#foo n CPU
+	
 	n_x <- 150
 	a_true <- 0.1
 	sig2_true <- 1
 	a_tol <- 1e-3
 	sig2_tol <- 1e-2
-	file_data <- file.path(dir_pdf,paste0("data_with_nx=",n_x,"_tol_a=", a_tol,"_sig2=", sig2_tol,".rds"))
-	if(!file.exists(file_data)){
-		data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)				
-		saveRDS(data,file= file_data)
-	}else{
-		data <- readRDS(file= file_data)
-	}
-	
+	n_iter <- 100000
+	iter_adapt <- n_iter
+	a_bounds <- c(-0.4, 0.4)
+	sig2_bounds <- c(0.3, 1.7)
+	prior_dist <- "uniform"
+
+	if(1){
+		#foo n CPU
+		file_data <- file.path(dir_pdf,paste0("data_with_nx=",n_x,"_tol_a=", a_tol,"_sig2=", sig2_tol,".rds"))
+		if(!file.exists(file_data)){
+			data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)				
+			saveRDS(data,file= file_data)
+		}else{
+			data <- readRDS(file= file_data)
+		}
 	}
 
 	#parallel
-	
-	#run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter=200000,a_true=0.1,sig2_true=1,n_x=300,a_bounds=c(-0.4, 0.4),sig2_bounds=c(0.4, 1.7),variance_thin=2,autocorr_thin=1, dir_pdf=dir_pdf) 
+	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
 
-	if(1){
+	if(0){
 			dir_mcmc <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_nx=150_nIter=2e+05_thinVar=1_thinCor=2_nChains=12_tola=1e-3")
 			mcmc <- readRDS(file=file.path(dir_mcmc,"mcmc_combined.rds"))
-			analyse_MCMC_MA1(mcmc, dir_pdf=dir_mcmc,smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0,grid_size=c(50,50))
+			analyse_MCMC_MA1(mcmc, dir_pdf=dir_mcmc,smoothing="ash",ash_smooth=c(5,5),thin_every=20,burn=0,grid_size=c(50,50))
 
 	}
 	
