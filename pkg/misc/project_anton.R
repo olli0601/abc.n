@@ -651,6 +651,7 @@ nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,
 					#accept
 					theta_curr <- theta_prop
 					ll_curr <- ll_prop
+					log_dprior_curr <- log_dprior_prop
 					posterior[[length(posterior)+1]] <- c(theta_curr,weight=1)
 						
 				}else{
@@ -1040,7 +1041,7 @@ main <- function() {
 	iter_adapt <- n_iter
 	a_bounds <- c(-0.4, 0.4)
 	sig2_bounds <- c(0.3, 1.7)
-	prior_dist <- "uniform"
+	prior_dist <- "uniform_on_rho"
 
 	if(1){
 		#foo n CPU
