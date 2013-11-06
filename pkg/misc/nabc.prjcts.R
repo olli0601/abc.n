@@ -5725,10 +5725,13 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 	r.xa			<- nabc.acf.a2nu(xa)		#r for xa
 	z.xa			<- nabc.acf.a2rho(xa)		#r for xa
 	xsigma2			<- 1	#sqrt(2)
-	xn				<- 3e2		
+	xn				<- 150	#3e2		
 	if(verbose)	cat(paste("\ntrue xmapa=",xa,", true correlation=",r.xa,"true z=",z.xa,"\n"))
 	#	load exact posterior from MCMC
-	moving.avg				<- readRDS(file= paste(dir.name,'/',"131102_anton_mcmc_combined_all.rds",sep='') )	
+	#moving.avg				<- readRDS(file= paste(dir.name,'/',"131102_anton_mcmc_combined_all.rds",sep='') )
+	#xn.exaxtposterior		<- 300
+	moving.avg				<- readRDS(file= paste(dir.name,'/',"131105_anton_mcmc_combined.rds",sep='') )
+	xn.exaxtposterior		<- 150 
 	moving.avg				<- analyse_MCMC_MA1_cast2datatable(moving.avg)	
 	moving.avg$posterior	<- analyse_MCMC_MA1_burn.and.thin(moving.avg$posterior, thin_every=10, burn=0)
 	#
@@ -5745,7 +5748,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 	leave.out.a		<- 2
 	leave.out.sig2	<- 1
 	alpha			<- 0.01
-	N				<- 2e6								
+	N				<- 3e6								
 	if(verbose)	cat(paste("\nprior bounds on mapa",prior.l.a,prior.u.a,"\n"))
 	if(verbose)	cat(paste("\nprior bounds on sig2",prior.l.sig2,prior.u.sig2,"\n"))	
 	
@@ -5758,20 +5761,35 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 		options(show.error.messages = TRUE)						
 		if(!resume || inherits(readAttempt, "try-error"))
 		{			
-			if(xn==300)
+			if(xn==xn.exaxtposterior)
 			{
+				x				<- moving.avg$data$x
+				moving.avg		<- NULL
+				gc()				
 				#
 				# calibrated run
 				#			
 				f.name			<- paste(dir.name,"/nABC.MA1_yncalibrated_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')			
-				x				<- moving.avg$data$x
-				moving.avg		<- NULL
-				gc()
 				zx				<- nabc.acf.equivalence.cor(x, leave.out=leave.out.a)
 				abc.param.a		<- nabc.tosz.calibrate(zx["n"], mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=F)					
 				vx				<- x[seq.int(1,length(x),by=1+leave.out.sig2)]
 				suppressWarnings({	
 							abc.param.sig2	<- nabc.chisqstretch.calibrate(length(vx), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
+						})
+				#print(abc.param.a)	;	print(abc.param.sig2)			
+				ans.ok			<- simu.acf.fixx.unifrho(	N, x, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
+				cat(paste("\nnABC.MA: save ",f.name))
+				save(ans.ok,file=f.name)
+				ans.ok			<- NULL
+				gc()
+				#
+				# calibrated run -- upper bound for data points
+				#			
+				f.name			<- paste(dir.name,"/nABC.MA1_ynupper_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')							
+				abc.param.a		<- nabc.tosz.calibrate(xn, mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=F)					
+				vx				<- x[seq.int(1,length(x),by=1+leave.out.sig2)]
+				suppressWarnings({	
+							abc.param.sig2	<- nabc.chisqstretch.calibrate(xn, sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
 						})
 				#print(abc.param.a)	;	print(abc.param.sig2)			
 				ans.ok			<- simu.acf.fixx.unifrho(	N, x, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
@@ -5858,6 +5876,30 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			
 	}	
 	
+}
+#------------------------------------------------------------------------------------------------------------------------
+nabc.test.multimode<- function()
+{
+	x		<- mvrnorm(n=1e4, c(0,0), matrix(c(0.1,0.05,0.05,0.1),2))	
+	y		<- mvrnorm(n=1e4, c(0.75,0.75), matrix(c(0.1,0.05,0.05,0.1),2))
+	z		<- rbind(x,y)
+	
+	require(KernSmooth)
+	require(fields)
+	width.infl	<- 0.2
+	gridsize	<- c(100,100)
+	x.bw		<- width.infl*diff(summary(z[,1])[c(2,5)])
+	y.bw		<- width.infl*diff(summary(z[,2])[c(2,5)])
+	xlim		<- range(z[,1])
+	ylim		<- range(z[,2])	
+	f 			<- bkde2D(z, range.x=list(xlim,ylim), bandwidth=c(x.bw,y.bw), gridsize=gridsize)	
+	
+	plot(x, xlim=xlim, ylim=ylim)
+	points(y,col="red")
+	contour(f$x1, f$x2, f$fhat, nlevels= 8, add=1, col="blue")
+	
+	xd			<- density(z[,1], width=x.bw, from=xlim[1], to=xlim[2])
+	plot(xd)
 }
 #------------------------------------------------------------------------------------------------------------------------
 nabc.test.tosz.calibrate<- function()
