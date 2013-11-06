@@ -333,7 +333,7 @@ nabc_MA1_plot_prior <- function(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2)
 
 		}
 		p <- nabc_plot_density2d(data = df_prior, var_names = c("a", "sig2"), y_lab = expression(sigma^2), mode =F, 
-			smoothing = "none", plot = F)
+			smoothing = "none",contour=T, plot = F)
 		if (prior_dist == "uniform_on_rho") {
 			p <- p + geom_line(data = df_limits, aes(x = a, y = sig2, group = variable), colour = "white")
 		}
@@ -885,12 +885,13 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 	covmat_mvn_proposal[rownames(cov_a_sig2_MLE),colnames(cov_a_sig2_MLE)] <- cov_a_sig2_MLE
 
 
-
+	if(prior_dist!="uniform"){
 	#plot prior
 	pdf(file = file.path(dir_mcmc, paste0("full_prior_analytic.pdf")), 6, 6)
 	nabc_MA1_plot_prior(a_bounds, sig2_bounds, prior_dist= prior_dist, variance = data$unthinned$s_stat$variance, 
 		autocorr = data$unthinned$s_stat$autocorr, method = "analytic",grid_size = c(100, 100))
-	dev.off()
+	dev.off()		
+	}
 	
 
     all_chains<-mclapply(stream_names,FUN=run_foo_on_RNGstream, foo_name="nabc_MA1_MCMC_MH", data= data, theta_init= theta_init, covmat_mvn_proposal= covmat_mvn_proposal, a_bounds = a_bounds, sig2_bounds = sig2_bounds, prior_dist = prior_dist, n_iter = n_iter, iter_adapt = iter_adapt, plot = F)
@@ -1043,7 +1044,7 @@ main <- function() {
 
 	if(1){
 		#foo n CPU
-		file_data <- file.path(dir_pdf,paste0("data_with_nx=",n_x,"_tol_a=", a_tol,"_sig2=", sig2_tol,".rds"))
+		file_data <- file.path(dir_pdf,"data",paste0("data_with_nx=",n_x,"_tol_a=", a_tol,"_sig2=", sig2_tol,".rds"))
 		if(!file.exists(file_data)){
 			data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)				
 			saveRDS(data,file= file_data)
@@ -1051,6 +1052,7 @@ main <- function() {
 			data <- readRDS(file= file_data)
 		}
 	}
+
 
 	#parallel
 	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
