@@ -603,7 +603,10 @@ nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,
 
 	
 	#initial theta + loglike + dprior
-	theta_curr <- theta_init
+	#theta_curr <- theta_init
+	theta_curr <- nabc_rpropwgausskernel(theta_init, covmat_mvn_proposal_adapted, support)
+	#theta_curr <- c(unlist(nabc_MA1_rprior(1, a_bounds, sig2_bounds, prior_dist,data$s_stat$variance,data$s_stat$autocorr)),eps_0=data$eps_0)	
+
 	ll_curr <-  ifelse(sample_from_prior,0,nabc_MA1_conditional_loglikelihood(theta_curr["a"], theta_curr["sig2"],data$x,theta_curr["eps_0"]))
 	log_dprior_curr <- nabc_MA1_dprior(a=theta_curr["a"],sig2=theta_curr["sig2"],a_bounds, sig2_bounds, prior_dist,variance=data$unthinned$s_stat$variance,autocorr=data$unthinned$s_stat$autocorr,give_log=T,test_support=FALSE)
 
@@ -645,8 +648,8 @@ nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,
 				log_dprior_prop <- nabc_MA1_dprior(a= theta_prop["a"],sig2= theta_prop["sig2"],a_bounds, sig2_bounds, prior_dist,variance=data$unthinned$s_stat$variance,autocorr=data$unthinned$s_stat$autocorr,give_log=T,test_support=FALSE)
 				
 				#compute acceptance ratio:
-				#log_accept_ratio <- ll_prop + log_dprior_prop - ll_curr - log_dprior_curr + nabc_dratio_propwgausskernel(support, theta_curr, theta_prop, covmat_mvn_proposal_adapted, give_log = T)
-				log_accept_ratio <- ll_prop - ll_curr #- log_dprior_curr + nabc_dratio_propwgausskernel(support, theta_curr, theta_prop, covmat_mvn_proposal_adapted, give_log = T)
+				log_accept_ratio <- ll_prop + log_dprior_prop - ll_curr - log_dprior_curr + nabc_dratio_propwgausskernel(support, theta_curr, theta_prop, covmat_mvn_proposal_adapted, give_log = T)
+				#log_accept_ratio <- ll_prop - ll_curr #- log_dprior_curr + nabc_dratio_propwgausskernel(support, theta_curr, theta_prop, covmat_mvn_proposal_adapted, give_log = T)
 				
 				if(log(runif(1))<log_accept_ratio){
 					#accept
@@ -904,6 +907,8 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 	
 	#combine posterior
 	mcmc <- all_chains[[1]]
+	#burn <- 0.1
+	
 	for(i in 2:length(all_chains)){	
 		mcmc$posterior <- c(mcmc$posterior,all_chains[[i]]$posterior)
 	}
