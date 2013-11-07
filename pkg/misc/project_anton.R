@@ -604,7 +604,7 @@ nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,
 	
 	#initial theta + loglike + dprior
 	#theta_curr <- theta_init
-	theta_curr <- nabc_rpropwgausskernel(theta_init, covmat_mvn_proposal_adapted, support)
+	theta_curr <- nabc_rpropwgausskernel(theta_init, covmat_mvn_proposal, support)
 	#theta_curr <- c(unlist(nabc_MA1_rprior(1, a_bounds, sig2_bounds, prior_dist,data$s_stat$variance,data$s_stat$autocorr)),eps_0=data$eps_0)	
 
 	ll_curr <-  ifelse(sample_from_prior,0,nabc_MA1_conditional_loglikelihood(theta_curr["a"], theta_curr["sig2"],data$x,theta_curr["eps_0"]))
@@ -883,11 +883,11 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 	theta_init <- c(a=data$param$a,sig2=data$param$sig2,eps_0=data$eps_0)		
 	
 	#default proposal
-	covmat_mvn_proposal <- matrix(c(1e-3, 1e-5, 0, 1e-5, 1e-3, 0, 0, 0, 0), nrow = length(theta_init), byrow = T, dimnames = list(names(theta_init), names(theta_init)))	
+	covmat_mvn_proposal <- 10*matrix(c(1e-3, 1e-5, 0, 1e-5, 1e-3, 0, 0, 0, 0), nrow = length(theta_init), byrow = T, dimnames = list(names(theta_init), names(theta_init)))	
 	#covmat of a and sig2 based on the likelihood surface
-	tmp <- check_MA1_simulator(n_replicate=20000,n_x=data$n,a=data$param$a,sig2=data$param$sig2,dir_save=file.path(dir_pdf,"covmat_MLE"),dir_pdf= dir_mcmc,RDS_file=NULL,contour=T,grid_size=c(50,50))
-	cov_a_sig2_MLE <- cov(tmp)
-	covmat_mvn_proposal[rownames(cov_a_sig2_MLE),colnames(cov_a_sig2_MLE)] <- cov_a_sig2_MLE
+	#tmp <- check_MA1_simulator(n_replicate=20000,n_x=data$n,a=data$param$a,sig2=data$param$sig2,dir_save=file.path(dir_pdf,"covmat_MLE"),dir_pdf= dir_mcmc,RDS_file=NULL,contour=T,grid_size=c(50,50))
+	#cov_a_sig2_MLE <- cov(tmp)
+	#covmat_mvn_proposal[rownames(cov_a_sig2_MLE),colnames(cov_a_sig2_MLE)] <- cov_a_sig2_MLE
 
 
 	if(prior_dist!="uniform"){
@@ -906,9 +906,7 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 	saveRDS(all_chains,file=file.path(dir_mcmc,"all_chains.rds"))
 	
 	#combine posterior
-	mcmc <- all_chains[[1]]
-	#burn <- 0.1
-	
+	mcmc <- all_chains[[1]]	
 	for(i in 2:length(all_chains)){	
 		mcmc$posterior <- c(mcmc$posterior,all_chains[[i]]$posterior)
 	}
