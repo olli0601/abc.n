@@ -645,7 +645,8 @@ nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,
 				log_dprior_prop <- nabc_MA1_dprior(a= theta_prop["a"],sig2= theta_prop["sig2"],a_bounds, sig2_bounds, prior_dist,variance=data$unthinned$s_stat$variance,autocorr=data$unthinned$s_stat$autocorr,give_log=T,test_support=FALSE)
 				
 				#compute acceptance ratio:
-				log_accept_ratio <- ll_prop + log_dprior_prop - ll_curr - log_dprior_curr + nabc_dratio_propwgausskernel(support, theta_curr, theta_prop, covmat_mvn_proposal_adapted, give_log = T)
+				#log_accept_ratio <- ll_prop + log_dprior_prop - ll_curr - log_dprior_curr + nabc_dratio_propwgausskernel(support, theta_curr, theta_prop, covmat_mvn_proposal_adapted, give_log = T)
+				log_accept_ratio <- ll_prop - ll_curr #- log_dprior_curr + nabc_dratio_propwgausskernel(support, theta_curr, theta_prop, covmat_mvn_proposal_adapted, give_log = T)
 				
 				if(log(runif(1))<log_accept_ratio){
 					#accept
@@ -1041,7 +1042,7 @@ main <- function() {
 	iter_adapt <- n_iter
 	a_bounds <- c(-0.4, 0.4)
 	sig2_bounds <- c(0.3, 1.7)
-	prior_dist <- "uniform_on_rho"
+	prior_dist <- "uniform"
 
 	if(1){
 		#foo n CPU
