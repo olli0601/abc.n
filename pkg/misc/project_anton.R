@@ -603,8 +603,8 @@ nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,
 
 	
 	#initial theta + loglike + dprior
-	#theta_curr <- theta_init
-	theta_curr <- nabc_rpropwgausskernel(theta_init, covmat_mvn_proposal, support)
+	theta_curr <- theta_init
+	#theta_curr <- nabc_rpropwgausskernel(theta_init, covmat_mvn_proposal, support)
 	#theta_curr <- c(unlist(nabc_MA1_rprior(1, a_bounds, sig2_bounds, prior_dist,data$s_stat$variance,data$s_stat$autocorr)),eps_0=data$eps_0)	
 
 	ll_curr <-  ifelse(sample_from_prior,0,nabc_MA1_conditional_loglikelihood(theta_curr["a"], theta_curr["sig2"],data$x,theta_curr["eps_0"]))
@@ -880,7 +880,8 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 	
 		
 	#theta_init (the theta init of each chain will be a gaussian perturbation of the true value)
-	theta_init <- c(a=data$param$a,sig2=data$param$sig2,eps_0=data$eps_0)		
+	#theta_init <- c(a=data$param$a,sig2=data$param$sig2,eps_0=data$eps_0)		
+	theta_init <- c(a=0,sig2=0.9,eps_0=data$eps_0)		
 	
 	#default proposal
 	covmat_mvn_proposal <- 50*matrix(c(1e-3, 1e-5, 0, 1e-5, 1e-3, 0, 0, 0, 0), nrow = length(theta_init), byrow = T, dimnames = list(names(theta_init), names(theta_init)))	
@@ -1063,9 +1064,11 @@ main <- function() {
 	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
 
 	if(0){
-			dir_mcmc <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_nx=150_nIter=2e+05_thinVar=1_thinCor=2_nChains=12_tola=1e-3")
+		
+			dir_mcmc <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_prior=uniform_nx=150_nIter=1e+05_thinVar=1_thinCor=2_nChains=12 6")
 			mcmc <- readRDS(file=file.path(dir_mcmc,"mcmc_combined.rds"))
-			analyse_MCMC_MA1(mcmc, dir_pdf=dir_mcmc,smoothing="ash",ash_smooth=c(5,5),thin_every=20,burn=0,grid_size=c(50,50))
+			analyse_MCMC_MA1(mcmc, dir_pdf=dir_mcmc,smoothing="kde",ash_smooth=c(5,5),thin_every=20,burn=0,grid_size=c(50,50))
+#			analyse_MCMC_MA1(mcmc, dir_pdf=dir_mcmc,smoothing="ash",ash_smooth=c(5,5),thin_every=20,burn=0,grid_size=c(50,50))
 
 	}
 	
