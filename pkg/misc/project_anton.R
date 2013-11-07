@@ -883,7 +883,7 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 	theta_init <- c(a=data$param$a,sig2=data$param$sig2,eps_0=data$eps_0)		
 	
 	#default proposal
-	covmat_mvn_proposal <- 10*matrix(c(1e-3, 1e-5, 0, 1e-5, 1e-3, 0, 0, 0, 0), nrow = length(theta_init), byrow = T, dimnames = list(names(theta_init), names(theta_init)))	
+	covmat_mvn_proposal <- 50*matrix(c(1e-3, 1e-5, 0, 1e-5, 1e-3, 0, 0, 0, 0), nrow = length(theta_init), byrow = T, dimnames = list(names(theta_init), names(theta_init)))	
 	#covmat of a and sig2 based on the likelihood surface
 	#tmp <- check_MA1_simulator(n_replicate=20000,n_x=data$n,a=data$param$a,sig2=data$param$sig2,dir_save=file.path(dir_pdf,"covmat_MLE"),dir_pdf= dir_mcmc,RDS_file=NULL,contour=T,grid_size=c(50,50))
 	#cov_a_sig2_MLE <- cov(tmp)
