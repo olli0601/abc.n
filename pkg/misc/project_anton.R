@@ -915,7 +915,7 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 
 	#mcmc <- readRDS(file=file.path(dir_pdf,"mcmc_combined.rds"))
 	
-	analyse_MCMC_MA1(mcmc, dir_mcmc,smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0,grid_size=c(100,100))
+	analyse_MCMC_MA1(mcmc, dir_mcmc,smoothing="kde",ash_smooth=c(5,5),thin_every=20,burn=0,grid_size=c(100,100))
 
 	
 } 
@@ -1042,7 +1042,7 @@ main <- function() {
 	sig2_true <- 1
 	a_tol <- 1e-3
 	sig2_tol <- 1e-2
-	n_iter <- 100000
+	n_iter <- 500000
 	iter_adapt <- n_iter
 	a_bounds <- c(-0.4, 0.4)
 	sig2_bounds <- c(0.3, 1.7)
@@ -1086,16 +1086,19 @@ main <- function() {
 	
 
 	if(0){
-	dir_mcmc <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_nx=300_nIter=50000_thinVar=1_thinCor=2_nChains=10")
+	dir_mcmc <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_prior=uniform_nx=150_nIter=1e+05_thinVar=1_thinCor=2_nChains=12 7")
 	#combine mcmc
 	all_chains <- readRDS(file.path(dir_mcmc,"all_chains.rds"))
 	
 	#combine posterior
 	mcmc <- all_chains[[1]]
+	n_iter <- length(mcmc$posterior)
+	n_burn <- 0.1*n_iter
+	mcmc$posterior <- mcmc$posterior[-(1:n_burn)]
 	for(i in 2:length(all_chains)){	
-		mcmc$posterior <- c(mcmc$posterior,all_chains[[i]]$posterior)
+		mcmc$posterior <- c(mcmc$posterior,all_chains[[i]]$posterior[-(1:n_burn)])
 	}
-	saveRDS(mcmc,file=file.path(dir_mcmc,"mcmc.rds"))
+	saveRDS(mcmc,file=file.path(dir_mcmc,"mcmc_burned.rds"))
 	#
 	analyse_MCMC_MA1(mcmc, dir_pdf=dir_mcmc,smoothing="ash",ash_smooth=c(5,5),thin_every=10,burn=0)
 	analyse_MCMC_MA1(mcmc, dir_pdf=file.path(dir_mcmc,"no_trim_big_grid"),smoothing="ash",ash_smooth=c(5,5),thin_every=1,burn=0,grid_size=c(100,100))
