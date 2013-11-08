@@ -987,7 +987,7 @@ main <- function() {
 	require(plyr)
 	require(devtools)
 
-	USE_CLUSTER <- T
+	USE_CLUSTER <- F
 	
 	dev_mode()
 	NABC_PKG <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/GitProjects/abc.n/pkg","~/Documents/GitProjects/nABC/git_abc.n/pkg")
@@ -1048,7 +1048,7 @@ main <- function() {
 	sig2_bounds <- c(0.3, 1.7)
 	prior_dist <- "uniform"
 
-	if(1){
+	if(0){
 		#foo n CPU
 		file_data <- file.path(dir_pdf,paste0("data_with_nx=",n_x,"_tol_a=", a_tol,"_sig2=", sig2_tol,".rds"))
 		if(!file.exists(file_data)){
@@ -1061,11 +1061,11 @@ main <- function() {
 
 
 	#parallel
-	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
+	#run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
 
-	if(0){
+	if(1){
 		
-			dir_mcmc <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_prior=uniform_nx=150_nIter=1e+05_thinVar=1_thinCor=2_nChains=12 6")
+			dir_mcmc <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_prior=uniform_nx=150_nIter=5e+05_thinVar=1_thinCor=2_nChains=12")
 			mcmc <- readRDS(file=file.path(dir_mcmc,"mcmc_combined.rds"))
 			analyse_MCMC_MA1(mcmc, dir_pdf=dir_mcmc,smoothing="kde",ash_smooth=c(5,5),thin_every=20,burn=0,grid_size=c(50,50))
 #			analyse_MCMC_MA1(mcmc, dir_pdf=dir_mcmc,smoothing="ash",ash_smooth=c(5,5),thin_every=20,burn=0,grid_size=c(50,50))
