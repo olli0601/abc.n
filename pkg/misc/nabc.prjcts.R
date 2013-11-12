@@ -654,7 +654,7 @@ project.nABC.changeofvariables<- function()
 	stop()
 }
 #------------------------------------------------------------------------------------------------------------------------
-project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbose=0, tol=5e-3,return_eps_0=FALSE)
+project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbose=0, tol=1e-3,return_eps_0=FALSE)
 {		
 	verbose			<- 1
 	m				<- ceiling( max(1, n / 5000) )
@@ -668,7 +668,7 @@ project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leav
 		u0	 		<- x[seq(1,m*n,by=n)]
 		x			<- x[-1] + x[-(m*n+1)]*a
 		x			<- matrix(x,ncol=m)	
-		x_std_cte 	<- sapply(seq_len(ncol(x)),function(i)		sqrt((1+a*a)*sd*sd)/sd(x[leave.out.s2,i])	)
+		x_std_cte 	<- sapply(seq_len(ncol(x)),function(i)		sqrt((1+a*a)*sd*sd)/(sd(x[leave.out.s2,i])*(n-1)/n)	)
 		x			<- sapply(seq_len(ncol(x)),function(i)		x[,i]*x_std_cte[i]							)			#set desired variance
 		
 		#rhox	<- apply(x,2,function(col)	atanh(acf(ts(col), plot=0,lag=1)[["acf"]][2,1,1]) )
