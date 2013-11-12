@@ -654,7 +654,7 @@ project.nABC.changeofvariables<- function()
 	stop()
 }
 #------------------------------------------------------------------------------------------------------------------------
-project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbose=0, tol=1e-3,return_eps_0=FALSE)
+project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbose=0, tol=1e-3, return_eps_0=FALSE )
 {		
 	verbose			<- 1
 	m				<- ceiling( max(1, n / 5000) )
@@ -664,15 +664,24 @@ project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leav
 	leave.out.s2	<- seq.int(1,n,by=1+leave.out.s2)
 	while(is.na(ans))
 	{
-		x			<-	rnorm(m*n+1,mu,sd=sd)
-		u0	 		<- x[seq(1,m*n,by=n)]
-		x			<- x[-1] + x[-(m*n+1)]*a
-		x			<- matrix(x,ncol=m)	
-		x_std_cte 	<- sapply(seq_len(ncol(x)),function(i)		sqrt((1+a*a)*sd*sd)/(sd(x[leave.out.s2,i])*(n-1)/n)	)
-		x			<- sapply(seq_len(ncol(x)),function(i)		x[,i]*x_std_cte[i]							)			#set desired variance
+		x				<-	rnorm(m*n+1,mu,sd=sd)
+		u0	 			<- x[seq(1,m*n,by=n)]
+		x				<- x[-1] + x[-(m*n+1)]*a
+		x				<- matrix(x,ncol=m)	
+		#adjust variance of thinned time series if requested
+		if(leave.out.s2)
+		{
+			x_std_cte 	<- sapply(seq_len(ncol(x)),function(i)		sqrt((1+a*a)*sd*sd)/(sd(x[leave.out.s2,i])*(n-1)/n)	)
+			x			<- sapply(seq_len(ncol(x)),function(i)		x[,i]*x_std_cte[i]							)			#set desired variance
+		}
+		else
+			x_std_cte 	<- rep(1,ncol(x))
+		#compute difference in sample autocorrelation if adjustment requested
+		if(leave.out.a)				
+			rhox		<- apply(x,2,function(col)	nabc.acf.equivalence.cor(col, leave.out=leave.out.a)["z"] )
+		else
+			rhox		<- rep(rho0, ncol(x))
 		
-		#rhox	<- apply(x,2,function(col)	atanh(acf(ts(col), plot=0,lag=1)[["acf"]][2,1,1]) )
-		rhox		<- apply(x,2,function(col)	nabc.acf.equivalence.cor(col, leave.out=leave.out.a)["z"] )
 		error		<- sapply(seq_len(ncol(x)),function(i)
 						{ 
 							tmp<- arima(x[,i], order=c(0,0,1), include.mean=0, method="CSS-ML")
