@@ -699,8 +699,8 @@ project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leav
 		else if(verbose)	cat(paste("\nerror above",tol))						
 	}	
 	ans				<- x[,ans]
-	if(verbose)	cat(paste("\nrhox of leave-out time series is",nabc.acf.equivalence.cor(ans, leave.out=leave.out.a)["z"],"and should be",rho0))	
-	if(verbose)	cat(paste("\nvar of leave-out time series is",var(ans[leave.out.s2]),"and should be",(1+a*a)*sd*sd))
+	if(verbose && leave.out.a)	cat(paste("\nrhox of leave-out time series is",nabc.acf.equivalence.cor(ans, leave.out=leave.out.a)["z"],"and should be",rho0))	
+	if(verbose && leave.out.s2)	cat(paste("\nvar of leave-out time series is",var(ans[leave.out.s2]),"and should be",(1+a*a)*sd*sd))
 	tmp				<- arima(ans, order=c(0,0,1), include.mean=0, method="CSS-ML")
 	if(verbose)	cat(paste("\narima MLE of time series is a=",tmp[["coef"]][1],"sig2=",tmp[["sigma2"]]))
 	
