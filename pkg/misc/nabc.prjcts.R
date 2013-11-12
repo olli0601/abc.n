@@ -654,37 +654,49 @@ project.nABC.changeofvariables<- function()
 	stop()
 }
 #------------------------------------------------------------------------------------------------------------------------
-project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbose=0, tol=1e-3,return_eps_0=FALSE)
+project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbose=0, tol=5e-3,return_eps_0=FALSE)
 {		
 	verbose			<- 1
 	m				<- ceiling( max(1, n / 5000) )
 	m				<- 1e4 / m
-	rho0			<- 	nabc.acf.a2rho(a)
-	error			<- 1
+	rho0			<- nabc.acf.a2rho(a)
+	ans				<- NA
 	leave.out.s2	<- seq.int(1,n,by=1+leave.out.s2)
-	while(error>tol)
+	while(is.na(ans))
 	{
-		x		<-	rnorm(m*n+1,mu,sd=sd)
-		eps_0 <- x[seq(1,m*n,by=n)]
-		x		<- x[-1] + x[-(m*n+1)]*a
-		x		<- matrix(x,ncol=m)	
-		x_std_cte <- sapply(seq_len(ncol(x)),function(i)	sqrt((1+a*a)*sd*sd)/sd(x[leave.out.s2,i]))
-		x		<- sapply(seq_len(ncol(x)),function(i)		x[,i]*x_std_cte[i]	)		#get correct variance
-		eps_0 <- eps_0/x_std_cte		#eps_0 must also be standardized
+		x			<-	rnorm(m*n+1,mu,sd=sd)
+		u0	 		<- x[seq(1,m*n,by=n)]
+		x			<- x[-1] + x[-(m*n+1)]*a
+		x			<- matrix(x,ncol=m)	
+		x_std_cte 	<- sapply(seq_len(ncol(x)),function(i)		sqrt((1+a*a)*sd*sd)/sd(x[leave.out.s2,i])	)
+		x			<- sapply(seq_len(ncol(x)),function(i)		x[,i]*x_std_cte[i]							)			#set desired variance
+		
 		#rhox	<- apply(x,2,function(col)	atanh(acf(ts(col), plot=0,lag=1)[["acf"]][2,1,1]) )
-		rhox	<- apply(x,2,function(col)	nabc.acf.equivalence.cor(col, leave.out=leave.out.a)["z"] )				
-		error	<- abs(rhox - rho0 )
-		ans		<- which.min(error)
-		error	<- error[ans]
-		eps_0 <- eps_0[ans]
-		if(verbose)	cat(paste("\ncurrent error is",error,"and should be <",tol))						
+		rhox		<- apply(x,2,function(col)	nabc.acf.equivalence.cor(col, leave.out=leave.out.a)["z"] )
+		error		<- sapply(seq_len(ncol(x)),function(i)
+						{ 
+							tmp<- arima(x[,i], order=c(0,0,1), include.mean=0, method="CSS-ML")
+							c( tmp[["coef"]][1], tmp[["sigma2"]] )
+						})
+		error		<- t( abs(error-c(a,sd*sd)) )
+		colnames(error)	<- c("error.arima.a","error.arima.sd")
+		error		<- cbind( data.table( error ), data.table(error.abc.a=abs(rhox - rho0 ), u0= u0/x_std_cte), dummy=seq_along(u0) )
+		error		<- subset(error, error.arima.a<tol & error.arima.sd<tol &  error.abc.a<tol)
+		if(nrow(error))
+		{
+			print(error)
+			ans		<- error[1,dummy]
+		}
+		else if(verbose)	cat(paste("\nerror above",tol))						
 	}	
-	ans<- x[,ans]
+	ans				<- x[,ans]
 	if(verbose)	cat(paste("\nrhox of leave-out time series is",nabc.acf.equivalence.cor(ans, leave.out=leave.out.a)["z"],"and should be",rho0))	
 	if(verbose)	cat(paste("\nvar of leave-out time series is",var(ans[leave.out.s2]),"and should be",(1+a*a)*sd*sd))
-	if(return_eps_0){
-		ans <- list(x=ans,eps_0=eps_0)
-	}
+	tmp				<- arima(ans, order=c(0,0,1), include.mean=0, method="CSS-ML")
+	if(verbose)	cat(paste("\narima MLE of time series is a=",tmp[["coef"]][1],"sig2=",tmp[["sigma2"]]))
+	
+	if(return_eps_0)
+					ans <- list(x=ans,eps_0=error[1,u0])				
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
@@ -5917,10 +5929,13 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			file					<- paste(dir.name,"/nABC.MA1_yneq_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,"_2Dposterior.pdf",sep='')
 			if(plot)	pdf(file=file, 4, 4)
 			par(mar=c(4.5,4.5,0.5,0.5))
-			tmp	<- acc.s2a						
-			tmp	<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",tmp],ans.eq[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
-			project.nABC.movingavg.add.contour(moving.avg$posterior[,a]+0.01, moving.avg$posterior[,sig2]-0.025, nlevels=7, contour.col="white")
-			#project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], nlevels=5, contour.col="white")			
+			tmp			<- acc.s2a						
+			tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",tmp],ans.eq[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
+			project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], nlevels=5, contour.col="white")
+			#project.nABC.movingavg.add.contour(moving.avg$posterior[,a]+0.01, moving.avg$posterior[,sig2]-0.025, nlevels=7, contour.col="white")
+			acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
+			points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")
+						
 			abline(h=xsigma2, lty=2)
 			abline(v=xa, lty=2)
 			if(plot)	dev.off()
