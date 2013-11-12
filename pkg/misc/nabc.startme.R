@@ -67,18 +67,27 @@ my.mkdir<-function(root,data.name)
 	if(length(dir(root,pattern=paste('^',data.name,'$',sep='')))==0)
 		system(paste("mkdir ",paste(root,data.name,sep='/'),sep=''))
 }
-
+###############################################################################
+my.dumpframes<- function()
+{
+	geterrmessage()
+	dump.frames()
+	cat(paste("\nmy.dumpframes dump 'last.dump' to file",paste(DATA,paste("debug_",paste(strsplit(date(),' ')[[1]],collapse='_'),".rda\n",sep=''),sep='/')))
+	save(last.dump, file=paste(DATA,paste("debug_",paste(strsplit(date(),' ')[[1]],collapse='_'),".rda",sep=''),sep='/'))
+	q()
+}
+###############################################################################
 my.make.documentation<- function()
 {
 	require(roxygen2)		
 	roxygenize(CODE.HOME)
 }
-
+###############################################################################
 my.fade.col<-function(col,alpha=0.5)
 {
 	return(rgb(col2rgb(col)[1]/255,col2rgb(col)[2]/255,col2rgb(col)[3]/255,alpha))
 }
-
+###############################################################################
 print.v<- function(x,cut=3,digits=4,prefix= "simu_",print.char= TRUE, as.R= TRUE)
 {
 	if(as.R)
@@ -103,7 +112,7 @@ print.v<- function(x,cut=3,digits=4,prefix= "simu_",print.char= TRUE, as.R= TRUE
 	if(print.char) print(tmp)
 	tmp
 }
-
+###############################################################################
 plot.2D.dens<- function(x,y,xlab,ylab,xlim=NA,ylim=NA,nbin=NA,width.infl=2,n.hists=5,method="gauss", palette= "topo", persp.theta= -30, persp.phi= 30, zero.abline=TRUE, ...)
 {
 	if(!method%in%c("gauss","ash","persp"))	stop("plot.2D.dens: exception 1a")
@@ -157,7 +166,7 @@ plot.2D.dens<- function(x,y,xlab,ylab,xlim=NA,ylim=NA,nbin=NA,width.infl=2,n.his
 				persp(x=f$x,y=f$y,z=f$z,col= fcol,theta=persp.theta,phi=persp.phi,xlab=xlab,ylab=ylab,zlab='', ticktype= "detailed" )
 			})
 }
-
+###############################################################################
 plot.persplocfit<- function(x, pv, theta= 30, phi= 20, palette= "gray",tcl=-0.05,...)
 {	
 	d <- x$mi["d"]
@@ -197,7 +206,10 @@ plot.persplocfit<- function(x, pv, theta= 30, phi= 20, palette= "gray",tcl=-0.05
 	
 	list(pmat=pmat, x= marg[[1]], y= marg[[2]], z= z)
 }
-
+###############################################################################
+#
+#
+#
 ###############################################################################
 my.mkdir(HOME,"data")
 my.mkdir(HOME,"pdf")
