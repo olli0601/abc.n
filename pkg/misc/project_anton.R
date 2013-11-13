@@ -1050,7 +1050,7 @@ main <- function() {
 	iter_adapt <- n_iter
 	a_bounds <- c(-0.4, 0.4)
 	sig2_bounds <- c(0.3, 1.7)
-	prior_dist <- "uniform"
+	prior_dist <- "uniform_on_rho"
 
 
 	if(1){
