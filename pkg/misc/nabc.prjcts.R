@@ -661,7 +661,7 @@ project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leav
 	m				<- 1e4 / m
 	rho0			<- nabc.acf.a2rho(a)
 	ans				<- NA
-	leave.out.s2	<- seq.int(1,n,by=1+leave.out.s2)
+	index.leave.out.s2	<- seq.int(1,n,by=1+leave.out.s2)
 	while(is.na(ans))
 	{
 		x				<-	rnorm(m*n+1,mu,sd=sd)
@@ -671,7 +671,7 @@ project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leav
 		#adjust variance of thinned time series if requested
 		if(leave.out.s2)
 		{
-			x_std_cte 	<- sapply(seq_len(ncol(x)),function(i)		sqrt((1+a*a)*sd*sd)/(sd(x[leave.out.s2,i])*(n-1)/n)	)
+			x_std_cte 	<- sapply(seq_len(ncol(x)),function(i)		sqrt((1+a*a)*sd*sd)/(sd(x[index.leave.out.s2,i])*(n-1)/n)	)
 			x			<- sapply(seq_len(ncol(x)),function(i)		x[,i]*x_std_cte[i]							)			#set desired variance
 		}
 		else
@@ -700,12 +700,16 @@ project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leav
 	}	
 	ans				<- x[,ans]
 	if(verbose && leave.out.a)	cat(paste("\nrhox of leave-out time series is",nabc.acf.equivalence.cor(ans, leave.out=leave.out.a)["z"],"and should be",rho0))	
-	if(verbose && leave.out.s2)	cat(paste("\nvar of leave-out time series is",var(ans[leave.out.s2]),"and should be",(1+a*a)*sd*sd))
+	if(verbose && leave.out.s2)	cat(paste("\nvar of leave-out time series is",var(ans[index.leave.out.s2]),"and should be",(1+a*a)*sd*sd))
 	tmp				<- arima(ans, order=c(0,0,1), include.mean=0, method="CSS-ML")
 	if(verbose)	cat(paste("\narima MLE of time series is a=",tmp[["coef"]][1],"sig2=",tmp[["sigma2"]]))
 	
-	if(return_eps_0)
-					ans <- list(x=ans,eps_0=error[1,u0])				
+	if(return_eps_0){
+		unthinned <- list(MLE=data.frame(a=tmp[["coef"]][1],sig2=tmp[["sigma2"]]),s_stat=data.frame(variance= var(ans),autocorr= nabc.acf.equivalence.cor(ans)[["cor"]]))
+		thinned <- list(MLE=data.frame(a=NA,sig2=NA),s_stat=data.frame(variance= var(ans[index.leave.out.s2]),autocorr= nabc.acf.equivalence.cor(ans,leave.out=leave.out.a)[["cor"]]))
+		ans_error <- as.data.frame(error[1,c(error.arima.a, error.arima.sd, error.abc.a)])
+		ans <- list(param=data.frame(a=a,sig2=sd*sd),eps_0=error[1,u0],n=n,thin=data.frame(variance= leave.out.s2,autocorr= leave.out.a), unthinned=unthinned, thinned=thinned, precision=list(tol=tol,error=ans_error),x=ans)
+	}
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
