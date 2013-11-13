@@ -917,7 +917,7 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 
 	#mcmc <- readRDS(file=file.path(dir_pdf,"mcmc_combined.rds"))
 	
-	analyse_MCMC_MA1(mcmc, dir_mcmc,smoothing="kde",ash_smooth=c(5,5),thin_every=20,burn=0,grid_size=c(100,100))
+	analyse_MCMC_MA1(mcmc, dir_mcmc,smoothing="kde",ash_smooth=c(5,5),thin_every=10,burn=0,grid_size=c(100,100))
 
 	
 } 
@@ -1046,7 +1046,7 @@ main <- function() {
 	tol <- 1e-2
 	variance_thin <- 1
 	autocorr_thin <- 2
-	n_iter <- 500000
+	n_iter <- 50000
 	iter_adapt <- n_iter
 	a_bounds <- c(-0.4, 0.4)
 	sig2_bounds <- c(0.3, 1.7)
