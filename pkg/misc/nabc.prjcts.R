@@ -5753,7 +5753,8 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 	#	load exact posterior from MCMC
 	#moving.avg				<- readRDS(file= paste(dir.name,'/',"131102_anton_mcmc_combined_all.rds",sep='') )
 	#xn.exaxtposterior		<- 300
-	moving.avg				<- readRDS(file= paste(dir.name,'/',"131105_anton_mcmc_combined.rds",sep='') )
+	#moving.avg				<- readRDS(file= paste(dir.name,'/',"131105_anton_mcmc_combined.rds",sep='') )
+	moving.avg				<- readRDS(file= paste(dir.name,'/',"131115_anton_mcmc_leave.out.a=0_leave.out.s2=0.rds",sep='') )	
 	xn.exaxtposterior		<- 150 
 	moving.avg				<- analyse_MCMC_MA1_cast2datatable(moving.avg)	
 	moving.avg$posterior	<- analyse_MCMC_MA1_burn.and.thin(moving.avg$posterior, thin_every=10, burn=0)
@@ -5916,7 +5917,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			abline(v=xa, lty=2)
 			if(plot)	dev.off()
 			#
-			#
+			#	compare to naive ABC
 			#
 			ans.ok.acc				<- length(acc.s2a) / ncol(ans.ok[["data"]])
 			ans.eq.acc				<- optimize( f=function(x, ans.eq, ans.ok.acc)
@@ -5943,56 +5944,59 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], nlevels=5, contour.col="white")
 			#project.nABC.movingavg.add.contour(moving.avg$posterior[,a]+0.01, moving.avg$posterior[,sig2]-0.025, nlevels=7, contour.col="white")
 			acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
-			points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")
-						
+			points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
 			abline(h=xsigma2, lty=2)
 			abline(v=xa, lty=2)
 			if(plot)	dev.off()
-			
-								
-			
-			
-			ans.ok[["data"]]["T.s2",]
-			
-
+			#
+			#
+			#
 			ans.upper[["data"]]["T.s2",]	<- ans.upper[["data"]]["T.s2",]*75/74/2
-			x					<- ans.upper[["x"]]			
-			abc.param.a			<- nabc.tosz.calibrate(length(x), mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=F)					
-			vx					<- x[seq.int(1,length(x),by=1+leave.out.sig2)]
+			x								<- ans.upper[["x"]]			
+			abc.param.a						<- nabc.tosz.calibrate(length(x), mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=F)					
+			vx								<- x[seq.int(1,length(x),by=1+leave.out.sig2)]
 			suppressWarnings({	
-						abc.param.sig2	<- nabc.chisqstretch.calibrate(length(x), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
+						abc.param.sig2		<- nabc.chisqstretch.calibrate(length(x), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
 					})
 			#	get ABC accepted values
-			acc.a				<- which( 	ans.upper[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)>=abc.param.a["cl"]  &  
-											ans.upper[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)<=abc.param.a["cu"])
-			acc.s2				<- which( ans.upper[["data"]]["T.s2",]>=abc.param.sig2["cl"]  &  ans.upper[["data"]]["T.s2",]<=abc.param.sig2["cu"] )
-			acc.s2a				<- which( 	ans.upper[["data"]]["T.s2",]>=abc.param.sig2["cl"]  &  ans.upper[["data"]]["T.s2",]<=abc.param.sig2["cu"]	&
-											ans.upper[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)>=abc.param.a["cl"]  &  ans.upper[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)<=abc.param.a["cu"]
-										)
-			#	plot marginal of rho_corr	-- OK								
-			acc.a.rho			<- ans.upper[["data"]]["rho.a",acc.a]-z.xa
-			acc.a.h				<- project.nABC.movingavg.gethist(acc.a.rho, ans.upper[["xa"]], nbreaks= 50, width= 0.5, plot=1, ylim=c(0,6))
-			rho					<- seq(min(acc.a.rho),max(acc.a.rho),len=1000)
-			su.lkl.norm			<- nabc.tosz.sulkl.norm(1/sqrt(length(x)-3), support=range(rho))
-			su.lkl				<- nabc.tosz.sulkl(rho, 1/sqrt(length(x)-3), norm=su.lkl.norm, support=range(rho), log=FALSE)
-			lines(rho,su.lkl,col="red")
-			abline(v=0, col="red", lty=2)
-			#	plot marginal of rho_var	-- not quite OK -- prior range?		
-			acc.s2.rho			<- ans.upper[["data"]]["rho.s2",acc.s2]								
-			acc.s2.h			<- project.nABC.movingavg.gethist(acc.s2.rho, ans.upper[["xv"]]*(length(x)-1)/length(x), nbreaks= 50, width= 0.5, plot=1, ylim=c(0,6))
-			rho					<- seq(min(acc.s2.rho),max(acc.s2.rho),len=1000)
-			su.lkl.norm			<- nabc.chisqstretch.su.lkl.norm(length(x), sd(vx), trafo=(length(x)-1)/length(x)*sd(vx)*sd(vx), support=range(acc.s2.rho))
-			su.lkl				<- nabc.chisqstretch.sulkl(rho, length(x), sd(vx), trafo=(length(x)-1)/length(x)*sd(vx)*sd(vx), norm=su.lkl.norm, support= range(acc.s2.rho), log=FALSE)
-			lines(rho,su.lkl,col="red")
-			abline(v=1, col="red", lty=2)			
-		
+			acc.a							<- which( 	ans.upper[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)>=abc.param.a["cl"]  &  
+														ans.upper[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)<=abc.param.a["cu"])
+			acc.s2							<- which( ans.upper[["data"]]["T.s2",]>=abc.param.sig2["cl"]  &  ans.upper[["data"]]["T.s2",]<=abc.param.sig2["cu"] )
+			acc.s2a							<- which( 	ans.upper[["data"]]["T.s2",]>=abc.param.sig2["cl"]  &  ans.upper[["data"]]["T.s2",]<=abc.param.sig2["cu"]	&
+														ans.upper[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)>=abc.param.a["cl"]  &  ans.upper[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)<=abc.param.a["cu"]
+													)
+			if(0)
+			{
+				#	plot marginal of rho_corr	-- OK								
+				acc.a.rho					<- ans.upper[["data"]]["rho.a",acc.a]-z.xa
+				acc.a.h						<- project.nABC.movingavg.gethist(acc.a.rho, ans.upper[["xa"]], nbreaks= 50, width= 0.5, plot=1, ylim=c(0,6))
+				rho							<- seq(min(acc.a.rho),max(acc.a.rho),len=1000)
+				su.lkl.norm					<- nabc.tosz.sulkl.norm(1/sqrt(length(x)-3), support=range(rho))
+				su.lkl						<- nabc.tosz.sulkl(rho, 1/sqrt(length(x)-3), norm=su.lkl.norm, support=range(rho), log=FALSE)
+				lines(rho,su.lkl,col="red")
+				abline(v=0, col="red", lty=2)
+				#	plot marginal of rho_var	-- not quite OK -- prior range?		
+				acc.s2.rho					<- ans.upper[["data"]]["rho.s2",acc.s2]								
+				acc.s2.h					<- project.nABC.movingavg.gethist(acc.s2.rho, ans.upper[["xv"]]*(length(x)-1)/length(x), nbreaks= 50, width= 0.5, plot=1, ylim=c(0,6))
+				rho							<- seq(min(acc.s2.rho),max(acc.s2.rho),len=1000)
+				su.lkl.norm					<- nabc.chisqstretch.su.lkl.norm(length(x), sd(vx), trafo=(length(x)-1)/length(x)*sd(vx)*sd(vx), support=range(acc.s2.rho))
+				su.lkl						<- nabc.chisqstretch.sulkl(rho, length(x), sd(vx), trafo=(length(x)-1)/length(x)*sd(vx)*sd(vx), norm=su.lkl.norm, support= range(acc.s2.rho), log=FALSE)
+				lines(rho,su.lkl,col="red")
+				abline(v=1, col="red", lty=2)			
+			}
 			#	plot ABC approximation to posterior
-			tmp	<- acc.s2a
-			tmp	<- project.nABC.movingavg.get.2D.mode(ans.upper[["data"]]["th.a",tmp],ans.upper[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))			
-			#project.nABC.movingavg.add.contour(moving.avg$posterior[,a]+0.01, moving.avg$posterior[,sig2]-0.035, nlevels=5, contour.col="red", levels=c(2,4,6,8,10,12, 17))
-			project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], nlevels=5, contour.col="red", levels=c(2,4,6,8,10,12, 17))
+			file							<- paste(dir.name,"/nABC.MA1_ynupper_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,"_2Dposterior.pdf",sep='')
+			if(plot)	pdf(file=file, 4, 4)
+			par(mar=c(4.5,4.5,0.5,0.5))
+			tmp								<- acc.s2a
+			tmp								<- project.nABC.movingavg.get.2D.mode(ans.upper[["data"]]["th.a",tmp],ans.upper[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))			
+			project.nABC.movingavg.add.contour(moving.avg$posterior[,a]+0.01, moving.avg$posterior[,sig2]-0.035, nlevels=5, contour.col="white", levels=c(2,4,6,8,10,12, 17))
+			project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], nlevels=5, contour.col="white", levels=c(2,4,6,8,10,12, 17))
+			acc.arima						<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
+			points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")									
 			abline(h=xsigma2, lty=2)
 			abline(v=xa, lty=2)
+			if(plot)	dev.off()
 		}
 			
 	}	
@@ -6088,40 +6092,104 @@ nabc.test.mutost.calibrate<- function()
 	library(plyr)
 	library(abc.n)
 	
-	xn 		<- 60
-	yn 		<- 60
-	xsigma 	<- 1	
-	
-	ymean 	<- xmean <- 0
-	ysigma 	<- 0.2
-	#ysigma 	<- 1.2
-	
-	obs 	<- rnorm(xn, xmean, xsigma)
-	obs 	<- (obs - mean(obs))/sd(obs) * xsigma + xmean
-	sim 	<- rnorm(yn, ymean, ysigma)
-	if(verbose)	cat(paste("\nsim has sample mean",mean(sim),"and sample sd",sd(sim)))
-	n.of.x 	<- xn
-	s.of.x 	<- sd(obs)
-	n.of.y 	<- yn
-	s.of.y 	<- sd(sim)
-	mx.pw 	<- 0.9
-	alpha 	<- 0.01	
-	
-	KL_args 		<- list(n.of.x= n.of.x, s.of.x= s.of.x, n.of.y=n.of.y, s.of.y=s.of.y, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5)
-	KL_args$tau.u 	<- 0.01
-	max.it 			<- 100
-	
-	print("R")
-	KL_args$debug=1
-	system.time(	ans	<- nabc.mutost.calibrate( KL_args, max.it, debug=1, plot_debug=1))
-	print(ans)
-	flush.console()
-	print("C")
-	KL_args$debug=0
-	system.time(	ans	<- nabc.mutost.calibrate( KL_args, max.it, debug=0, plot_debug=1))
-	print(ans)
-	
-	nabc.mutost.calibrate.tolerances.getkl(n.of.x, s.of.x, ans["n.of.y"], s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = ans["tau.u"], plot=T, debug=1)	
+	if(0)
+	{
+		xn 		<- 60
+		yn 		<- 60
+		xsigma 	<- 1	
+		
+		ymean 	<- xmean <- 0
+		ysigma 	<- 0.2
+		ysigma 	<- 1.2
+		
+		obs 	<- rnorm(xn, xmean, xsigma)
+		obs 	<- (obs - mean(obs))/sd(obs) * xsigma + xmean
+		sim 	<- rnorm(yn, ymean, ysigma)
+		if(verbose)	cat(paste("\nsim has sample mean",mean(sim),"and sample sd",sd(sim)))
+		n.of.x 	<- xn
+		s.of.x 	<- sd(obs)
+		n.of.y 	<- yn
+		s.of.y 	<- sd(sim)
+		mx.pw 	<- 0.9
+		alpha 	<- 0.01	
+		
+		KL_args 		<- list(n.of.x= n.of.x, s.of.x= s.of.x, n.of.y=n.of.y, s.of.y=s.of.y, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5)
+		KL_args$tau.u 	<- 0.01
+		max.it 			<- 100
+		
+		print("R")
+		KL_args$debug=1
+		system.time(	ans	<- nabc.mutost.calibrate( KL_args, max.it, debug=1, plot_debug=1))
+		print(ans)
+		flush.console()
+		print("C")
+		KL_args$debug=0
+		system.time(	ans	<- nabc.mutost.calibrate( KL_args, max.it, debug=0, plot_debug=1))
+		print(ans)
+		
+		nabc.mutost.calibrate.tolerances.getkl(n.of.x, s.of.x, ans["n.of.y"], s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = ans["tau.u"], plot=T, debug=1)	
+	}
+	if(1)
+	{
+		xn 		<- 60
+		yn 		<- 60
+		xsigma 	<- 1	
+		
+		ymean 	<- xmean <- 0
+		ysigma 	<- 0.2
+		ysigma 	<- 1.2
+		
+		obs 	<- rnorm(xn, xmean, xsigma)
+		obs 	<- (obs - mean(obs))/sd(obs) * xsigma + xmean
+		sim 	<- rnorm(yn, ymean, ysigma)
+		
+		args	<- "ci.tost.lag2.1/80/1.3/0.015/0.01"
+
+		normal.test= "sf.test"; obs.n=NA; verbose= 1		
+		ans		<- NABC.DEFAULT.ANS
+		#compute two sample t-test on either z-scores or untransformed data points
+		if(any(is.na(sim)))		stop("unexpected NA in sim")
+		if(any(is.na(obs)))		stop("unexpected NA in obs")
+		if(is.na(args))			stop("args missing")
+		
+		args<- strsplit(args,'/')[[1]]
+		if(length(args)!=5)		stop("args with unexpected length")
+		
+		annealing	<- as.numeric( args[2] )
+		mx.pw		<- 0.9
+		obs.sd		<- as.numeric( args[3] )
+		tau.u.ub	<- as.numeric( args[4] )
+		alpha		<- as.numeric( args[5] )
+		args		<- args[1]
+		if(alpha<0 || alpha>1)		stop("incorrect alpha")
+		if(tau.u.ub<0 )				stop("incorrect tau.u or tau.l")
+		if(annealing<1)				stop("incorrect annealing parameter")
+		ans["pfam.pval"]	<-	nabc.get.pfam.pval(sim, normal.test)	
+		if(!any(diff(sim)>0))	return(ans)
+		obs.n		<- ifelse(!is.na(obs.n),obs.n,length(obs))
+		obs.mean	<- mean(obs)
+		obs.sd		<- sd(obs)
+		if(obs.n<2)	stop("length of observed summaries too small, or set 'obs.n' explicitly")		
+		
+		KL_args 	<- list(n.of.x=obs.n, s.of.x= obs.sd, n.of.y=min( obs.n, length(sim) ), s.of.y=sd(sim), mx.pw=mx.pw, alpha=alpha, tau.u=tau.u.ub, pow_scale=1.5, debug=0)
+		abc.param	<- nabc.mutost.calibrate( KL_args, 100, debug=0, plot_debug=0)
+		
+		if(abs(abc.param["pw.cmx"]-mx.pw)>0.09)		stop("unexpected difference in max power - tau.up not accurate")
+		sim.n		<- abc.param["n.of.y"]
+		options(warn=1)
+		if(sim.n>length(sim))
+		{
+			warning(paste("not enough simulated summary values",sim.n,length(sim)))
+			sim.n	<- length(sim)
+		}
+		options(warn=2)		
+		sim.mean	<- mean(sim[1:sim.n])
+		tau.u		<- abc.param["tau.u"]*annealing
+		tau.l		<- -tau.u		
+		if(verbose)		cat(paste("\nn=",obs.n," obs.sd=",obs.sd,". Free ABC parameters calibrated to m=",sim.n,"sd sim=",sim.sd))	
+		
+		
+	}
 }
 #------------------------------------------------------------------------------------------------------------------------
 project.nABC.TOST<- function()
