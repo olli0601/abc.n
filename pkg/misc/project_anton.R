@@ -438,10 +438,12 @@ nabc_rpropwgausskernel<- function(theta, covmat, support)
 }
 
 nabc_MA1_MLE <- function(x, variance_thin=0, autocorr_thin=0){
-	
-	n <- length(x)
+
+	n <- length(x)	
+	x_thin <- x[seq.int(1,n,by=1+variance_thin)]
+	n_thin <- length(x_thin)
 	x_cor <- nabc.acf.equivalence.cor(x,leave=autocorr_thin)[["cor"]]
-	x_var <- var(x[seq.int(1,n,by=1+variance_thin)])
+	x_var <- var(x_thin)*(n_thin-1)/n_thin
 	
 	a_MLE <- nabc.acf.nu2a(x_cor)
 	sig2_MLE <- x_var/(1+ a_MLE^2)
@@ -986,17 +988,18 @@ main <- function() {
 	require(RColorBrewer)
 	require(plyr)
 	require(devtools)
+	require(data.table)
 
-	USE_CLUSTER <- F
+	USE_CLUSTER <- T
 	
 	dev_mode()
 	NABC_PKG <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/GitProjects/abc.n/pkg","~/Documents/GitProjects/nABC/git_abc.n/pkg")
 	load_all(NABC_PKG)
 
 	#source Olli's prjct:
-	#source(file.path(NABC_PKG,"misc","nabc.prjcts.R"))
+	source(file.path(NABC_PKG,"misc","nabc.prjcts.R"))
 	
-	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_exact","~/Documents/GitProjects/nABC/pdf")
+	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_with_thin","~/Documents/GitProjects/nABC/pdf")
 	dir.create(dir_pdf,rec=T)
 
 	if(0){
@@ -1040,19 +1043,22 @@ main <- function() {
 	n_x <- 150
 	a_true <- 0.1
 	sig2_true <- 1
-	a_tol <- 1e-3
-	sig2_tol <- 1e-2
+	tol <- 1e-3
+	variance_thin <- 1
+	autocorr_thin <- 2
 	n_iter <- 500000
 	iter_adapt <- n_iter
 	a_bounds <- c(-0.4, 0.4)
 	sig2_bounds <- c(0.3, 1.7)
 	prior_dist <- "uniform"
 
-	if(0){
+
+	if(1){
 		#foo n CPU
-		file_data <- file.path(dir_pdf,paste0("data_with_nx=",n_x,"_tol_a=", a_tol,"_sig2=", sig2_tol,".rds"))
+		file_data <- file.path(dir_pdf,paste0("data_with_nx=",n_x,"_tol=", tol,"_varThin=", variance_thin,"_corThin=", autocorr_thin,".rds"))
 		if(!file.exists(file_data)){
-			data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)				
+			data <- project.nABC.movingavg.get.fixed.ts(n=n_x, mu=0, a=a_true, sd= sqrt(sig2_true), leave.out.a= autocorr_thin, leave.out.s2= variance_thin, verbose=1, tol=tol, return_eps_0=T)
+			#data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)				
 			saveRDS(data,file= file_data)
 		}else{
 			data <- readRDS(file= file_data)
@@ -1061,9 +1067,9 @@ main <- function() {
 
 
 	#parallel
-	#run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
+	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
 
-	if(1){
+	if(0){
 		
 			dir_mcmc <- file.path(dir_pdf,"1_mcmc_MA1_a=0.1_sig2=1_prior=uniform_nx=150_nIter=5e+05_thinVar=1_thinCor=2_nChains=12")
 			mcmc <- readRDS(file=file.path(dir_mcmc,"mcmc_combined.rds"))
