@@ -2,7 +2,8 @@
 \alias{nabc.acf.equivalence.cor}
 \title{Compute the autocorrelation in a time series along with some other info}
 \usage{
-  nabc.acf.equivalence.cor(x, leave.out = 0)
+  nabc.acf.equivalence.cor(x, leave.out = 0,
+    len = ceiling(length(x)/(1 + leave.out)))
 }
 \arguments{
   \item{x}{time series (simply vector)}

@@ -167,7 +167,7 @@ nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf
 #' alpha=0.01, calibrate.tau.u=T, tau.u=1, plot=T)
 #'
 #------------------------------------------------------------------------------------------------------------------------
-nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, plot = F) 
+nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, plot = F, legend.title='') 
 {
 	#TODO check argument with stopifnot	
 	if (!debug)		#ALL IN C 
@@ -180,11 +180,13 @@ nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.
 		tau.u <- ans[2]
 		pw.cmx <- ans[3]
 		
-		if(plot){
-			lkl_support <- pow_support <- c(-tau.u, tau.u) * pow_scale
-			lkl_norm <- diff(pt(lkl_support/ssn, df))
+		if(plot)
+		{
+			ssn 			<- s.of.x/sqrt(n.of.x)
+			lkl_support 	<- pow_support <- c(-tau.u, tau.u) * pow_scale
+			lkl_norm 		<- diff(pt(lkl_support/ssn, df))
 			suppressWarnings({ #suppress numerical inaccuracy warnings
-				pow_norm <- .Call("abc_mutost_integrate_pow", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
+				pow_norm 	<- .Call("abc_mutost_integrate_pow", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
 			})			
 		}
 	} 
@@ -236,14 +238,14 @@ nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.
 		p 					<- p + geom_line()
 		p 					<- p + scale_linetype("truncated and\nstandardized?")
 		p 					<- p + xlab(expression(rho)) + ylab("")
-		p 					<- p + ggtitle(paste("n.of.y=", n.of.y, "\ntau.u=", tau.u, "\nKL=", KL_div))
+		p 					<- p + ggtitle(paste(ifelse(!is.na(legend.title), legend.title, ''),"n.of.y=", n.of.y, "\ntau.u=", tau.u, "\nKL=", KL_div))
 		print(p)
 	}
 	ans <- c(KL_div = KL_div, n.of.y=n.of.y, tau.u = tau.u, pw.cmx = pw.cmx)
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
-nabc.mutost.calibrate<- function(KL_args, tau.u.lb=1, max.it = 100, debug = 0, plot = FALSE, plot_debug = FALSE, verbose=TRUE) 
+nabc.mutost.calibrate<- function(KL_args, tau.u.lb=1, max.it = 100, debug = 0, plot = FALSE, plot_debug = FALSE, verbose=FALSE) 
 {	
 	stopifnot(max.it > 0)
 	stopifnot(all(c("n.of.x", "s.of.x", "n.of.y", "s.of.y", "mx.pw", "alpha", "tau.u", "pow_scale") %in% names(KL_args)))
@@ -623,6 +625,103 @@ old.nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.u
 #'	y<- rnorm(yn,ymu,sd=sqrt(ysigma2))
 #'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
 nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test", plot=0, legend.txt="")
+{
+	verbose	<- 1
+	ans				<- NABC.DEFAULT.ANS
+	#compute two sample t-test on either z-scores or untransformed data points
+	if(any(is.na(sim)))		stop("unexpected NA in sim")
+	if(any(is.na(obs)))		stop("unexpected NA in obs")
+	if(is.na(args))			stop("args missing")
+	#cat(print.v(sim, prefix="simu", print.char=0))
+	#cat(print.v(obs, prefix="obs", print.char=0))
+	args<- strsplit(args,'/')[[1]]
+	if(length(args)==3)
+	{
+		annealing	<- as.numeric( args[2] )	#annealing must be at pos 2 otherwise 'ANNEAL.CI.setTau' goes wrong
+		obs.n		<- length(obs)
+		obs.sd		<- sd(obs)
+		tau.u.ub	<- 3*obs.sd
+		alpha		<- as.numeric( args[3] )			
+	}
+	else if(length(args)==4)
+	{
+		annealing	<- as.numeric( args[2] )
+		obs.n		<- length(obs)
+		obs.sd		<- sd(obs)
+		tau.u.ub	<- as.numeric( args[3] )
+		alpha		<- as.numeric( args[4] )			
+	}
+	else if(length(args)==6)
+	{
+		annealing	<- as.numeric( args[2] )		
+		obs.n		<- as.numeric( args[3] )	#read when obs data just a single point
+		obs.sd		<- as.numeric( args[4] )	#read when obs data just a single point
+		tau.u.ub	<- as.numeric( args[5] )
+		alpha		<- as.numeric( args[6] )			
+	}
+	else stop("args with unexpected length")
+	if(alpha<0 || alpha>1)		stop("incorrect alpha")
+	if(tau.u.ub<0 )				stop("incorrect tau.u or tau.l")
+	if(annealing<1)				stop("incorrect annealing parameter")
+	args		<- args[1]
+	if(verbose)	cat(paste("\ninput call=",args,"annealing=",annealing,"obs.sd=",obs.sd,"tau.u.ub=",tau.u.ub,"alpha=",alpha))
+	mx.pw		<- 0.9
+	ans["pfam.pval"]	<-	nabc.get.pfam.pval(sim, normal.test)	
+	if(!any(diff(sim)>0))	return(ans)		
+	obs.mean	<- mean(obs)	
+	if(verbose)		
+		cat(paste("\nn=",obs.n,"obs.mean",obs.mean,"obs.sd=",obs.sd,"sim.sd",sd(sim)))	
+	
+	if(obs.n<2)	stop("length of observed summaries too small, or set 'obs.n' explicitly")		
+	
+	KL_args 	<- list(n.of.x=obs.n, s.of.x= obs.sd, n.of.y=min( obs.n, length(sim) ), s.of.y=sd(sim), mx.pw=mx.pw, alpha=alpha, tau.u=tau.u.ub, pow_scale=1.5, debug=0)
+	abc.param	<- nabc.mutost.calibrate( KL_args, 100, debug=0, plot_debug=0, plot=plot)
+	
+	if(abs(abc.param["pw.cmx"]-mx.pw)>0.09 && abc.param["n.of.y"]>min( obs.n, length(sim) ) )
+	{
+		print(abc.param)
+		stop("unexpected difference in max power when m>n - tau.up not accurate")
+	}
+	sim.n		<- abc.param["n.of.y"]
+	options(warn=1)
+	if(sim.n>length(sim))
+	{
+		cat(paste("\nnot enough simulated summary values requested:",sim.n, " available and used:", length(sim)))
+		sim.n	<- length(sim)
+	}
+	options(warn=2)		
+	sim.mean	<- mean(sim[1:sim.n])
+	sim.sd		<- sd(sim[1:sim.n])
+	tau.u		<- abc.param["tau.u"]*annealing
+	tau.l		<- -tau.u		
+	if(verbose)		
+		cat(paste("\nsim.mean",sim.mean,"sd sim=",sim.sd,". Free ABC parameters calibrated to m=",sim.n,"tau.u=",abc.param["tau.u"],"annealed tau.u=",tau.u))	
+	if(plot)
+		tmp		<- nabc.mutost.calibrate.tolerances.getkl(obs.n, obs.sd, sim.n, sim.sd, mx.pw, alpha, calibrate.tau.u=F, tau.u=abc.param["tau.u"], debug=1, plot=T, legend.title=legend.txt)
+	
+	tmp			<- c(	sqrt(sim.n)*(sim.mean-obs.mean-tau.l) / sim.sd,			#[1]	T-	test statistic for -tau (lower test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
+			sqrt(sim.n)*(sim.mean-obs.mean-tau.u) / sim.sd,			#[2]	T+	test statistic for tau (upper test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
+			sqrt(sim.n)*(sim.mean-obs.mean) / sim.sd,				#[3]	T	test statistic for equality; estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
+			sim.n-1,												#[4] 	degrees of freedom
+			sim.sd/sqrt(sim.n),										#[5]	estimate of the std dev of the test statistic is simply the std dev in the sample whose sample size is > 1 divided by that sample size
+			sim.sd )												#[6]  	standard deviation of the sample
+	tost.ans	<-	nabc.generic.tost(tmp, tau.l, tau.u, alpha, tost.distr="t")
+	#print("")
+	#print(tost.ans)
+	ans[c("error","cil","cir")]	<- c(tost.ans["p.error"], 0, alpha)
+	ans[c("tl","tr","nsim")]	<- c(tau.l,tau.u,sim.n)
+	ans[c("lkl","pval")]<-  tost.ans[c("lkl","ass.pval")]
+	ans[c("al","ar")]	<- 	c(0,alpha)								
+	ans["mx.pow"]		<-	nabc.mutost.pow(0, tmp[4], tmp[5], tau.u,  alpha) 				
+	ans["link.mc.sim"]	<- 	sim.mean
+	ans["link.mc.obs"]	<- 	obs.mean
+	ans["rho.mc"]		<- 	sim.mean - obs.mean
+	ans["rho.pow"]		<-	nabc.mutost.pow(ans["rho.mc"], tmp[4], tmp[5], tau.u, alpha )
+	if(verbose)	print(ans)
+	ans
+}
+#------------------------------------------------------------------------------------------------------------------------
+old.nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, normal.test= "sf.test", plot=0, legend.txt="")
 {
 	verbose<- 1
 	ans<- NABC.DEFAULT.ANS
