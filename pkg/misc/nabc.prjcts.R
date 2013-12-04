@@ -1125,7 +1125,7 @@ print(c(ax,sig2x))
 			options(show.error.messages = FALSE, warn=1)		
 			readAttempt<-try(suppressWarnings(load(save.f.name)))						
 			options(show.error.messages = TRUE)
-			
+
 			#set up fixed tau			
 			xn<- 500
 			fixed.tau<- matrix(NA,2,4,dimnames=list(c("a","v"),c("tau.l","tau.u","c.l","c.u")))						
@@ -1313,13 +1313,14 @@ stop()
 		par(mar=c(4,4.5,1,.75))
 		ylim<- range(	sapply(ans, function(x) x[,"a.hmode"]-x[1,"xa"]) 	)
 		#ylim<- c(-0.04,0.015)		
-		plot(1,1,type='n',bty='n',log='x',xlim=range(sample.size),ylim=ylim, xlab="sample size n",ylab=expression("bias in a: mode of "*hat(pi)[tau]*'('*a*'|'*x*') - '*a[x]))
+		plot(1,1,type='n',bty='n',log='x',xlim=range(sample.size),ylim=ylim, xlab="sample size n",ylab=expression("mode of "*hat(pi)[abc]*'('*a*'|'*x*') - mode of '*hat(pi)*'('*a*'|'*x*')'))
 		abline(h=0,lty=ltys[3])
 		points(sample.size,sapply(ans, function(x) x[1,"a.hmode"]-x[1,"xa"]),pch=20,cex=1.5,col=cols[2])		
 		points(sample.size,sapply(ans, function(x) x[2,"a.hmode"]-x[2,"xa"]),pch=23,cex=1.25,col=cols[1])
-		lines(sample.size,detjac.fxtau.p,col=cols[2],lwd=2)
-		lines(sample.size,detjac.fxpow.p,col=cols[1],lwd=2)
-		legend("bottomleft",bty='n',border=NA,fill=c(cols[1],"transparent",cols[2],"transparent","transparent","transparent","transparent"),legend=c("fixed power &",expression("decreasing "*tau^'+'),"increasing power &",expression("fixed "*tau^'+'),"","dots: simulated",expression("lines: expected")))		
+		#lines(sample.size,detjac.fxtau.p,col=cols[2],lwd=2)
+		#lines(sample.size,detjac.fxpow.p,col=cols[1],lwd=2)
+		#legend("bottomleft",bty='n',border=NA,fill=c(cols[1],"transparent",cols[2],"transparent","transparent","transparent","transparent"),legend=c("fixed power &",expression("decreasing "*tau^'+'),"increasing power &",expression("fixed "*tau^'+'),"","dots: simulated",expression("lines: expected")))
+		legend("bottomleft",bty='n',border=NA,fill=c(cols[1],"transparent",cols[2],"transparent"),legend=c("fixed power &",expression("decreasing "*tau^'+'),"increasing power &",expression("fixed "*tau^'+')))
 		dev.off()
 stop()
 
@@ -3026,18 +3027,17 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m<- function()		#check MLE, 
 			}
 			if(1)	#produce Fig for paper
 			{
-				#read also 
-				f.name<- paste(dir.name,"/nABC.Chisq_mle_yntoolarge_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')
-				cat(paste("\nnABC.Chisq: resume ",f.name))						
-				readAttempt<-try(suppressWarnings(load(f.name)))									
-				
 				x												<- ans.ok[["x"]]
 				abc.param.ok									<- nabc.chisqstretch.calibrate(length(x), sd(x), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
 				tmp												<- abc.param.ok
 				tstat											<- ans.ok[["data"]]["T",] / length(x)
 				acc.ok											<- which( tstat>=tmp["cl"]  &  tstat<=tmp["cu"] )
 				acc.h.ok										<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok], ans.ok[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,2.25))
-				
+								
+				#read also 
+				f.name<- paste(dir.name,"/nABC.Chisq_mle_yntoolarge_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')
+				cat(paste("\nnABC.Chisq: resume ",f.name))						
+				readAttempt<-try(suppressWarnings(load(f.name)))
 				yn												<- 300
 				x												<- ans.too[["x"]]
 				abc.param.toolarge								<- nabc.chisqstretch.calibrate.tauup(0.9, 3*sd(x), length(x), yn-1, alpha=alpha)
@@ -3045,28 +3045,63 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m<- function()		#check MLE, 
 				tstat											<- ans.too[["data"]]["T",] / length(x)
 				acc.too											<- which( tstat>=tmp["cl"]  &  tstat<=tmp["cu"] )
 				acc.h.too										<- project.nABC.movingavg.gethist(ans.too[["data"]]["ysigma2",acc.too], ans.too[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,3.3))
+								
+				#read also 
+				f.name<- paste(dir.name,"/nABC.Chisq_mle_yneqxn_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')												
+				cat(paste("\nnABC.Chisq: resume ",f.name))						
+				readAttempt<-try(suppressWarnings(load(f.name)))	
+				abc.param.yneqxn								<- nabc.chisqstretch.calibrate.tauup(0.9, 3*sd(x), xn, xn-1, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=0)
+				tmp												<- abc.param.yneqxn
+				tstat											<- ans.eq[["data"]]["T",] / length(x)
+				acc.yneqxn										<- which( tstat>=tmp["cl"]  &  tstat<=tmp["cu"] )
+				acc.h.yneqxn									<- project.nABC.movingavg.gethist(ans.eq[["data"]]["ysigma2",acc.yneqxn], ans.eq[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,3.3))
 				
-				#rho			<- seq(tmp["tau.low"]/1.5, tmp["tau.up"]*1.5, len=1024)
-				#pw			<- nabc.chisqstretch.pow(rho, length(x), yn-1, tmp["cl"], tmp["cu"])
-				#lines(rho,pw,col="red")
+				#get KL of standard ABC
+				tstat		<- ans.eq[["data"]]["sy2-sx2",]
+				#tstat		<- ans.eq[["data"]]["rho.mc",]				
+				s2			<- seq( min( ans.eq[["data"]]["ysigma2",] ), max( ans.eq[["data"]]["ysigma2",] ), length.out=1024 )
+				s2.lkl		<- nabc.chisqstretch.sulkl(s2, xn, sqrt(xsigma2), trafo=1 )
+				y1			<- s2.lkl / sum(s2.lkl)				
+				#				
+				tmp			<- sapply(c(0.8,0.4,0.2,0.1,0.05), function(cu)
+						{
+							acc.naive				<- which( abs(tstat) <= cu )				
+							tmp						<- density( ans.eq[["data"]]["ysigma2",acc.naive]	)
+							y2						<- approx(tmp$x, tmp$y, s2, yleft=0, yright=0, rule=2)$y
+							y2						<- y2 / sum(y2)										
+							kl						<- log( y2/y1 )
+							kl[ is.nan(kl) ]		<- 0
+							kl[ is.infinite(kl) ]	<- NA
+							kl[ y2==0 ]				<- 0
+							kl						<- kl*y2	
+							c(sum(kl), length(acc.naive) / ncol(ans.eq[["data"]]) )
+						})				
 				
+				#get standard ABC
+				tstat											<- ans.eq[["data"]]["sy2-sx2",]
+				acc.naive										<- which( abs(tstat) <= quantile(abs(tstat), prob= length(acc.yneqxn) / ncol(ans.eq[["data"]])) )
+				acc.naive										<- which( abs(tstat) <= 0.4 )
+				acc.h.naive										<- project.nABC.movingavg.gethist(ans.eq[["data"]]["ysigma2",acc.naive], ans.eq[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,3.3))
+				#
 				#plot sigma2
-				cols		<- c(my.fade.col("black",0.6),my.fade.col("black",0.2),"black")
-				ltys		<- c(1,1,4,3)				
+				#
+				cols		<- c(my.fade.col("black",0.6),my.fade.col("black",0.2),"black","black")
+				ltys		<- c(1,1,3,4)				
 				
 				f.name	<- paste(dir.name,"/nABC.Chisq_mle_yyn_",N,"_",xn,"_",prior.u,"_",prior.l,"_",tau.u,"_m",m,".pdf",sep='')
 				print(f.name)
 				pdf(f.name,version="1.4",width=4,height=5)
 				par(mar=c(5,5,0.5,0.5))
-				plot(acc.h.too, col=cols[2],border=NA,main='',freq=0,ylab=expression("numerical estimate of "*pi[abc]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,3.3))
-				plot(acc.h.ok, col=cols[1],border=NA,main='',add=1,freq=0)
-				
+				plot(1,1,type='n',bty='n',ylab=expression("numerical estimate of "*pi[abc]*'('*sigma^2*'|'*x*')'),xlab=expression(sigma^2),xlim=c(0,3),ylim=c(0,2.5))				
+				lines(acc.h.ok$mids,acc.h.ok$density,type="S",col=cols[1], lty=ltys[1], lwd=1.5)				
+				lines(acc.h.naive$mids,acc.h.naive$density,type="S",col=cols[2], lty=ltys[2], lwd=1.5)
+				#lines(acc.h.yneqxn$mids,acc.h.yneqxn$density,type="S",col=cols[1], lty=ltys[3])
+				#lines(acc.h.too$mids,acc.h.too$density,type="S",col=cols[1], lty=ltys[1])				
 				sig2		<- seq(min(acc.h.ok$breaks),max(acc.h.ok$breaks),len=1000)
 				su.lkl		<- nabc.chisqstretch.sulkl(sig2, length(x), sd(x), trafo=1, norm = 1, support= c(0,Inf), log=FALSE)
-				lines(sig2,su.lkl,col=cols[3],lty=ltys[4])
-				abline(v=ans.ok[["xsigma2"]],col=cols[3],lty=ltys[3])
-											
-				legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,NA,ltys[2],NA,NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.589", tau^'+'*"=1.752","m=108","calibrated","tolerances",tau^'-'*"=0.726",tau^'+'*"=1.392","m=300","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
+				lines(sig2,su.lkl,col=cols[3],lty=ltys[3], lwd=0.75)
+				abline(v=ans.ok[["xsigma2"]],col=cols[4],lty=ltys[4], lwd=0.75)											
+				legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent","transparent",cols[2],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,NA,ltys[2],NA,NA,NA,NA,NA,ltys[3],NA,ltys[4],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","ABC*",tau^'-'*"=0.589", tau^'+'*"=1.752","m=108","standard","ABC",c^'-'*"=-0.8",c^'+'*"=0.8","m=60","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
 				#legend("topright",fill=c("transparent","transparent",cols[1],"transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent","transparent"),lty=c(NA,NA,ltys[1],NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,ltys[4],NA,ltys[3],NA),border=NA,bty='n',legend=expression("n=60","","calibrated","tolerances",tau^'-'*"=0.572", tau^'+'*"=1.808","m=97","","","","","","",pi*'('*sigma^2*'|'*x*')',"",argmax[sigma^2],pi*'('*sigma^2*'|'*x*')'))
 				dev.off()
 			}
@@ -3547,7 +3582,7 @@ stop()
 		df<- yn-1
 		alpha<- 0.01		
 		tau.u<- 2.2 		
-		tau.l<- nabc.chisqstretch.tau.low(tau.u, df, alpha)
+		#tau.l<- nabc.chisqstretch.tau.low(tau.u, df, alpha)
 		tau.h<- 0.65
 		
 		ymu<- xmu<- 0
@@ -3583,38 +3618,61 @@ stop()
 			f.name<- paste(dir.name,paste("nABC.sig2_stdabc_",N,".R",sep=''),sep='/')
 			options(show.error.messages = FALSE, warn=1)		
 			readAttempt<-try(suppressWarnings(load(f.name)))						
-			options(show.error.messages = TRUE)		
+			options(show.error.messages = TRUE)	
 			if(!resume || inherits(readAttempt, "try-error"))
 			{
 				cat(paste("\nnABC.sig2_stdabc generate",paste(dir.name,paste("nABC.sig2_stdabc_",N,".R",sep=''),sep='/')))
 				f.name<- list.files(dir.name, pattern=paste("^nABC.sig2_stdabc",'',sep=''), full.names = TRUE)				
 				ans<- lapply(seq_along(f.name),function(i)
 						{
-							out<- matrix(NA,2,11,dimnames=list(c("mean","mode"),c("o0.8","o0.4","o0.2","o0.1","o0.05","l0.8","l0.4","l0.2","l0.1","l0.05","xsigma2")))
+							out<- matrix(NA,4,11,dimnames=list(c("mean","mode","acc","kl"),c("o0.8","o0.4","o0.2","o0.1","o0.05","l0.8","l0.4","l0.2","l0.1","l0.05","xsigma2")))
 							cat(paste("\nload",f.name[i]))
 							readAttempt<-try(suppressWarnings(load( f.name[i] )))
 							if(inherits(readAttempt, "try-error"))	
 								return(out)
 							
+							s2			<- seq( min( ans.ok[["data"]]["ysigma2",] ), max( ans.ok[["data"]]["ysigma2",] ), length.out=1024 )
+							s2.lkl		<- nabc.chisqstretch.sulkl(s2, xn, sqrt(xsigma2), trafo=1 )
+							y1			<- s2.lkl / sum(s2.lkl)
+							
 							cus<- c(0.8,0.4,0.2,0.1,0.05)							
 							out[,1:5]<- sapply(cus,function(cu)
 									{
 										#print(cu)
-										acc<- which( ans.ok[["data"]]["sy2-sx2",]<=cu  &  ans.ok[["data"]]["sy2-sx2",]>=-cu )
-										#print(length(acc))
-										tmp<- project.nABC.movingavg.gethist( ans.ok[["data"]]["ysigma2",acc], xsigma2, nbreaks, .5, plot=0)
+										acc		<- which( ans.ok[["data"]]["sy2-sx2",]<=cu  &  ans.ok[["data"]]["sy2-sx2",]>=-cu )
+										#get KL										
+										tmp		<- density( ans.ok[["data"]]["ysigma2",acc]	)
+										y2		<- approx(tmp$x, tmp$y, s2, yleft=0, yright=0, rule=2)$y
+										y2		<- y2 / sum(y2)										
+										kl		<- log( y2/y1 )
+										kl[ is.nan(kl) ]		<- 0
+										kl[ is.infinite(kl) ]	<- NA
+										kl[ y2==0 ]				<- 0
+										kl						<- kl*y2
+										#get mode
+										tmp<- project.nABC.movingavg.gethist( ans.ok[["data"]]["ysigma2",acc], xsigma2, nbreaks, width=.5, plot=0)
 										#print(c(tmp[["mean"]],tmp[["dmode"]]))
-										c(tmp[["mean"]],tmp[["dmode"]])
+										c(tmp[["mean"]],tmp[["dmode"]],length(acc)/ncol(ans.ok[["data"]]),sum(kl))
 									})
 							out[,6:10]<- sapply(cus,function(cu)
 									{
 										#print(cu)
-										acc<- which( ans.ok[["data"]]["rho.mc",]<=cu  &  ans.ok[["data"]]["rho.mc",]>=-cu )
-										#print(length(acc))
-										tmp<- project.nABC.movingavg.gethist( ans.ok[["data"]]["ysigma2",acc], xsigma2, nbreaks, .5, plot=0)
+										acc		<- which( ans.ok[["data"]]["rho.mc",]<=cu  &  ans.ok[["data"]]["rho.mc",]>=-cu )
+										#get KL										
+										tmp		<- density( ans.ok[["data"]]["ysigma2",acc]	)
+										y2		<- approx(tmp$x, tmp$y, s2, yleft=0, yright=0, rule=2)$y
+										y2		<- y2 / sum(y2)										
+										kl		<- log( y2/y1 )
+										kl[ is.nan(kl) ]		<- 0
+										kl[ is.infinite(kl) ]	<- NA
+										kl[ y2==0 ]				<- 0
+										kl						<- kl*y2
+										#get mode										
+										tmp		<- project.nABC.movingavg.gethist( ans.ok[["data"]]["ysigma2",acc], xsigma2, nbreaks, width=.5, plot=0)
 										#print(c(tmp[["mean"]],tmp[["dmode"]]))
-										c(tmp[["mean"]],tmp[["dmode"]])
+										c(tmp[["mean"]],tmp[["dmode"]],length(acc)/ncol(ans.ok[["data"]]),sum(kl))
 									})
+#AAA							
 							out[,11]<- ans.ok[["xsigma2"]]
 							out
 						})
@@ -5923,7 +5981,13 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			lines(tmp,(1+xa*xa)*xsigma2/(1+tmp*tmp),type='l',col="white", lwd=1, lty=2)			
 			abline(h=xsigma2, lty=2)
 			abline(v=xa, lty=2)
-			if(plot)	dev.off()	
+			if(plot)	dev.off()
+			#
+			#	compute KL divergence
+			#
+			df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2],	th2=ans.ok[["data"]]["th.s2",acc.s2]	)			
+			df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
+			kl.sd		<- nabc.kl.2D(df1, df2, nbin=100)			
 			#	plot SD+ACF-ABC approximation to posterior
 			file					<- paste(dir.name,"/nABC.MA1_yncalibrated_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,"_2Dposterior.pdf",sep='')
 			if(plot)	pdf(file=file, 4, 4)
@@ -5936,6 +6000,12 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			abline(h=xsigma2, lty=2)
 			abline(v=xa, lty=2)
 			if(plot)	dev.off()
+			#
+			#	compute KL divergence
+			#
+			df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2a],	th2=ans.ok[["data"]]["th.s2",acc.s2a]	)			
+			df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
+			kl.ok		<- nabc.kl.2D(df1, df2, nbin=100)
 			#
 			#	compare to naive ABC
 			#
@@ -5955,6 +6025,12 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			acc.s2a					<- which( 	ans.eq[["data"]]["T.s2",]>=acc.sig2[1]  &  ans.eq[["data"]]["T.s2",]<=acc.sig2[2]	&
 												ans.eq[["data"]]["T.a",]>=acc.a[1]  &  ans.eq[["data"]]["T.a",]<=acc.a[2]
 											 )
+			#
+			#	compute KL divergence
+			#
+			df1			<- data.table(	th1=ans.eq[["data"]]["th.a",acc.s2a],	th2=ans.eq[["data"]]["th.s2",acc.s2a]	)			
+			df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
+			kl.eq		<- nabc.kl.2D(df1, df2, nbin=100)			
 			#	plot standard ABC approximation to posterior, based on same acceptance probability (13%) with quantile method
 			file					<- paste(dir.name,"/nABC.MA1_yneq_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,"_2Dposterior.pdf",sep='')
 			if(plot)	pdf(file=file, 4, 4)

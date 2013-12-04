@@ -26,6 +26,32 @@ nabc.kl.integrand<-function(x,dP,dQ,P_arg,Q_arg)
 	return(ans)
 }
 
+nabc.kl.2D<- function(df1, df2, nbin=100)
+{
+	require(ash)
+	
+	df1.lim		<- df1[, lapply(.SD, range)]
+	df2.lim		<- df2[, lapply(.SD, range)]
+	df.lim		<- as.matrix( rbind(df1.lim, df2.lim)[, lapply(.SD, range)] )
+	df1.bins	<- bin2(as.matrix(df1), ab=t(df.lim), nbin=rep(nbin,2))
+	df1.bins$nc	<- df1.bins$nc / sum( df1.bins$nc )
+	df2.bins	<- bin2(as.matrix(df2), ab=t(df.lim), nbin=rep(nbin,2))
+	df2.bins$nc	<- df2.bins$nc / sum( df2.bins$nc )
+	
+	kl			<- data.table(one= as.numeric(log( df1.bins$nc / df2.bins$nc )), two= as.numeric( log( df2.bins$nc / df1.bins$nc )) )
+	set(kl, which(is.nan(kl[,one])), 'one', 0. )
+	set(kl, which(is.nan(kl[,two])), 'two', 0. )
+	set(kl, which(is.infinite(kl[,one])), 'one', NA )
+	set(kl, which(is.infinite(kl[,two])), 'two', NA )
+	set(kl, NULL, 'one', kl[, one] * as.numeric(df1.bins$nc) )
+	set(kl, NULL, 'two', kl[, two] * as.numeric(df2.bins$nc) )
+	set(kl, which(as.numeric(df1.bins$nc)==0), 'one', 0. )
+	set(kl, which(as.numeric(df2.bins$nc)==0), 'two', 0. )
+	
+	ans			<- list(one= sum(kl[,one], na.rm=1), two= sum(kl[,two], na.rm=1), zero.denom.one= sum(is.na(kl[,one])), zero.denom.two= sum(is.na(kl[,two]))	)
+	ans
+}
+
 #' A wrapper to minimize \code{KL_divergence} over the parameter \code{x_name} using the function \link{optimize}
 #' @param x_value value tested.
 #' @param x_name name of the parameter over which minimization is performed.
