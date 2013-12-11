@@ -374,7 +374,7 @@ project.nABC.plotGAUSSresults<- function()
 	stop()
 }
 #------------------------------------------------------------------------------------------------------------------------
-project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,n.hists=5,nbin=2, nlevels=5, width.infl=0.25, gridsize=c(100,100), method="kde", plot=0, contour.col="black", ...)
+project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,xlab='x',ylab='y',n.hists=5,nbin=2, nlevels=5, width.infl=0.25, gridsize=c(100,100), method="kde", plot=0, contour.col="black", ...)
 {
 	if(!method%in%c("kde","ash"))	stop("project.nABC.movingavg.get.2D.mode: error at 1a")
 	if(any(is.na(xlim)))	xlim<- range(x)*1.05
@@ -409,8 +409,8 @@ project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,n.hists=5,nbin
 					mean( f$x2[ c(mxidx[2],ifelse(mxidx[2]<length(f$x2),mxidx[2]+1,mxidx[2])) ] )		)
 		if(plot)
 		{
-			image(f$x1,f$x2,f$fhat, col=head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50), ...)
-			contour(f$x1, f$x2, f$fhat, nlevels= nlevels, add=1, col=contour.col)			
+			image(f$x1,f$x2,f$fhat, col=head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50),xlab=xlab,ylab=ylab )
+			contour(f$x1, f$x2, f$fhat, nlevels= nlevels, add=1, col=contour.col, ...)			
 		}
 	}	
 	mx
@@ -2081,6 +2081,23 @@ project.nABC.compareSEIRS<- function()
 		
 		sus<- list(oss[[1]][seq.int(1,length(oss[[1]]),2)], oss[[2]][seq.int(1,length(oss[[2]]),2)] )
 		
+		tmp		<- qqnorm(sus[[1]], plot.it=0)
+		cat(paste("\nplot",paste(d.name,"ts_aILIo_qq_Neth.pdf",sep='/')))
+		pdf(paste(d.name,"ts_aILIo_qq_Neth.pdf",sep='/'),version="1.4",width=4,height=4)				
+		par(mar=c(5,4.5,0.5,1.5))		
+		plot(tmp, ylab= "aILI quantiles", xlab="normal quantiles", pch=16, col= COLS[1], bty='n', main='',cex.axis= cex, cex.lab= cex, cex=cex, type='p', xaxt='n')
+		axis(1, at=qnorm(c(0.1,0.25,0.5,0.75,0.9)), label=paste(c(0.1,0.25,0.5,0.75,0.9)*100,"%",sep=''),cex.axis= cex, cex.lab= cex )
+		qqline(sus[[1]], lty=2 )
+		dev.off()
+		tmp		<- qqnorm(sus[[2]], plot.it=0)
+		cat(paste("\nplot",paste(d.name,"ts_aILIs_qq_Neth.pdf",sep='/')))
+		pdf(paste(d.name,"ts_aILIs_qq_Neth.pdf",sep='/'),version="1.4",width=4,height=4)				
+		par(mar=c(5,4.5,0.5,1.5))		
+		plot(tmp, ylab= "aILI quantiles", xlab="normal quantiles", pch=1, col= COLS[2], bty='n', main='',cex.axis= cex, cex.lab= cex, cex=cex, type='p', xaxt='n')
+		axis(1, at=qnorm(c(0.1,0.25,0.5,0.75,0.9)), label=paste(c(0.1,0.25,0.5,0.75,0.9)*100,"%",sep=''),cex.axis= cex, cex.lab= cex )
+		qqline(sus[[2]], lty=2 )
+		dev.off()
+		
 		x<- seq(min(sus[[1]])*1,max(sus[[1]])*1.5,by=diff(range(sus[[1]]))/500)
 		y<- dnorm(x,mean(sus[[1]]), sd=sd(sus[[1]]))
 		cat(paste("\nplot",paste(d.name,"ts_ATTR_hist_Neth.pdf",sep='/')))
@@ -2113,7 +2130,6 @@ project.nABC.compareSEIRS<- function()
 					x
 				})
 		ylab<- "log 1st order diff'ces in\n ILI attack rate"
-		
 		obs.t.pyr<- lapply(oss, function(x){		as.numeric(names(x))			}	)
 		xlim<- range( c( obs.t.pyr, recursive= TRUE)  )
 		xlim[2]<- xlim[2]+1
@@ -2144,6 +2160,24 @@ project.nABC.compareSEIRS<- function()
 		
 		sus<- list(oss[[1]][seq.int(2,length(oss[[1]]),2)], oss[[2]][seq.int(2,length(oss[[2]]),2)] )
 		
+		tmp		<- qqnorm(sus[[1]], plot.it=0)
+		cat(paste("\nplot",paste(d.name,"ts_fdILIo_qq_Neth.pdf",sep='/')))
+		pdf(paste(d.name,"ts_fdILIo_qq_Neth.pdf",sep='/'),version="1.4",width=4,height=4)				
+		par(mar=c(5,4.5,0.5,1.5))		
+		plot(tmp, ylab= "fdILI quantiles", xlab="normal quantiles", pch=16, col= COLS[1], bty='n', main='',cex.axis= cex, cex.lab= cex, cex=cex, type='p', xaxt='n')
+		axis(1, at=qnorm(c(0.1,0.25,0.5,0.75,0.9)), label=paste(c(0.1,0.25,0.5,0.75,0.9)*100,"%",sep=''),cex.axis= cex, cex.lab= cex )
+		qqline(sus[[1]], lty=2 )
+		dev.off()
+		tmp		<- qqnorm(sus[[2]], plot.it=0)
+		cat(paste("\nplot",paste(d.name,"ts_fdILIs_qq_Neth.pdf",sep='/')))
+		pdf(paste(d.name,"ts_fdILIs_qq_Neth.pdf",sep='/'),version="1.4",width=4,height=4)				
+		par(mar=c(5,4.5,0.5,1.5))		
+		plot(tmp, ylab= "fdILI quantiles", xlab="normal quantiles", pch=1, col= COLS[2], bty='n', main='',cex.axis= cex, cex.lab= cex, cex=cex, type='p', xaxt='n')
+		axis(1, at=qnorm(c(0.1,0.25,0.5,0.75,0.9)), label=paste(c(0.1,0.25,0.5,0.75,0.9)*100,"%",sep=''),cex.axis= cex, cex.lab= cex )
+		qqline(sus[[2]], lty=2 )
+		dev.off()
+		
+		
 		x<- seq(min(sus[[1]])*1.5,max(sus[[1]])*1.5,by=diff(range(sus[[1]]))/500)
 		y<- dnorm(x,mean(sus[[1]]), sd=sd(sus[[1]]))
 		cat(paste("\nplot",paste(d.name,"ts_FDATTR_hist_Neth.pdf",sep='/')))
@@ -2172,6 +2206,17 @@ project.nABC.compareSEIRS<- function()
 		oss<- list( NULL, simuobs[["data"]][[1]][["TOTAL.INC.ATT.R.0"]] )
 		ylab<- "population-level attack rate"
 		sus<- list(NULL, oss[[2]][seq.int(1,length(oss[[2]]),2)] )
+			
+		tmp		<- qqnorm(sus[[2]], plot.it=0)
+		cat(paste("\nplot",paste(d.name,"ts_aINCs_qq_Neth.pdf",sep='/')))
+		pdf(paste(d.name,"ts_aINCs_qq_Neth.pdf",sep='/'),version="1.4",width=4,height=4)				
+		par(mar=c(5,4.5,0.5,1.5))		
+		plot(tmp, ylab= "aINC quantiles", xlab="normal quantiles", pch=1, col= COLS[2], bty='n', main='',cex.axis= cex, cex.lab= cex, cex=cex, type='p', xaxt='n')
+		axis(1, at=qnorm(c(0.1,0.25,0.5,0.75,0.9)), label=paste(c(0.1,0.25,0.5,0.75,0.9)*100,"%",sep=''),cex.axis= cex, cex.lab= cex )
+		qqline(sus[[2]], lty=2 )
+		dev.off()
+		
+		
 		x2<- seq(min(sus[[2]])/1.04,max(sus[[2]])*1.04,by=diff(range(sus[[2]]))/500)
 		y2<- dnorm(x2,mean(sus[[2]]), sd=sd(sus[[2]]))
 		cat(paste("\nplot",paste(d.name,"ts_XATTR_hist_sim.pdf",sep='/')))
@@ -2422,7 +2467,7 @@ print(f.name)
 		}									
 		if(!resume || inherits(readAttempt, "try-error"))
 		{
-			f.name<- c("abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v0.2","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v16")			
+			f.name<- c("abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v50","abc.ci.mcmc.anneal.SEIIRS_PTPR_NL_1_fit_Tier1_Ferguson_9pa_v16")			
 			tmp<- paste("nABC.SEIIRScompare",f.name,sep='/')
 			
 			rho.names	<- c("MED.ANN.ATT.R","AMED.FD.ATT.R","MED.INC.ATT.R")
@@ -2439,9 +2484,9 @@ print(f.name)
 						samples	<- ABC.MMCMC.getsamples(mabc, grace.after.annealing= grace.after.annealing)
 						links	<- ABC.MMCMC.getsamples(mabc, only.nonconst=FALSE, grace.after.annealing= grace.after.annealing, what= "rho.mc")						
 						
-						#df		<- do.call(rbind,samples)
-						#idx		<- c(TRUE,diff(df[,1])!=0)
-						#df		<- cbind(df[idx,],do.call(rbind,links)[idx,])
+						df		<- do.call(rbind,samples)
+						idx		<- c(TRUE,diff(df[,1])!=0)
+						df		<- cbind(df[idx,],do.call(rbind,links)[idx,])
 						#print(df[1:20,])
 						tmp		<- nabc.exprho.at.theta(as.data.frame(df), theta.names, rho.names, thin=1)
 						#print(tmp[1:40,])
@@ -2476,6 +2521,49 @@ print(f.name)
 		xnames	<- c("R0","durImm","repProb")
 		xlab	<- expression(R[0],1/nu,omega)
 		xtrue	<- c(3.5,10,0.08)
+		#	plot 2D histograms that compare two runs with each other
+		f.name<- paste(d.name,"/nABC.compareSEIRS_simu_12.pdf",sep='')
+		cat(paste("\nABC.StretchedF: write pdf to",f.name))
+		pdf(f.name,version="1.4",width=4,height=4)
+		par(mar=c(4,4,1,1))		
+		j1		<- 1
+		j2		<- 2
+		xs1		<- lapply(seq_along(post),function(i){		c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xnames[j1]]), recursive=1)		})	
+		xs2		<- lapply(seq_along(post),function(i){		c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xnames[j2]]), recursive=1)		})		
+		tmp		<- project.nABC.movingavg.get.2D.mode(xs1[[2]], xs2[[2]], xlim= c(3.32,3.65),ylim=c(9.2,10.7),plot=1, nbin=10, levels=c(1, 5, 10, 12), method="ash", width.infl=0.35, xlab=xlab[j1], ylab=xlab[j2])				
+		abline(v=xtrue[1], lty=3)
+		abline(h=xtrue[2], lty=3)
+		project.nABC.movingavg.add.contour(xs1[[1]], xs2[[1]],  xlim= c(3.32,3.65), ylim=c(9.2,10.7), levels=c(1, 12, 50, 90 ), width.infl=0.3, contour.col="white")		#
+		dev.off()
+		f.name<- paste(d.name,"/nABC.compareSEIRS_simu_13.pdf",sep='')
+		cat(paste("\nABC.StretchedF: write pdf to",f.name))
+		pdf(f.name,version="1.4",width=4,height=4)
+		par(mar=c(4,4,1,1))				
+		j1		<- 1
+		j2		<- 3
+		xs1		<- lapply(seq_along(post),function(i){		c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xnames[j1]]), recursive=1)		})	
+		xs2		<- lapply(seq_along(post),function(i){		c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xnames[j2]]), recursive=1)		})		
+		tmp		<- project.nABC.movingavg.get.2D.mode(xs1[[2]], xs2[[2]], xlim= c(3.32,3.65),ylim=c(0.072,0.086),plot=1, nbin=10, levels=c(200, 800, 1150), method="ash", width.infl=0.4, xlab=xlab[j1], ylab=xlab[j2])				
+		abline(v=xtrue[j1], lty=3)
+		abline(h=xtrue[j2], lty=3)
+		project.nABC.movingavg.add.contour(xs1[[1]], xs2[[1]],  xlim= c(3.32,3.65), ylim=c(0.072,0.086), levels=c(200, 1150, 5000, 12000), width.infl=0.4, contour.col="white")		#
+		dev.off()
+		f.name<- paste(d.name,"/nABC.compareSEIRS_simu_23.pdf",sep='')
+		cat(paste("\nABC.StretchedF: write pdf to",f.name))
+		pdf(f.name,version="1.4",width=4,height=4)
+		par(mar=c(4,4,1,1))						
+		j1		<- 2
+		j2		<- 3
+		xs1		<- lapply(seq_along(post),function(i){		c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xnames[j1]]), recursive=1)		})	
+		xs2		<- lapply(seq_along(post),function(i){		c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xnames[j2]]), recursive=1)		})		
+		tmp		<- project.nABC.movingavg.get.2D.mode(xs1[[2]], xs2[[2]], xlim= c(9.2,10.7),ylim=c(0.072,0.086),plot=1, nbin=10, levels=c(100,250,350), method="ash", width.infl=0.3, xlab=xlab[j1], ylab=xlab[j2])				
+		abline(v=xtrue[j1], lty=3)
+		abline(h=xtrue[j2], lty=3)
+		project.nABC.movingavg.add.contour(xs1[[1]], xs2[[1]],  xlim= c(9.2,10.7), ylim=c(0.072,0.086), levels=c(100,1000, 2500), width.infl=0.3, contour.col="white")		#
+		dev.off()
+stop()
+		
+		#	plot 1D histograms that compare two runs with each other
 		lapply(seq_along(xnames),function(j)
 						{
 							xname<- xnames[j]
@@ -5925,8 +6013,9 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 				#
 				# run with equal yn=xn
 				#
+				leave.out.a		<- leave.out.sig2	<- 0
 				f.name			<- paste(dir.name,"/nABC.MA1_yneqxn_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')									
-				ans.eq			<- simu.acf.fixx.unifrho(	N, x, x.u0=x.u0, yn.sig2=ceiling( length(x)/(1+leave.out.sig2) ), yn.a=ceiling( length(x)/(1+leave.out.a) ), prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
+				ans.eq			<- simu.acf.fixx.unifrho(	N, x, x.u0=x.u0, yn.sig2=ceiling( length(x)/(1+leave.out.sig2) ), yn.a=ceiling( length(x)/(1+leave.out.a) ), prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1, xmapa.leave.out=leave.out.a, xsig2.leave.out=leave.out.sig2 )					
 				cat(paste("\nnABC.MA: save ",f.name))
 				save(ans.eq,file=f.name)
 			}
@@ -5994,6 +6083,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			par(mar=c(4.5,4.5,0.5,0.5))
 			tmp	<- acc.s2a						
 			tmp	<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
+			sqrt(sum(tmp-c(xa,xsigma2))^2)
 			project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10,13), contour.col="white")
 			acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
 			points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
@@ -6012,31 +6102,43 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			ans.ok.acc				<- length(acc.s2a) / ncol(ans.ok[["data"]])
 			ans.eq.acc				<- optimize( f=function(x, ans.eq, ans.ok.acc)
 										{
-											tmp						<- 1-x
-											acc.a					<- quantile(ans.eq[["data"]]["T.a",], probs=c(tmp/2,1-tmp/2))	#inner area is %acc
-											acc.sig2				<- quantile(ans.eq[["data"]]["T.s2",], probs=c(tmp/2,1-tmp/2))
-											acc.s2a					<- which( 	ans.eq[["data"]]["T.s2",]>=acc.sig2[1]  &  ans.eq[["data"]]["T.s2",]<=acc.sig2[2]	&
-																				ans.eq[["data"]]["T.a",]>=acc.a[1]  &  ans.eq[["data"]]["T.a",]<=acc.a[2]
-											)
+											tmp1					<- quantile(abs(ans.eq[["data"]]["T.a",]), probs=x)	#inner area is %acc
+											tmp2					<- quantile(abs(log(ans.eq[["data"]]["T.s2",])), probs=x)
+											acc.s2a					<- which( 	abs(log(ans.eq[["data"]]["T.s2",]))<=tmp2  & 	abs(ans.eq[["data"]]["T.a",])<=tmp1			)
 											abs(ans.ok.acc - length(acc.s2a) / ncol(ans.eq[["data"]]))
-										}, interval=c(ans.ok.acc,1), ans.eq, ans.ok.acc)$minimum								
-			acc.a					<- quantile(ans.eq[["data"]]["T.a",], probs=c((1-ans.eq.acc)/2,1-(1-ans.eq.acc)/2))	
-			acc.sig2				<- quantile(ans.eq[["data"]]["T.s2",], probs=c((1-ans.eq.acc)/2,1-(1-ans.eq.acc)/2))
-			acc.s2a					<- which( 	ans.eq[["data"]]["T.s2",]>=acc.sig2[1]  &  ans.eq[["data"]]["T.s2",]<=acc.sig2[2]	&
-												ans.eq[["data"]]["T.a",]>=acc.a[1]  &  ans.eq[["data"]]["T.a",]<=acc.a[2]
-											 )
+										}, interval=c(ans.ok.acc,1), ans.eq, ans.ok.acc)$minimum						
+								
+			tmp1					<- quantile(abs(ans.eq[["data"]]["T.a",]), probs=ans.eq.acc)	
+			tmp2					<- quantile(abs(log(ans.eq[["data"]]["T.s2",])), probs=ans.eq.acc)
+			acc.s2a					<- which( 	abs(log(ans.eq[["data"]]["T.s2",]))<=tmp2  &	abs(ans.eq[["data"]]["T.a",])<=tmp1	)
+			
+			tmp1	<- tmp1*c(0.25,0.5,1,1.5,2)
+			tmp2	<- tmp2*c(0.25,0.5,1,1.5,2)
+			acc.s2a					<- lapply(seq_along(tmp1),function(i)	which( 	abs(log(ans.eq[["data"]]["T.s2",]))<=tmp2[i]  &	abs(ans.eq[["data"]]["T.a",])<=tmp1[i]	) 		)
 			#
+			#	acceptance
+			#
+			#sapply(seq_along(tmp1),function(i)	length(acc.s2a[[i]]) / ncol(ans.eq[["data"]])		)
 			#	compute KL divergence
 			#
-			df1			<- data.table(	th1=ans.eq[["data"]]["th.a",acc.s2a],	th2=ans.eq[["data"]]["th.s2",acc.s2a]	)			
-			df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-			kl.eq		<- nabc.kl.2D(df1, df2, nbin=100)			
+			kl.eq	<- sapply(seq_along(tmp1),function(i)
+						{
+							df1			<- data.table(	th1=ans.eq[["data"]]["th.a",acc.s2a[[i]]],	th2=ans.eq[["data"]]["th.s2",acc.s2a[[i]]]	)			
+							df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
+							nabc.kl.2D(df1, df2, nbin=100)$two									
+						})
+			mode	<- lapply(seq_along(tmp1),function(i)
+						{
+							project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a[[i]]],ans.eq[["data"]]["th.s2",acc.s2a[[i]]], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=0, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
+						})
+			sapply(seq_along(mode),function(i)		sqrt(sum(mode[[i]]-c(xa,xsigma2))^2)	)		
+			
 			#	plot standard ABC approximation to posterior, based on same acceptance probability (13%) with quantile method
 			file					<- paste(dir.name,"/nABC.MA1_yneq_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,"_2Dposterior.pdf",sep='')
 			if(plot)	pdf(file=file, 4, 4)
 			par(mar=c(4.5,4.5,0.5,0.5))
 			tmp			<- acc.s2a						
-			tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",tmp],ans.eq[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
+			tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",tmp],ans.eq[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=7, method="ash", xlab="a", ylab=expression(sigma^2))
 			project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10,13), contour.col="white")			
 			acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
 			points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
