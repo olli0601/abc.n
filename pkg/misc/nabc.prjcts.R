@@ -5891,6 +5891,48 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 		rownames(ans[["data"]])	<- c("th.a","rho.a", "T.a", "th.s2", "rho.s2",  "T.s2")		
 		ans
 	}
+	#nABC - simulates data sets and pre-computes the test statistics for required length of simulated time series
+	simu.acf2.fixx.unifrho<- function(	N, x, x.u0=NA, yn.a=NA, yn.sig2=NA, xmapa.prior.l=-0.3,xmapa.prior.u=0.3, xsig2.prior.l=0.5,xsig2.prior.u=2, xmapa.leave.out=2, xsig2.leave.out=1, verbose=0	)
+	{
+		ans				<- vector("list",7)
+		names(ans)		<- c("x","xv","xv2","xa","xa2","xa3","data")
+		ans[["x"]]		<- x
+		ans[["xv"]]		<- var( x[seq.int(1,length(x),by=1+xsig2.leave.out)] )
+		ans[["xv2"]]	<- var( x[seq.int(2,length(x),by=1+xsig2.leave.out)] )
+		ans[["xa"]]		<- nabc.acf.equivalence.cor(x, leave.out=xmapa.leave.out)["z"]
+		ans[["xa2"]]	<- nabc.acf.equivalence.cor(x[-1], leave.out=xmapa.leave.out)["z"]
+		ans[["xa3"]]	<- nabc.acf.equivalence.cor(x[-c(1,2)], leave.out=xmapa.leave.out)["z"]
+		if(any(is.na(c(yn.a,yn.sig2))))
+			yn			<- length(x)
+		else
+			yn			<- max( yn.sig2*(1+leave.out.sig2),yn.a*(1+leave.out.a) )
+		if(verbose)	cat(paste("\nyn.a=",yn.a))
+		if(verbose)	cat(paste("\nyn.sig2=",yn.sig2))
+		if(verbose)	cat(paste("\nNumber of simulated data points set to",yn))
+		if(yn<length(x))	stop("Unexpected yn<length(x)")
+		ans[["data"]]	<- sapply(1:N,function(i)
+				{
+					#cat(paste("\nproject.nABC.movingavg.unifsigma.unifma iteration",i))
+					ymapa		<- runif(1, nabc.acf.a2rho( xmapa.prior.l ), nabc.acf.a2rho( xmapa.prior.u ))	#uniform on rho
+					ymapa		<- nabc.acf.rho2a( ymapa )						
+					ysigma2		<- runif(1, xsig2.prior.l, xsig2.prior.u )										#uniform on rho
+					ysigma2		<- nabc.acf.rho2sig2( ysigma2, a=ymapa )
+					if(is.na(x.u0))	
+						x.u0	<- rnorm( 1, 0, sd=sqrt(ysigma2))
+					y			<- c(x.u0, rnorm( yn, 0, sd=sqrt(ysigma2)))
+					y			<- y[-1] + y[-(yn+1)]*ymapa
+					tmp			<- list( 	nabc.acf.equivalence.cor(y, leave.out=xmapa.leave.out, len=yn.a),
+											nabc.acf.equivalence.cor(y[-1], leave.out=xmapa.leave.out, len=yn.a),
+											nabc.acf.equivalence.cor(y[-c(1,2)], leave.out=xmapa.leave.out, len=yn.a)	)
+					out.a		<- c(ymapa, 	nabc.acf.a2rho(ymapa),			(tmp[[1]]["z"] - ans[["xa"]]),			(tmp[[2]]["z"] - ans[["xa"]]),			(tmp[[3]]["z"] - ans[["xa"]]))					
+					tmp			<- list(	(y[seq.int(1,length(y),by=1+xsig2.leave.out)])[seq_len(yn.sig2)],
+											(y[seq.int(2,length(y),by=1+xsig2.leave.out)])[seq_len(yn.sig2)]	)						
+					out.v		<- c(ysigma2,	(1+ymapa*ymapa)*ysigma2,	 	var(tmp[[1]])*(length(tmp[[1]])-1) / (ans[["xv"]] * ceiling( length(x)/(1+xsig2.leave.out)-1 ) ),		var(tmp[[2]])*(length(tmp[[2]])-1) / (ans[["xv"]] * ceiling( length(x)/(1+xsig2.leave.out)-1 ) )	)					
+					c(out.a,out.v)
+				})	
+		rownames(ans[["data"]])	<- c("th.a","rho.a", "T.a", "T.a2", "T.a3", "th.s2", "rho.s2",  "T.s2",  "T.s22")		
+		ans
+	}
 	#
 	# parameters to simulate data x
 	#
@@ -5965,14 +6007,14 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 							abc.param.sig2	<- nabc.chisqstretch.calibrate(length(vx), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
 						})
 				#print(abc.param.a)	;	print(abc.param.sig2)			
-				ans.ok			<- simu.acf.fixx.unifrho(	N, x, x.u0=x.u0, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
+				ans.ok			<- simu.acf2.fixx.unifrho(	N, x, x.u0=x.u0, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1 )					
 				cat(paste("\nnABC.MA: save ",f.name))
 				save(ans.ok,file=f.name)
 				ans.ok			<- NULL
 				gc()
 				#
 				# calibrated run -- upper bound for data points
-				#			
+				#							
 				f.name			<- paste(dir.name,"/nABC.MA1_ynupper_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')							
 				abc.param.a		<- nabc.tosz.calibrate(xn, mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=F)					
 				vx				<- x[seq.int(1,length(x),by=1+leave.out.sig2)]
@@ -5985,6 +6027,22 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 				save(ans.upper,file=f.name)
 				ans.upper		<- NULL
 				gc()
+				#
+				# calibrated run with no leave out
+				#							
+				leave.out.a		<- leave.out.sig2	<- 0
+				f.name			<- paste(dir.name,"/nABC.MA1_yncalibratednoleaveout_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,".R",sep='')			
+				zx				<- nabc.acf.equivalence.cor(x, leave.out=leave.out.a)
+				abc.param.a		<- nabc.tosz.calibrate(zx["n"], mx.pw=0.9, alpha=alpha, max.it=100, pow_scale=2, debug=F, plot=F)					
+				vx				<- x[seq.int(1,length(x),by=1+leave.out.sig2)]
+				suppressWarnings({	
+							abc.param.sig2	<- nabc.chisqstretch.calibrate(length(vx), sd(vx), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
+						})			
+				ans.ok.nlo		<- simu.acf.fixx.unifrho(	N, x, x.u0=x.u0, yn.sig2=abc.param.sig2["n.of.y"], yn.a=abc.param.a["n.of.y"], prior.l.a, prior.u.a, prior.l.sig2, prior.u.sig2, verbose=1, xmapa.leave.out=leave.out.a, xsig2.leave.out=leave.out.sig2 )					
+				cat(paste("\nnABC.MA: save ",f.name))
+				save(ans.ok.nlo,file=f.name)
+				ans.ok			<- NULL
+				gc()				
 			}
 			else if(xn<3e2)		#calibrating m does not work for chi2stretch for xn>3e2 because summary likelihood is based on densigamma which has a call to gamma that is Inf for xn>3e2
 			{
@@ -6090,6 +6148,8 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			abline(h=xsigma2, lty=2)
 			abline(v=xa, lty=2)
 			if(plot)	dev.off()
+			
+			tmp	<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["rho.a",acc.s2a],ans.ok[["data"]]["rho.s2",acc.s2a], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
 			#
 			#	compute KL divergence
 			#
@@ -6108,13 +6168,9 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 											abs(ans.ok.acc - length(acc.s2a) / ncol(ans.eq[["data"]]))
 										}, interval=c(ans.ok.acc,1), ans.eq, ans.ok.acc)$minimum						
 								
-			tmp1					<- quantile(abs(ans.eq[["data"]]["T.a",]), probs=ans.eq.acc)	
-			tmp2					<- quantile(abs(log(ans.eq[["data"]]["T.s2",])), probs=ans.eq.acc)
-			acc.s2a					<- which( 	abs(log(ans.eq[["data"]]["T.s2",]))<=tmp2  &	abs(ans.eq[["data"]]["T.a",])<=tmp1	)
-			
-			tmp1	<- tmp1*c(0.25,0.5,1,1.5,2)
-			tmp2	<- tmp2*c(0.25,0.5,1,1.5,2)
-			acc.s2a					<- lapply(seq_along(tmp1),function(i)	which( 	abs(log(ans.eq[["data"]]["T.s2",]))<=tmp2[i]  &	abs(ans.eq[["data"]]["T.a",])<=tmp1[i]	) 		)
+			tmp1	<- quantile(abs(ans.eq[["data"]]["T.a",]), probs=ans.eq.acc)	*	c(0.25,0.5,1,1.5,2)
+			tmp2	<- quantile(abs(log(ans.eq[["data"]]["T.s2",])), probs=ans.eq.acc)	*	c(0.25,0.5,1,1.5,2)
+			acc.s2a	<- lapply(seq_along(tmp1),function(i)	which( 	abs(log(ans.eq[["data"]]["T.s2",]))<=tmp2[i]  &	abs(ans.eq[["data"]]["T.a",])<=tmp1[i]	) 		)
 			#
 			#	acceptance
 			#

@@ -100,7 +100,7 @@ nabc.acf.equivalence.cor<- function(x, leave.out=0, len= ceiling(length(x)/(1+le
 	tmp	<- rbind( x[-1], x[-length(x)]	)
 	tmp	<- tmp[,seq.int(1,ncol(tmp),by=1+leave.out)]
 	if(leave.out>0){
-		tmp	<- tmp[,seq_len(len)]		
+		tmp	<- tmp[,seq_len(min(ncol(tmp),len))]		
 	}
 	if(any(is.na(tmp)))		stop("Unexpected NA in tmp")
 	tmp2<- cor(tmp[1,],tmp[2,])
