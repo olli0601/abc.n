@@ -380,11 +380,9 @@ nabc_dratio_propwgausskernel <- function(support, ctheta, ptheta, covmat, give_l
 		names.posdef <- rownames(covmat)[diag(covmat) > 0]
 
 		if (give_log) {
-			r <- log(pmvnorm(lower = support["lower", names.posdef], upper = support["upper", names.posdef], mean = ctheta[names.posdef],sigma = covmat[names.posdef, names.posdef])) 
-			- log(pmvnorm(lower = support["lower", names.posdef], upper = support["upper", names.posdef], mean = ptheta[names.posdef], sigma = covmat[names.posdef, names.posdef]))
+			r <- log(pmvnorm(lower = support["lower", names.posdef], upper = support["upper", names.posdef], mean = ctheta[names.posdef],sigma = covmat[names.posdef, names.posdef])) - log(pmvnorm(lower = support["lower", names.posdef], upper = support["upper", names.posdef], mean = ptheta[names.posdef], sigma = covmat[names.posdef, names.posdef]))
 		} else {
-			r <- pmvnorm(lower = support["lower", names.posdef], upper = support["upper", names.posdef], mean = ctheta[names.posdef], sigma = covmat[names.posdef, names.posdef])
-			/pmvnorm(lower = support["lower", names.posdef], upper = support["upper", names.posdef], mean = ptheta[names.posdef], sigma = covmat[names.posdef, names.posdef])
+			r <- pmvnorm(lower = support["lower", names.posdef], upper = support["upper", names.posdef], mean = ctheta[names.posdef], sigma = covmat[names.posdef, names.posdef])/pmvnorm(lower = support["lower", names.posdef], upper = support["upper", names.posdef], mean = ptheta[names.posdef], sigma = covmat[names.posdef, names.posdef])
 		}
 	}
 	return(r)
