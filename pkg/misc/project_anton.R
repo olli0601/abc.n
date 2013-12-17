@@ -1039,10 +1039,10 @@ main <- function() {
 	tol <- 1e-3
 	variance_thin <- 1
 	autocorr_thin <- 2
-	n_iter <- 1000000
+	n_iter <- 5000000
 	iter_adapt <- n_iter
 	a_bounds <- c(-0.5, 0.5)
-	sig2_bounds <- c(0.2, 1.8)
+	sig2_bounds <- c(0.3, 1.7)
 	prior_dist <- "uniform_on_rho"
 
 
