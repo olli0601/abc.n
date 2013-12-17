@@ -579,11 +579,11 @@ nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,
 
 	if(plot){
 		stopifnot(!is.null(dir_pdf))
-	#plot prior
-	pdf(file = file.path(dir_pdf, paste0("full_prior_analytic.pdf")), 6, 6)
-	nabc_MA1_plot_prior(a_bounds, sig2_bounds, prior_dist, variance = data$unthinned$s_stat$variance, 
-		autocorr = data$unthinned$s_stat$autocorr, method = "analytic",grid_size = c(100, 100))
-	dev.off()
+		#plot prior
+		pdf(file = file.path(dir_pdf, paste0("full_prior_analytic.pdf")), 6, 6)
+		nabc_MA1_plot_prior(a_bounds, sig2_bounds, prior_dist, variance = data$unthinned$s_stat$variance, 
+			autocorr = data$unthinned$s_stat$autocorr, method = "analytic",grid_size = c(100, 100))
+		dev.off()
 	}
 	
 	##choose init state
@@ -882,8 +882,8 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 	
 		
 	#theta_init (the theta init of each chain will be a gaussian perturbation of the true value)
-	#theta_init <- c(a=data$param$a,sig2=data$param$sig2,eps_0=data$eps_0)		
-	theta_init <- c(a=0,sig2=0.9,eps_0=data$eps_0)		
+	theta_init <- c(a=data$param$a,sig2=data$param$sig2,eps_0=data$eps_0)		
+	#theta_init <- c(a=0,sig2=0.9,eps_0=data$eps_0)		
 	
 	#default proposal
 	covmat_mvn_proposal <- 50*matrix(c(1e-3, 1e-5, 0, 1e-5, 1e-3, 0, 0, 0, 0), nrow = length(theta_init), byrow = T, dimnames = list(names(theta_init), names(theta_init)))	
@@ -910,8 +910,10 @@ run_parallel_MCMC_MA1 <- function(i_process, n_CPU, stream_names, data=NULL, n_i
 	
 	#combine posterior
 	mcmc <- all_chains[[1]]	
-	for(i in 2:length(all_chains)){	
-		mcmc$posterior <- c(mcmc$posterior,all_chains[[i]]$posterior)
+	if(length(all_chains)>1){
+		for(i in 2:length(all_chains)){	
+			mcmc$posterior <- c(mcmc$posterior,all_chains[[i]]$posterior)
+		}
 	}
 	saveRDS(mcmc,file=file.path(dir_mcmc,"mcmc_combined.rds"))
 
@@ -999,7 +1001,7 @@ main <- function() {
 	#source Olli's prjct:
 	source(file.path(NABC_PKG,"misc","nabc.prjcts.R"))
 	
-	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_with_thin","~/Documents/GitProjects/nABC/pdf")
+	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_a_0_to_0.4","~/Documents/GitProjects/nABC/pdf")
 	dir.create(dir_pdf,rec=T)
 
 	if(0){
@@ -1041,21 +1043,22 @@ main <- function() {
 	#continue_MCMC_MA1(mcmc,50000)
 	
 	n_x <- 150
-	a_true <- 0.1
+	index_a	<- as.numeric(Sys.getenv("ARG1")) + 1
+	a_true <- seq(0, 0.4, 0.025)[index_a]
 	sig2_true <- 1
 	tol <- 1e-3
 	variance_thin <- 1
 	autocorr_thin <- 2
-	n_iter <- 500000
+	n_iter <- 1000000
 	iter_adapt <- n_iter
-	a_bounds <- c(-0.4, 0.4)
-	sig2_bounds <- c(0.3, 1.7)
-	prior_dist <- "uniform"
+	a_bounds <- c(-0.8, 0.8)
+	sig2_bounds <- c(0.2, 1.8)
+	prior_dist <- "uniform_on_rho"
 
 
 	if(1){
 		#foo n CPU
-		file_data <- file.path(dir_pdf,paste0("data_with_nx=",n_x,"_tol=", tol,"_varThin=", variance_thin,"_corThin=", autocorr_thin,".rds"))
+		file_data <- file.path(dir_pdf,paste0("data_with_a=",a_true,"_nx=",n_x,"_tol=", tol,"_varThin=", variance_thin,"_corThin=", autocorr_thin,".rds"))
 		if(!file.exists(file_data)){
 			data <- project.nABC.movingavg.get.fixed.ts(n=n_x, mu=0, a=a_true, sd= sqrt(sig2_true), leave.out.a= autocorr_thin, leave.out.s2= variance_thin, verbose=1, tol=tol, return_eps_0=T)
 			#data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)				
@@ -1067,7 +1070,7 @@ main <- function() {
 
 
 	#parallel
-	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,12,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
+	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,1,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
 
 	if(0){
 		
