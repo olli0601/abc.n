@@ -584,7 +584,7 @@ nabc_MA1_MCMC_MH <- function(data=NULL,theta_init=NULL,covmat_mvn_proposal=NULL,
 
 
 	##specify support for parameters
-	support <- matrix(c(-1, 0, -Inf, 1, Inf,Inf), ncol = length(theta_init), byrow = T, dimnames = list(c("lower","upper"), names(theta_init)))
+	support <- matrix(c(-0.5, 0, -Inf, 0.5, Inf,Inf), ncol = length(theta_init), byrow = T, dimnames = list(c("lower","upper"), names(theta_init)))
 
 	if(is.null(covmat_mvn_proposal)){
 		##specify default covmat for gaussian proposal (eps_0 fixed to true value)
@@ -1037,7 +1037,7 @@ main <- function() {
 	tol <- 1e-3
 	variance_thin <- 1
 	autocorr_thin <- 2
-	n_iter <- 5000000
+	n_iter <- 3000000
 	iter_adapt <- n_iter
 	a_bounds <- c(-0.5, 0.5)
 	sig2_bounds <- c(0.3, 1.7)
