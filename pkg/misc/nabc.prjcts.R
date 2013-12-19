@@ -654,32 +654,37 @@ project.nABC.changeofvariables<- function()
 }
 #------------------------------------------------------------------------------------------------------------------------
 project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbose=0, tol=1e-3, return_eps_0=FALSE )
-{		
-	verbose			<- 1
-	m				<- ceiling( max(1, n / 5000) )
-	m				<- 1e4 / m
-	rho0			<- nabc.acf.a2rho(a)
-	ans				<- NA
+{
+	require(data.table)
+	verbose				<- 1
+	m					<- ceiling( max(1, n / 5000) )
+	m					<- 1e4 / m
+	#true values to match in observed data
+	rho.a.0				<- nabc.acf.a2rho(a)
+	rho.sig2.0			<- sd*sd *( 1 + a*a )
+	ans					<- NA
 	index.leave.out.s2	<- seq.int(1,n,by=1+leave.out.s2)
-	while(is.na(ans))
+	while(any(is.na(ans)))
 	{
-		x				<-	rnorm(m*n+1,mu,sd=sd)
+		x				<- rnorm(m*n+1,mu,sd=sd)
 		u0	 			<- x[seq(1,m*n,by=n)]
 		x				<- x[-1] + x[-(m*n+1)]*a
 		x				<- matrix(x,ncol=m)	
-		#adjust variance of thinned time series if requested
-		if(leave.out.s2)
-		{
-			x_std_cte 	<- sapply(seq_len(ncol(x)),function(i)		sqrt((1+a*a)*sd*sd)/(sd(x[index.leave.out.s2,i])*(n-1)/n)	)
-			x			<- sapply(seq_len(ncol(x)),function(i)		x[,i]*x_std_cte[i]							)			#set desired variance
-		}
-		else
-			x_std_cte 	<- rep(1,ncol(x))
-		#compute difference in sample autocorrelation if adjustment requested
+		#adjust variance of time series
+		x_std_cte 		<- sapply(seq_len(ncol(x)),function(i)		sqrt(	((1+a*a)*sd*sd)/(var(x[index.leave.out.s2,i])*(n-1)/n)	)	)
+		x				<- sapply(seq_len(ncol(x)),function(i)		x[,i]*x_std_cte[i]							)			#set desired variance		
+		#compute sample autocorrelation with leave.out
 		if(leave.out.a)				
-			rhox		<- apply(x,2,function(col)	nabc.acf.equivalence.cor(col, leave.out=leave.out.a)["z"] )
+			rho.a.x.lo		<- apply(x,2,function(col)	nabc.acf.equivalence.cor(col, leave.out=leave.out.a)["z"] )
 		else
-			rhox		<- rep(rho0, ncol(x))
+			rho.a.x.lo		<- rep(rho.a.0, ncol(x))
+		#compute sample autocorrelation without leave.out 
+		rho.a.x.nlo			<- apply(x,2,function(col)	nabc.acf.equivalence.cor(col, leave.out=0)["z"] )
+		#compute sample variance without leave.out
+		if(leave.out.s2)	
+			rho.sig2.x.nlo	<- apply(x,2,function(col) var(col) )
+		else
+			rho.sig2.x.nlo	<- rep(rho.sig2.0, ncol(x))
 		
 		error		<- sapply(seq_len(ncol(x)),function(i)
 						{ 
@@ -688,18 +693,22 @@ project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leav
 						})
 		error		<- t( abs(error-c(a,sd*sd)) )
 		colnames(error)	<- c("error.arima.a","error.arima.sd")
-		error		<- cbind( data.table( error ), data.table(error.abc.a=abs(rhox - rho0 ), u0= u0/x_std_cte), dummy=seq_along(u0) )
-		error		<- subset(error, error.arima.a<tol & error.arima.sd<tol &  error.abc.a<tol)
+		error		<- cbind( data.table( error ), data.table(	error.abc.a.lo=abs(rho.a.x.lo - rho.a.0 ), 
+																error.abc.a.nlo=abs(rho.a.x.nlo - rho.a.0 ),
+																error.abc.sig2.nlo=abs(rho.sig2.x.nlo - rho.sig2.0),
+																u0= u0/x_std_cte), dummy=seq_along(u0) )
+		error		<- subset(error, error.arima.a<tol & error.arima.sd<tol &  error.abc.a.lo<tol  &  error.abc.a.nlo<tol & error.abc.sig2.nlo<tol)
 		if(nrow(error))
 		{
 			print(error)
 			ans		<- error[1,dummy]
+			ans		<- x[,ans]
 		}
 		else if(verbose)	cat(paste("\nerror above",tol))						
 	}	
-	ans				<- x[,ans]
-	if(verbose && leave.out.a)	cat(paste("\nrhox of leave-out time series is",nabc.acf.equivalence.cor(ans, leave.out=leave.out.a)["z"],"and should be",rho0))	
-	if(verbose && leave.out.s2)	cat(paste("\nvar of leave-out time series is",var(ans[index.leave.out.s2]),"and should be",(1+a*a)*sd*sd))
+	
+	if(verbose && leave.out.a)	cat(paste("\n atanh(cor) of leave-out time series is",nabc.acf.equivalence.cor(ans, leave.out=leave.out.a)["z"],"and should be",rho.a.0))	
+	if(verbose && leave.out.s2)	cat(paste("\n var*(n-1)/n of leave-out time series is",var(ans[index.leave.out.s2])*(n-1)/n,"and should be",rho.sig2.0))
 	tmp				<- arima(ans, order=c(0,0,1), include.mean=0, method="CSS-ML")
 	if(verbose)	cat(paste("\narima MLE of time series is a=",tmp[["coef"]][1],"sig2=",tmp[["sigma2"]]))
 	
@@ -5835,7 +5844,6 @@ analyse_MCMC_MA1_burn.and.thin<- function(posterior,thin_every=0,burn=0)
 #------------------------------------------------------------------------------------------------------------------------
 nabc.test.acf.montecarlo.vary.a<- function()
 {
-	
 	my.mkdir(DATA,"nABC.acf")
 	dir.name	<- paste(DATA,"nABC.acf",sep='/')	
 	pdf.width	<- 4
@@ -6069,6 +6077,25 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					acc.s2a				<- which( 	ans.ok.nlo[["data"]]["T.s2",]>=abc.param.sig2["cl"]  &  ans.ok.nlo[["data"]]["T.s2",]<=abc.param.sig2["cu"]	&
 													ans.ok.nlo[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)>=abc.param.a["cl"]  &  ans.ok.nlo[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)<=abc.param.a["cu"]
 												)
+					if(0)
+					{
+						acc.a.rho			<- ans.ok.nlo[["data"]]["rho.a",acc.s2a]-nabc.acf.a2rho(xa)
+						acc.a.h				<- project.nABC.movingavg.gethist(acc.a.rho, ans.ok.nlo[["xa"]], nbreaks= 50, width= 0.5, plot=1, ylim=c(0,6))
+						rho					<- seq(min(acc.a.rho),max(acc.a.rho),len=1000)
+						
+						su.lkl.norm			<- nabc.tosz.sulkl.norm(1/sqrt(zx["n"]-3), support=range(rho))
+						su.lkl				<- nabc.tosz.sulkl(rho, 1/sqrt(zx["n"]-3), norm=su.lkl.norm, support=range(rho), log=FALSE)
+						lines(rho,su.lkl,col="red")
+						abline(v=0, col="red", lty=2)
+						#	plot marginal of rho_var	-- not quite OK -- prior range?		
+						acc.s2.rho			<- ans.ok.nlo[["data"]]["rho.s2",acc.s2a]								
+						acc.s2.h			<- project.nABC.movingavg.gethist(acc.s2.rho, ans.ok.nlo[["xv"]]*(length(vx)-1)/length(vx), nbreaks= 50, width= 0.5, plot=1, ylim=c(0,4))
+						rho					<- seq(min(acc.s2.rho),max(acc.s2.rho),len=1000)
+						su.lkl.norm			<- nabc.chisqstretch.su.lkl.norm(length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), support=range(acc.s2.rho))
+						su.lkl				<- nabc.chisqstretch.sulkl(rho, length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), norm=su.lkl.norm, support= range(acc.s2.rho), log=FALSE)
+						lines(rho,su.lkl,col="red")
+						abline(v=1, col="red", lty=2)
+					}
 					acc.prob			<- length(acc.s2a)/ncol(ans.ok.nlo[["data"]])
 					file				<- files.a[2,file]
 					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_2Dposterior.pdf",sep='')
@@ -6151,27 +6178,25 @@ nabc.test.acf.montecarlo.vary.a<- function()
 													ans.ok[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)>=abc.param.a["cl"]  &  ans.ok[["data"]]["T.a",]*sqrt(abc.param.a["n.of.y"]-3)<=abc.param.a["cu"]							
 												)
 					acc.prob			<- length(acc.s2a.t2)/ncol(ans.ok[["data"]])
-					
-					acc.a.rho			<- ans.ok[["data"]]["rho.a",acc.s2a.t2]-nabc.acf.a2rho(xa)
-					acc.a.h				<- project.nABC.movingavg.gethist(acc.a.rho, ans.ok[["xa"]], nbreaks= 50, width= 0.5, plot=1, ylim=c(0,6))
-					rho					<- seq(min(acc.a.rho),max(acc.a.rho),len=1000)
-					
-					su.lkl.norm			<- nabc.tosz.sulkl.norm(1/sqrt(zx["n"]-3), support=range(rho))
-					su.lkl				<- nabc.tosz.sulkl(rho, 1/sqrt(zx["n"]-3), norm=su.lkl.norm, support=range(rho), log=FALSE)
-					lines(rho,su.lkl,col="red")
-					abline(v=0, col="red", lty=2)
-					#	plot marginal of rho_var	-- not quite OK -- prior range?		
-					acc.s2.rho			<- ans.ok[["data"]]["rho.s2",acc.s2a.t2]								
-					acc.s2.h			<- project.nABC.movingavg.gethist(acc.s2.rho, ans.ok[["xv"]]*(length(vx)-1)/length(vx), nbreaks= 50, width= 0.5, plot=1, ylim=c(0,4))
-					rho					<- seq(min(acc.s2.rho),max(acc.s2.rho),len=1000)
-					su.lkl.norm			<- nabc.chisqstretch.su.lkl.norm(length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), support=range(acc.s2.rho))
-					su.lkl				<- nabc.chisqstretch.sulkl(rho, length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), norm=su.lkl.norm, support= range(acc.s2.rho), log=FALSE)
-					lines(rho,su.lkl,col="red")
-					abline(v=1, col="red", lty=2)
-					
-					
-					
-					
+					if(0)
+					{
+						acc.a.rho			<- ans.ok[["data"]]["rho.a",acc.s2a.t2]-nabc.acf.a2rho(xa)
+						acc.a.h				<- project.nABC.movingavg.gethist(acc.a.rho, ans.ok[["xa"]], nbreaks= 50, width= 0.5, plot=1, ylim=c(0,6))
+						rho					<- seq(min(acc.a.rho),max(acc.a.rho),len=1000)
+						
+						su.lkl.norm			<- nabc.tosz.sulkl.norm(1/sqrt(zx["n"]-3), support=range(rho))
+						su.lkl				<- nabc.tosz.sulkl(rho, 1/sqrt(zx["n"]-3), norm=su.lkl.norm, support=range(rho), log=FALSE)
+						lines(rho,su.lkl,col="red")
+						abline(v=0, col="red", lty=2)
+						#	plot marginal of rho_var	-- not quite OK -- prior range?		
+						acc.s2.rho			<- ans.ok[["data"]]["rho.s2",acc.s2a.t2]								
+						acc.s2.h			<- project.nABC.movingavg.gethist(acc.s2.rho, ans.ok[["xv"]]*(length(vx)-1)/length(vx), nbreaks= 50, width= 0.5, plot=1, ylim=c(0,4))
+						rho					<- seq(min(acc.s2.rho),max(acc.s2.rho),len=1000)
+						su.lkl.norm			<- nabc.chisqstretch.su.lkl.norm(length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), support=range(acc.s2.rho))
+						su.lkl				<- nabc.chisqstretch.sulkl(rho, length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), norm=su.lkl.norm, support= range(acc.s2.rho), log=FALSE)
+						lines(rho,su.lkl,col="red")
+						abline(v=1, col="red", lty=2)
+					}
 					file				<- files.a[1,file]
 					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_2tests_2Dposterior.pdf",sep='')
 					if(plot)	pdf(file=file, 4, 4)
@@ -6188,15 +6213,37 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2a.t2],	th2=ans.ok[["data"]]["th.s2",acc.s2a.t2]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
 					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two
-					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP, kl=kl, type="2tests", a=xa))		
+					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP, kl=kl, type="2tests", a=xa))
+					#
+					#	calibrated ABC*, test var on all suval, ignoring autocorrelations
+					#					
+					acc.s2				<- which( 	ans.ok[["data"]]["T.s2",]>=abc.param.sig2["cl"]  &  ans.ok[["data"]]["T.s2",]<=abc.param.sig2["cu"]		)
+					acc.prob			<- length(acc.s2)/ncol(ans.ok[["data"]])
+					file				<- files.a[1,file]
+					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_SDonly_2Dposterior.pdf",sep='')
+					if(plot)	pdf(file=file, 4, 4)
+					par(mar=c(4.5,4.5,0.5,0.5))
+					tmp					<- acc.s2						
+					tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					dist.MAP			<- sqrt(sum(c(tmp-c(xa,xsigma2))^2))
+					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white", lty=1, lwd=1, labcex=0.6)			
+					acc.arima			<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
+					points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
+					abline(h=xsigma2, lty=2)
+					abline(v=xa, lty=2)
+					if(plot)	dev.off()						
+					df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2],	th2=ans.ok[["data"]]["th.s2",acc.s2]	)			
+					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
+					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two	
+					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP, kl=kl, type="2tests-sd", a=xa))					
 					#
 					#	compare to naive ABC
 					#
 					ans.eq[["data"]]["T.a",]	<- tanh( ans.eq[["data"]]["T.a",] + ans.eq[["xa"]] ) - tanh( ans.eq[["xa"]] )
 					ans.eq[["data"]]["T.s2",]	<- ans.eq[["data"]]["T.s2",] * ans.eq[["xv"]] * ( length(ans.eq[["x"]])-1 ) / length(ans.eq[["x"]])
 					ans.eq[["data"]]["T.s2",]	<- ans.eq[["data"]]["T.s2",] - ans.eq[["xv"]] 
-
-					ans.ok.acc	<- length(acc.s2a.all) / ncol(ans.ok[["data"]])
+					#
+					ans.ok.acc	<- 0.005	#length(acc.s2a.all) / ncol(ans.ok[["data"]])
 					ans.eq.acc	<- optimize( f=function(x, ans.eq, ans.ok.acc)
 												{
 													tmp1					<- quantile(abs(ans.eq[["data"]]["T.a",]), probs=x)	#inner area is %acc
@@ -6212,7 +6259,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
 					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two	
 					file				<- files.a[1,file]
-					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_stdabc_2Dposterior.pdf",sep='')
+					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_stdabc005_2Dposterior.pdf",sep='')
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))		
 					tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
@@ -6223,7 +6270,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)
 					if(plot)	dev.off()							
-					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP, kl=kl, type="std", a=xa))
+					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP, kl=kl, type="std005", a=xa))
 					#
 					#	compare to naive ABC	5% quantile
 					#
@@ -6288,11 +6335,15 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP, kl=kl, type="std10", a=xa))
 					ans
 				})
-		df			<- do.call("rbind",df)		
+		df			<- do.call("rbind",df)
+		file		<- paste(dir.name,"/nABC.MA1_results_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_a.R",sep='')
+		cat("paste save df to",file)
+		save(df, file=file)
+		
 		
 		xlim		<- range( subset(df,a<0.275)[,a] )
-		by			<- c("std10","std05","std","nlo","all5") #unique( df[,type] )
-		names(by)	<- c("Std-ABC 10%","Std-ABC 5%","Std-ABC 3%","ABC* ignore corr","ABC* thinned 5")
+		by			<- c("std10","std05","std005","nlo","all5") #unique( df[,type] )
+		names(by)	<- c("ABC 10%","ABC 5%","ABC 0.5%","ABC* w corr","ABC* thinned")
 		ltys		<- c(1,2,3,1,2)#seq_along(by)
 		names(ltys)	<- by
 		pchs		<- c(rep(16,3),rep(17,2)) #+seq_along(by)
@@ -6301,28 +6352,39 @@ nabc.test.acf.montecarlo.vary.a<- function()
 		names(cols)	<- by
 		#plot KL
 		df[,y:=kl]
-		ylab		<- "KL"		
-		ylim		<- c(0,0.5)#range( subset(df, type%in%by)[,y] )		
+		ylab		<- "KL divergence of ABC*"		
+		ylim		<- c(0,0.42)#range( subset(df, type%in%by)[,y] )		
+		file		<- paste(dir.name,"/nABC.MA1_results_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_a_KL.pdf",sep='')
+		cat("paste plot to",file)
+		pdf(file, 4, 4)
+		par(mar=c(4.5,4.5,0.5,0.5))
 		plot(1,1,type='n',bty='n',xlim=xlim, ylim=ylim, xlab='a', ylab=ylab)		
 		sapply(by, function(z)
 				{					
-					points(subset(df,type==z)[,a],subset(df,type==z)[,y],lty=ltys[z],col=cols[z], type='b', pch=pchs[z], cex=0.75)
+					points(subset(df,type==z)[,a],subset(df,type==z)[,y],lty=ltys[z],col=cols[z], type='b', pch=pchs[z], cex=0.75, lwd=1.2)
 					#lines(subset(df,type==z)[,a],subset(df,type==z)[,y],lty=ltys[z],col=cols[z])
 				})
-		legend("topleft", bty='n', legend=names(by), lty=ltys, col=cols, pch=pchs)
-		
+		legend("topleft", bty='n', legend=names(by)[1:3], lty=ltys[1:3], col=cols[1:3], pch=pchs[1:3])
+		legend("topright", bty='n', legend=names(by)[4:5], lty=ltys[4:5], col=cols[4:5], pch=pchs[4:5])
+		dev.off()
 		
 		#plot dist.MAP
 		df[,y:=dist.MAP]
-		ylab	<- "MAP"		
-		ylim	<- c(0,0.05)#range( df[,y] )		
+		ylab	<- "mean squared error of ABC* MAP"		
+		ylim	<- c(0,0.05)#range( df[,y] )	
+		file		<- paste(dir.name,"/nABC.MA1_results_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_a_MAP.pdf",sep='')
+		cat("paste plot to",file)
+		pdf(file, 4, 4)	
+		par(mar=c(4.5,4.5,0.5,0.5))
 		plot(1,1,type='n',bty='n',xlim=xlim, ylim=ylim, xlab='a', ylab=ylab)		
 		sapply(by, function(z)
 				{					
-					points(subset(df,type==z)[,a],subset(df,type==z)[,y],lty=ltys[z],col=cols[z], type='b', pch=pchs[z], cex=0.75)
+					points(subset(df,type==z)[,a],subset(df,type==z)[,y],lty=ltys[z],col=cols[z], type='b', pch=pchs[z], cex=0.75, lwd=1.2)
 					#lines(subset(df,type==z)[,a],subset(df,type==z)[,y],lty=ltys[z])
 				})
-		legend("topleft", bty='n', legend=names(by), lty=ltys, col=cols, pch=pchs)
+		legend("topleft", bty='n', legend=names(by)[1:3], lty=ltys[1:3], col=cols[1:3], pch=pchs[1:3])
+		legend("topright", bty='n', legend=names(by)[4:5], lty=ltys[4:5], col=cols[4:5], pch=pchs[4:5])
+		dev.off()
 		
 		
 		
