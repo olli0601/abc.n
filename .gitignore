@@ -10,3 +10,6 @@
 *.so
 
 *.out
+
+*.sublime-project
+*.sublime-workspace
