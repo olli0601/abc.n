@@ -715,7 +715,7 @@ project.nABC.movingavg.get.fixed.ts<- function(n, mu, a, sd, leave.out.a=2, leav
 	if(return_eps_0){
 		unthinned <- list(MLE=data.frame(a=tmp[["coef"]][1],sig2=tmp[["sigma2"]]),s_stat=data.frame(variance= var(ans),autocorr= nabc.acf.equivalence.cor(ans)[["cor"]]))
 		thinned <- list(MLE=data.frame(a=NA,sig2=NA),s_stat=data.frame(variance= var(ans[index.leave.out.s2]),autocorr= nabc.acf.equivalence.cor(ans,leave.out=leave.out.a)[["cor"]]))
-		ans_error <- as.data.frame(error[1,c(error.arima.a, error.arima.sd, error.abc.a)])
+		ans_error <- as.data.frame(error[1,c(error.arima.a, error.arima.sd, error.abc.a.lo,error.abc.a.nlo,error.abc.sig2.nlo)])
 		ans <- list(param=data.frame(a=a,sig2=sd*sd),eps_0=error[1,u0],n=n,thin=data.frame(variance= leave.out.s2,autocorr= leave.out.a), unthinned=unthinned, thinned=thinned, precision=list(tol=tol,error=ans_error),x=ans)
 	}
 	ans

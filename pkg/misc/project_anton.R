@@ -1034,7 +1034,7 @@ main <- function() {
 	index_a	<- as.numeric(Sys.getenv("ARG1")) + 1
 	a_true <- seq(0, 0.3, 0.025)[index_a]
 	sig2_true <- 1
-	tol <- 1e-3
+	tol <- 1e-1
 	variance_thin <- 1
 	autocorr_thin <- 2
 	n_iter <- 2000000
