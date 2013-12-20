@@ -989,7 +989,7 @@ main <- function() {
 	#source Olli's prjct:
 	source(file.path(NABC_PKG,"misc","nabc.prjcts.R"))
 
-	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_a_0_to_0.3_tol=5e-3","~/Documents/GitProjects/nABC/pdf")
+	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_a_0_to_0.3_tol=1e-3","~/Documents/GitProjects/nABC/pdf")
 	dir.create(dir_pdf,rec=T)
 
 	if(0){
@@ -1034,7 +1034,7 @@ main <- function() {
 	index_a	<- as.numeric(Sys.getenv("ARG1")) + 1
 	a_true <- seq(0, 0.3, 0.025)[index_a]
 	sig2_true <- 1
-	tol <- 5e-3
+	tol <- 1e-3
 	variance_thin <- 1
 	autocorr_thin <- 2
 	n_iter <- 2000000
