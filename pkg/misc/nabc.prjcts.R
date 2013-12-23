@@ -6039,6 +6039,16 @@ nabc.test.acf.montecarlo.vary.a<- function()
 		files		<- subset(files, !is.na(a))[, list(a=substr(a,2,nchar(a)-2)) ,by=file]
 		set(files, NULL, 'a', as.numeric(files[,a]))
 		setkey(files, 'a')
+		
+		files		<- files[,	{
+									tmp<- strsplit(file,'_')[[1]]
+									list(cali= tmp[2], N=tmp[3], a=a)
+								}, by=file]
+		files		<- files[,		{
+										tmp<- ifelse(length(N)<2,1,2)
+										list( file= file[tmp] )
+									}	,by=c('a','cali')]	
+		
 		df			<- lapply( unique(files[,a]), function(xa)
 				{
 					cat(paste("\nprocess",xa)) 
@@ -6065,7 +6075,8 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					moving.avg				<- readRDS(file= paste(dir.name,'/',"131220_anton_mcmc_leave.out.a=2_leave.out.s2=1_a=",xa,".rds",sep='') )		
 					moving.avg				<- analyse_MCMC_MA1_cast2datatable(moving.avg)	
 					moving.avg$posterior	<- analyse_MCMC_MA1_burn.and.thin(moving.avg$posterior, thin_every=10, burn=0)
-					x						<- moving.avg$data$x		
+					x						<- moving.avg$data$x
+					x.map					<- project.nABC.movingavg.get.2D.mode(moving.avg$posterior[,a],moving.avg$posterior[,sig2], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=0, nbin=10,  method="ash")
 					#
 					#	calibrated ABC*, test autocorr and var on all suval, ignoring autocorrelations
 					#					
@@ -6090,7 +6101,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 						lines(rho,su.lkl,col="red")
 						abline(v=0, col="red", lty=2)
 						#	plot marginal of rho_var	-- not quite OK -- prior range?		
-						acc.s2.rho			<- ans.ok.nlo[["data"]]["rho.s2",acc.s2a]								
+						acc.s2.rho			<- ans.ok.nlo[["data"]]["rho.s2",acc.s2a] / (1+xa*xa)*xsigma2									
 						acc.s2.h			<- project.nABC.movingavg.gethist(acc.s2.rho, ans.ok.nlo[["xv"]]*(length(vx)-1)/length(vx), nbreaks= 50, width= 0.5, plot=1, ylim=c(0,4))
 						rho					<- seq(min(acc.s2.rho),max(acc.s2.rho),len=1000)
 						su.lkl.norm			<- nabc.chisqstretch.su.lkl.norm(length(vx), sd(vx), trafo=(length(vx)-1)/length(vx)*sd(vx)*sd(vx), support=range(acc.s2.rho))
@@ -6105,12 +6116,12 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					par(mar=c(4.5,4.5,0.5,0.5))
 					tmp					<- acc.s2a						
 					tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok.nlo[["data"]]["th.a",tmp],ans.ok.nlo[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
-					dist.MAP			<- sqrt(sum(c(tmp-c(xa,xsigma2))^2))
-					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white", lty=1, lwd=1, labcex=0.6)			
-					acc.arima			<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
-					points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)
+					dist.MAP			<- sqrt(sum(c(tmp-x.map)^2))
+					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white", lty=1, lwd=1, labcex=0.6)			
+					acc.arima			<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
+					points(x.map, pch=18, col="white")						
 					if(plot)	dev.off()						
 					df1			<- data.table(	th1=ans.ok.nlo[["data"]]["th.a",acc.s2a],	th2=ans.ok.nlo[["data"]]["th.s2",acc.s2a]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
@@ -6127,12 +6138,12 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					par(mar=c(4.5,4.5,0.5,0.5))
 					tmp					<- acc.s2a						
 					tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok.nlo[["data"]]["th.a",tmp],ans.ok.nlo[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
-					dist.MAP			<- sqrt(sum(c(tmp-c(xa,xsigma2))^2))
-					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white", lty=1, lwd=1, labcex=0.6)			
-					acc.arima			<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
-					points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)
+					dist.MAP			<- sqrt(sum(c(tmp-x.map)^2))
+					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white", lty=1, lwd=1, labcex=0.6)			
+					acc.arima			<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
+					points(x.map, pch=18, col="white")						
 					if(plot)	dev.off()						
 					df1			<- data.table(	th1=ans.ok.nlo[["data"]]["th.a",acc.s2a],	th2=ans.ok.nlo[["data"]]["th.s2",acc.s2a]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
@@ -6162,15 +6173,16 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					par(mar=c(4.5,4.5,0.5,0.5))
 					tmp					<- acc.s2a.all						
 					tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
-					dist.MAP			<- sqrt(sum(c(tmp-c(xa,xsigma2))^2))
-					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white")
-					acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
-					points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)
+					dist.MAP			<- sqrt(sum(c(tmp-x.map)^2))
+					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white")
+					acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
+					points(x.map, pch=18, col="white")						
 					if(plot)	dev.off()					
 					df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2a.all],	th2=ans.ok[["data"]]["th.s2",acc.s2a.all]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
+					
 					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two
 					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP, kl=kl, type="all5", a=xa))
 					#
@@ -6205,12 +6217,12 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					par(mar=c(4.5,4.5,0.5,0.5))
 					tmp					<- acc.s2a.t2						
 					tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
-					dist.MAP			<- sqrt(sum(c(tmp-c(xa,xsigma2))^2))
-					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white")
-					acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
-					points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)
+					dist.MAP			<- sqrt(sum(c(tmp-x.map)^2))
+					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white")
+					acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
+					points(x.map, pch=18, col="white")						
 					if(plot)	dev.off()					
 					df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2a.t2],	th2=ans.ok[["data"]]["th.s2",acc.s2a.t2]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
@@ -6227,12 +6239,12 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					par(mar=c(4.5,4.5,0.5,0.5))
 					tmp					<- acc.s2						
 					tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
-					dist.MAP			<- sqrt(sum(c(tmp-c(xa,xsigma2))^2))
+					abline(h=xsigma2, lty=2)
+					abline(v=xa, lty=2)					
+					dist.MAP			<- sqrt(sum(c(tmp-x.map)^2))
 					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white", lty=1, lwd=1, labcex=0.6)			
 					acc.arima			<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
-					points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
-					abline(h=xsigma2, lty=2)
-					abline(v=xa, lty=2)
+					points(x.map, pch=18, col="white")						
 					if(plot)	dev.off()						
 					df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2],	th2=ans.ok[["data"]]["th.s2",acc.s2]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
@@ -6265,18 +6277,47 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))		
 					tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
-					dist.MAP	<- sqrt(sum(c(tmp-c(xa,xsigma2))^2))
+					abline(h=xsigma2, lty=2)
+					abline(v=xa, lty=2)					
+					dist.MAP	<- sqrt(sum(c(tmp-x.map)^2))
 					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white")
 					acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
-					points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
-					abline(h=xsigma2, lty=2)
-					abline(v=xa, lty=2)
+					points(x.map, pch=18, col="white")						
 					if(plot)	dev.off()							
 					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP, kl=kl, type="std005", a=xa))
 					#
-					#	compare to naive ABC	5% quantile
+					#	compare to naive ABC	0.1% quantile
+					#					
+					ans.ok.acc	<- 0.2				
+					ans.eq.acc	<- optimize( f=function(x, ans.eq, ans.ok.acc)
+							{
+								tmp1					<- quantile(abs(ans.eq[["data"]]["T.a",]), probs=x)	#inner area is %acc
+								tmp2					<- quantile(abs(ans.eq[["data"]]["T.s2",]), probs=x)
+								acc.s2a					<- which( 	abs(ans.eq[["data"]]["T.s2",])<=tmp2  & 	abs(ans.eq[["data"]]["T.a",])<=tmp1			)
+								abs(ans.ok.acc - length(acc.s2a) / ncol(ans.eq[["data"]]))
+							}, interval=c(ans.ok.acc,1), ans.eq, ans.ok.acc)$minimum								
+					tmp1		<- quantile(abs(ans.eq[["data"]]["T.a",]), probs=ans.eq.acc)	
+					tmp2		<- quantile(abs(ans.eq[["data"]]["T.s2",]), probs=ans.eq.acc)
+					acc.s2a		<- which( 	abs(ans.eq[["data"]]["T.s2",])<=tmp2  &	abs(ans.eq[["data"]]["T.a",])<=tmp1	) 		
+					acc.prob	<- length(acc.s2a)/ncol(ans.eq[["data"]])
+					df1			<- data.table(	th1=ans.eq[["data"]]["th.a",acc.s2a],	th2=ans.eq[["data"]]["th.s2",acc.s2a]	)			
+					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
+					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two	
+					file				<- files.a[1,file]
+					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_stdabc20_2Dposterior.pdf",sep='')
+					if(plot)	pdf(file=file, 4, 4)
+					par(mar=c(4.5,4.5,0.5,0.5))		
+					tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					abline(h=xsigma2, lty=2)
+					abline(v=xa, lty=2)					
+					dist.MAP	<- sqrt(sum(c(tmp-x.map)^2))
+					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white")
+					acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
+					points(x.map, pch=18, col="white")						
+					if(plot)	dev.off()							
+					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP, kl=kl, type="std20", a=xa))
 					#
-					ans.ok.acc	<- 0.05					
+					ans.ok.acc	<- 0.05						
 					ans.eq.acc	<- optimize( f=function(x, ans.eq, ans.ok.acc)
 							{
 								tmp1					<- quantile(abs(ans.eq[["data"]]["T.a",]), probs=x)	#inner area is %acc
@@ -6296,12 +6337,12 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))		
 					tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
-					dist.MAP	<- sqrt(sum(c(tmp-c(xa,xsigma2))^2))
+					abline(h=xsigma2, lty=2)
+					abline(v=xa, lty=2)					
+					dist.MAP	<- sqrt(sum(c(tmp-x.map)^2))
 					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white")
 					acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
-					points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
-					abline(h=xsigma2, lty=2)
-					abline(v=xa, lty=2)
+					points(x.map, pch=18, col="white")						
 					if(plot)	dev.off()							
 					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP, kl=kl, type="std05", a=xa))
 					#
@@ -6327,12 +6368,12 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))		
 					tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
-					dist.MAP	<- sqrt(sum(c(tmp-c(xa,xsigma2))^2))
+					abline(h=xsigma2, lty=2)
+					abline(v=xa, lty=2)					
+					dist.MAP	<- sqrt(sum(c(tmp-x.map)^2))
 					project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white")
 					acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
-					points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
-					abline(h=xsigma2, lty=2)
-					abline(v=xa, lty=2)
+					points(x.map, pch=18, col="white")						
 					if(plot)	dev.off()							
 					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP, kl=kl, type="std10", a=xa))
 					ans
@@ -6348,7 +6389,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 		names(by)	<- c("ABC 10%","ABC 5%","ABC 0.5%","ABC* w corr","ABC* thinned")
 		ltys		<- c(1,2,3,1,2)#seq_along(by)
 		names(ltys)	<- by
-		pchs		<- c(rep(16,3),rep(17,2)) #+seq_along(by)
+		pchs		<- c(rep(21,3),rep(17,2)) #+seq_along(by)
 		names(pchs)	<- by
 		cols		<- c(rep(my.fade.col("black",0.4),3), rep(my.fade.col("black",0.8),2))
 		names(cols)	<- by
@@ -6379,7 +6420,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 		pdf(file, 4, 4)	
 		par(mar=c(4.5,4.5,0.5,0.5))
 		plot(1,1,type='n',bty='n',xlim=xlim, ylim=ylim, xlab='a', ylab=ylab)		
-		sapply(by, function(z)
+		sapply(by[-4], function(z)
 				{					
 					points(subset(df,type==z)[,a],subset(df,type==z)[,y],lty=ltys[z],col=cols[z], type='b', pch=pchs[z], cex=0.75, lwd=1.2)
 					#lines(subset(df,type==z)[,a],subset(df,type==z)[,y],lty=ltys[z])

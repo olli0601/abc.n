@@ -626,7 +626,7 @@ old.nabc.mutost.onesample.tau.lowup.var<- function(s.of.Sx, df, s.of.T, tau.up.u
 #'	x<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 #'	y<- rnorm(yn,ymu,sd=sqrt(ysigma2))
 #'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
-nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, sd.tolerance=0.05, normal.test= "sf.test", plot=0, legend.txt="")
+nabc.mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, sd.tolerance=0.05, normal.test= "sf.test", plot=0, legend.txt="")
 {
 	#verbose	<- 1
 	ans				<- NABC.DEFAULT.ANS
