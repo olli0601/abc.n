@@ -1,14 +1,18 @@
 
-#' Compute the density of the (possible truncated) power of the equivalence test for population dispersion of normal summary values
-#' @param rho vector of quantile
-#' @param scale	scaling of T apart from rho, either n-1 for unbiased ABC or n for exact MAP
-#' @param df	degrees of freedom
-#' @param c.l,c.u lower and upper ABC tolerance
-#' @param norm normalization constant for the truncated power function.
-#' @param support vector of dimension 2. Support of the truncated power function.
-#' @param log logical; if \code{TRUE}, densities d are given as log(d). 
+#' @title Power of the variance test for normal summary values
+#' @description This function computes the power function of the two-sided, one-sample scaled chi sqare test for 
+#' testing the equivalence of variances for normal summary values.
+#' @param rho 		vector of quantile
+#' @param scale		scaling parameter; typically \code{n}, the number of observed summary values
+#' @param df		degrees of freedom; typically \code{m-1} where \code{m} is the number of simulated summary values 
+#' @param c.l		lower point of the critical region of the test (equivalent to the lower standard ABC tolerance \code{epsilon^-})
+#' @param c.u 		upper point of the critical region of the test (equivalent to the upper standard ABC tolerance \code{epsilon^+})
+#' @param norm 		normalization constant for the truncated power function.
+#' @param support 	vector of dimension 2. Support of the truncated power function.
+#' @param log l		ogical; if \code{TRUE}, densities d are given as log(d). 
 #' @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
 #' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived (numerically) from the other.
+#' @example example/ex.chisqstretch.pow.R
 #' @export
 #' 	
 nabc.chisqstretch.pow <- function(rho, scale, df, c.l, c.u, norm=1, trafo=1, support=c(0,Inf), log=FALSE){
@@ -22,20 +26,29 @@ nabc.chisqstretch.pow <- function(rho, scale, df, c.l, c.u, norm=1, trafo=1, sup
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
+#' @title Area under the power function of the variance test for normal summary values
+#' @description This function computes the area under the power function \code{nabc.chisqstretch.pow.norm}.
+#' @inheritParams nabc.chisqstretch.pow
+#' @seealso nabc.chisqstretch.pow
 nabc.chisqstretch.pow.norm<- function(scale, df, c.l, c.u, trafo= 1, support=c(0,Inf))
 {
 	ans <- integrate(nabc.chisqstretch.pow, lower=support[1], upper=support[2], scale=scale, df=df, c.l=c.l, c.u=c.u, norm=1, trafo=trafo, support=support, log=FALSE)
 	ans$value
 }	
 #------------------------------------------------------------------------------------------------------------------------
-#' Compute the density of the (possibly truncated) summary likelihood for population dispersion of normal summary values
-#' @param rho vector of quantile
-#' @param norm scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
-#' @param support vector of dimension 2, support of the truncated summary likelihood.
-#' @param log logical; if \code{TRUE}, densities d are given as log(d). 
+#' @title Density of the summary likelihood of the variance for normal summary values
+#' @description		The density of the summary likelihood of the variance for normal summary values is scaled inverse chi square.
+#' @param rho 		vector of quantile
+#' @param n.of.x	Number of observed summary values
+#' @param s.of.x	Standard deviation of the summary values
+#' @param trafo		Parameter transformation to compute the summary likelihood on the \code{rho} error space. 		
+#' @param norm 		scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
+#' @param support 	vector of dimension 2, support of the truncated summary likelihood.
+#' @param log 		logical; if \code{TRUE}, densities d are given as log(d). 
 #' @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
 #' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived from the other. 
 #' \code{support=qigamma(c(1-norm,1+norm)/2,(n.of.x-2)/2,s.of.x^2*(n.of.x-1)/2)} and \code{norm=diff(pigamma(support,(n.of.x-2)/2,s.of.x^2*(n.of.x-1)/2)}.
+#' @seealso \code{\link{nabc.chisqstretch.calibrate.tolerances.getkl}} for an example.
 #' @import pscl
 #' @export	
 #'
@@ -56,41 +69,39 @@ nabc.chisqstretch.sulkl<- function(rho, n.of.x, s.of.x, trafo=(n.of.x-1)/n.of.x*
 	return(ans)
 }
 #------------------------------------------------------------------------------------------------------------------------
+#' @title Area under the summary likelihood of the variance for normal summary values
+#' @description This function computes the area under the summary likelihood \code{nabc.chisqstretch.sulkl}.
+#' @inheritParams nabc.chisqstretch.sulkl
 nabc.chisqstretch.su.lkl.norm	<- function(n.of.x, s.of.x, trafo=1, support=c(0,Inf))
 {
 	ans	<- integrate(nabc.chisqstretch.sulkl, lower=support[1], upper=support[2],  n.of.x=n.of.x, s.of.x=s.of.x, norm=1, trafo=trafo , support=support, log=FALSE)	
 	ans$value
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Compute Kullback-Leibler divergence between the summary likelihood and the power function of chisqstretch 
-#' @param n.of.x number of observed summary values
-#' @param s.of.x standard deviation of observed summary values
-#' @param n.of.y number of simulated summary values
-#' @param s.of.y standard deviation of simulated summary values
-#' @param mx.pw maximum power at the point of reference (rho.star=0) (only when \code{calibrate.tau.u==TRUE}).
-#' @param alpha level of the equivalence test
-#' @param calibrate.tau.u if \code{TRUE} the upper tolerance of the equivalence region (\code{tau.u}) is calibrated so that power at the point of reference is equal to \code{mx.pw}
-#' @param tau.u	upper tolerance of the equivalence region. If \code{calibrate.tau.u==TRUE}, \code{tau.u} is just a guess on an upper bound on the upper tolerance of the equivalence region.
-#' @param for.mle	calibrate so that the mode of the power is at the MLE
-#' @param pow_scale scale for the support of the standardized power. The power is truncated between \code{[tau.l/pow_scale,tau.u*pow_scale]} and then standardized.
-#' @param debug flag if C implementation is used
-#' @param plot whether to plot the two distributions
+#' @title KL divergence between the summary likelihood and the power function of \code{chisqstretch}
+#' @description Compute the Kullback-Leibler divergence between the summary likelihood and the power function of the \code{chisqstretch} equivalence test.
+#' The KL divergence is required to calibrate the number of simulated data points of the test.
+#' @inheritParams nabc.chisqstretch.sulkl 
+#' @inheritParams nabc.chisqstretch.pow
+#' @param mx.pw 			Power at the point of reference rho.star=1 (only used when \code{calibrate.tau.u==TRUE}).
+#' @param alpha 			Level of the equivalence test
+#' @param calibrate.tau.u	If \code{TRUE} the upper tolerance of the equivalence region (\code{tau.u}) is calibrated so that power at the point of reference is equal to \code{mx.pw}
+#' @param tau.u				Upper tolerance of the equivalence region. If \code{calibrate.tau.u==TRUE}, \code{tau.u} is just a guess on an upper bound on the upper tolerance of the equivalence region to speed up calibration.
+#' @param pow_scale 	 	Used to set the support of the pdf associated to the power function. The power is truncated between \code{[tau.l/pow_scale,tau.u*pow_scale]} and then standardized.
+#' @param plot 				Logical. If \code{plot==TRUE}, the power of the calibrated test is plotted along with the summary likelihood.
 #' @return	vector of length 6
 #' 	\item{KL_div}{the Kullback Leibler divergence}	
 #' 	\item{tau.l}{lower tolerance of the equivalence region}	
 #' 	\item{tau.u}{upper tolerance of the equivalence region}
-#' 	\item{c.l}{lower ABC tolerance}	
-#' 	\item{c.u}{upper ABC tolerance}	
-#' 	\item{pw.cmx}{actual maximum power associated with the equivalence region}
-#' @note Whatever the value of \code{calibrate.tau.u}, the lower tolerance of the equivalence region (\code{tau.l}) is always numerically calibrated using \link{nabc.chisqstretch.calibrate.taulow}.
+#' 	\item{c.l}{lower point of the critical region, i.e. lower standard ABC tolerance}	
+#' 	\item{c.u}{upper point of the critical region, i.e. upper standard ABC tolerance}	
+#' 	\item{pw.cmx}{actual maximum power at the point of equality}
+#' @note Whatever the value of \code{calibrate.tau.u}, the lower tolerance of the equivalence region (\code{tau.l}) is always numerically calibrated so that the mode of the power function is at the point of equality rho.star.
 #' @export
 #' @import ggplot2 reshape2 pscl
-#' @examples
+#' @example example/ex.chisqstretch.calibrate.tolerances.getkl.R
 #' 
-#' nabc.chisqstretch.calibrate.tolerances.getkl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
-#' alpha=0.01, calibrate.tau.u=T, tau.u=1, plot=T)
-#'
-nabc.chisqstretch.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, scale, df, tau.u, mx.pw=0.9, alpha=0.01, pow_scale=1.5, debug = 0, calibrate.tau.u=T, plot = F) 
+nabc.chisqstretch.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, scale, df, tau.u, mx.pw=0.9, alpha=0.01, pow_scale=1.5, calibrate.tau.u=T, plot = F) 
 {
 	tau.l<- pw.cmx<- error<- c.l<- c.u<- NA	
 	if(calibrate.tau.u)	#calibrate tau.u constrained on yn, alpha and mx.pw 
@@ -146,19 +157,24 @@ nabc.chisqstretch.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, scale, 
 	c(KL_div = KL_div, tau.l = tau.l, tau.u = tau.u, c.l = c.l, c.u = c.u, pw.cmx = pw.cmx)	
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Calibrate the lower tolerance interval of the equivalence region for the test of dispersion equivalence
+#' @title Calibrate the lower tolerance interval of the equivalence region for \code{chisqstretch}
+#' @description This function calibrates the lower tolerance interval of the equivalence region for the \code{chisqstretch} equivalence test
+#' so that the mode of the power function is at \code{rho.star=1}.
 #' @export
-#' @param tau.up	upper tolerance of the equivalence region
-#' @param df		degrees of freedom
-#' @param alpha		level of the equivalence test
-#' @param rho.star	point of reference. Defaults to the point of equality rho.star=1
+#' @inheritParams 	nabc.chisqstretch.pow
+#' @param tau.up	Upper tolerance of the equivalence region
+#' @param rho.star	point of reference. Defaults to the point of equality \code{rho.star=1}.
 #' @param tol		this algorithm stops when the actual point of reference is less than 'tol' from 'rho.star'
 #' @param max.it	this algorithm stops prematurely when the number of iterations to find the equivalence region exceeds 'max.it'
-#' @param for.mle	calibrate so that the mode of the power is at the MLE
-#' @return tau.low, lower tolerance of the equivalence region
-#' @examples	tau.u<- 2.2
-#'  yn<- 60
-#'	tau.l<- nabc.chisqstretch.calibrate.taulow(tau.u, yn-1, 0.01)
+#' @param pow_scale	Used to set the support of the power function. The power is truncated between \code{[tau.l/pow_scale,tau.u*pow_scale]} and then standardized.
+#' @param verbose	Logical. If \code{verbose==TRUE}, details of the calibration are printed to the console. 
+#' @return vector of length 6	
+#' 	\item{tau.low}{lower tolerance of the equivalence region}	
+#' 	\item{cl}{lower point of the critical region, i.e. lower standard ABC tolerance}	
+#' 	\item{cu}{upper point of the critical region, i.e. upper standard ABC tolerance}	
+#' 	\item{error}{actual error between the mode of the power function and rho.star}
+#' @example example/ex.chisqstretch.calibrate.taulow.R
+#' 
 nabc.chisqstretch.calibrate.taulow<- function(tau.up, scale, df, alpha=0.01, rho.star=1, tol= 1e-5, max.it=100, pow_scale=1.5, verbose=0) 
 {	
 	rho			<- seq(1/(tau.up*pow_scale), tau.up*pow_scale, len=1024)

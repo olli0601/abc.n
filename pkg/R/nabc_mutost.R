@@ -1,4 +1,4 @@
-	
+
 #' Compute the density of the (possible truncated) power of the equivalence test for population means of normal summary values
 #' @inheritParams nabc.mutost.calibrate.tolerances.getkl
 #' @inheritParams nabc.mutost.pow

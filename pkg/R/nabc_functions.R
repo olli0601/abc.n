@@ -679,3 +679,174 @@ nabc.getlevelset.3d<- function(df, lnk.name, theta.names, rho.eq=0, rho.eq.sep=1
 	}
 	lnk.eqx
 }
+
+###############################################################################
+my.mkdir<-function(root,data.name)
+{
+	if(length(dir(root,pattern=paste('^',data.name,'$',sep='')))==0)
+		system(paste("mkdir ",paste(root,data.name,sep='/'),sep=''))
+}
+###############################################################################
+my.qqline<- function (y, datax = FALSE, u=1.95, ...) 
+{
+	y 	<- quantile(y[!is.na(y)], c(0.25, 0.75))
+	x 	<- qnorm(c(0.25, 0.75))
+	if (datax) 
+	{
+		slope 	<- diff(x)/diff(y)
+		int 	<- x[1L] - slope * y[1L]
+	}
+	else 
+	{
+		slope 	<- diff(y)/diff(x)
+		int 	<- y[1L] - slope * x[1L]
+	}
+	x	<- qnorm(c(0.01, 0.99))
+	x	<- seq(x[1],x[2],len=1e3)
+	z	<- int + slope*x
+	lines(x,z, ...)
+	z	<- u*sqrt( pnorm(x)*(1-pnorm(x)) ) / ( dnorm(x)*sqrt(length(y)) )
+	y95u<- int + slope*(x+z)
+	y95l<- int + slope*(x-z)
+	lines(x,y95u, ...)
+	lines(x,y95l, ...)
+}
+###############################################################################
+package.dumpframes<- function()
+{
+	geterrmessage()
+	dump.frames()
+	cat(paste("\npackage.dumpframes dump 'last.dump' to file",paste(DATA,paste("debug_",paste(strsplit(date(),' ')[[1]],collapse='_'),".rda\n",sep=''),sep='/')))
+	save(last.dump, file=paste(DATA,paste("debug_",paste(strsplit(date(),' ')[[1]],collapse='_'),".rda",sep=''),sep='/'))
+	q()
+}
+###############################################################################
+package.roxygenize<- function()
+{
+	require(roxygen2)		
+	roxygenize(CODE.HOME)
+}
+###############################################################################
+my.fade.col<-function(col,alpha=0.5)
+{
+	return(rgb(col2rgb(col)[1]/255,col2rgb(col)[2]/255,col2rgb(col)[3]/255,alpha))
+}
+###############################################################################
+print.v<- function(x,cut=3,digits=4,prefix= "simu_",print.char= TRUE, as.R= TRUE)
+{
+	if(as.R)
+	{
+		tmp<- paste("c(",paste(c(x,recursive=T),collapse=',',sep=''),')',sep='')
+		if(!is.null(names(x)))
+			tmp<- paste("{tmp<-", tmp, "; names(tmp)<- ", paste('c("',paste(c(names(x),recursive=T),collapse='", "',sep=''),'")',sep=''), "; tmp}", sep= '', collapse= '')
+	}
+	else
+	{
+		if(!is.null(names(x)))
+		{
+			m<- matrix(NA,nrow=2,ncol=length(x))
+			m[1,]<- substr(names(x),1,cut)
+			m[2,]<- round( x, digits=digits )
+			if(cut==0)		m<- m[2,]
+			tmp<- gsub('.',',',paste(prefix,paste(as.vector(m), collapse='_',sep=''),sep=''),fixed=T)
+		}
+		else
+			tmp<- gsub('.',',',paste(prefix,paste(round( x, digits=digits ), collapse='_',sep=''),sep=''),fixed=T)
+	}
+	if(print.char) print(tmp)
+	tmp
+}
+###############################################################################
+plot.2D.dens<- function(x,y,xlab,ylab,xlim=NA,ylim=NA,nbin=NA,width.infl=2,n.hists=5,method="gauss", palette= "topo", persp.theta= -30, persp.phi= 30, zero.abline=TRUE, ...)
+{
+	if(!method%in%c("gauss","ash","persp"))	stop("plot.2D.dens: exception 1a")
+	if(!palette%in%c("topo","heat","gray"))	stop("plot.2D.dens: exception 1b")
+	switch(method,
+			gauss=
+					{
+						require(KernSmooth)
+						require(fields)
+						x.bw<- width.infl*diff(summary(x)[c(2,5)])
+						y.bw<- width.infl*diff(summary(y)[c(2,5)])
+						if(!x.bw) x.bw<- EPS
+						if(!y.bw) y.bw<- EPS
+						if(any(is.na(xlim)))	xlim<- range(x)+c(-1.5,1.5)*x.bw
+						if(any(is.na(ylim)))	ylim<- range(y)+c(-1.5,1.5)*y.bw
+						dens <- bkde2D(cbind(x, y), range.x=list(xlim,ylim),bandwidth=c(x.bw,y.bw))
+						contour(dens$x1, dens$x2, dens$fhat,xlab=xlab,ylab=ylab)
+						if(zero.abline) abline(v=0,col="black",lty=3,lwd=1.5)
+						if(zero.abline) abline(h=0,col="black",lty=3,lwd=1.5)
+					},
+			ash={
+				require(ash)
+				if(any(is.na(xlim))) xlim<- range(x)*1.05
+				if(any(is.na(ylim))) ylim<- range(y)*1.05
+				if(any(is.na(nbin))) nbin<- 2*c(nclass.Sturges(x),nclass.Sturges(y))
+				bins<- bin2(cbind(x, y), ab=rbind(xlim,ylim),nbin=nbin)
+				f <- ash2(bins,rep(n.hists,2))
+				#image(f$x,f$y,f$z, col=rainbow(50,start= 4/6,end=0),xlab=xlab,ylab=ylab)
+				if(palette=="topo")					image(f$x,f$y,f$z, col=tail( topo.colors(trunc(50*1.4)), 50 ),xlab=xlab,ylab=ylab,...)
+				else if(palette=="gray")			image(f$x,f$y,f$z, col=head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50),xlab=xlab,ylab=ylab,...)					
+				else								image(f$x,f$y,f$z, col=heat.colors( 50 ),xlab=xlab,ylab=ylab,...)
+				contour(f$x,f$y,f$z,add=TRUE, nlevels= 5)
+				if(zero.abline) abline(v=0,col="black",lty=2,lwd=2)
+				if(zero.abline) abline(h=0,col="black",lty=2,lwd=2)
+			},
+			persp={
+				require(ash)
+				require(MASS)
+				if(any(is.na(xlim))) xlim<- range(x)*1.05
+				if(any(is.na(ylim))) ylim<- range(y)*1.05
+				bins<- bin2(cbind(x, y), ab=rbind(xlim,ylim),nbin=2*c(nclass.Sturges(x),nclass.Sturges(y)))
+				f <- ash2(bins,rep(n.hists,2))
+				
+				nrz <- nrow(f$z)
+				ncz <- ncol(f$z)
+				col<- tail(topo.colors(trunc(1.4 * 50)),50)
+				fcol      <- col[trunc(f$z / max(f$z)*(50-1))+1]
+				dim(fcol) <- c(nrz,ncz)
+				fcol      <- fcol[-nrz,-ncz]
+				par(mar=c(1/2,1/2,1/2,1/2))
+				persp(x=f$x,y=f$y,z=f$z,col= fcol,theta=persp.theta,phi=persp.phi,xlab=xlab,ylab=ylab,zlab='', ticktype= "detailed" )
+			})
+}
+###############################################################################
+plot.persplocfit<- function(x, pv, theta= 30, phi= 20, palette= "gray",tcl=-0.05,...)
+{	
+	d <- x$mi["d"]
+	ev <- x$mi["ev"]
+	where <- "grid"
+	
+	pv <- match(pv, x$vnames)
+	tv <- (1:d)[-pv]
+	vrs <- c(pv, tv)
+	if (any(duplicated(vrs))) 
+		warning("Duplicated variables in pv, tv")
+	if (any((vrs <= 0) | (vrs > d))) 
+		stop("Invalid variable numbers in pv, tv")
+	m <- ifelse(d == 1, 100, 40) 
+	m <- rep(m, d)
+	m[tv] <- mtv<- 6		
+	xl <- x$box
+	marg <- lfmarg(xl, m)
+	pred <- locfit:::preplot.locfit(x, marg, band = "none", tr = NULL, what = "coef", get.data = 0, f3d = 0)
+	z<- matrix(pred$fit, nrow = length(marg[[1]]))
+	nbcol <- 100
+	if(palette=="gray")	
+		color<- head( rev(gray(seq(0,0.95,len=trunc(nbcol*1.4)))), nbcol)
+	else
+	{
+		jet.colors <- colorRampPalette( c("blue", "green") )
+		color <- jet.colors(nbcol)
+	}
+	# Compute the z-value at the facet centres
+	nrz <- nrow(z)
+	ncz <- ncol(z)
+	zfacet <- z[-1, -1] + z[-1, -ncz] + z[-nrz, -1] + z[-nrz, -ncz]
+	# Recode facet z-values into color indices
+	facetcol <- cut(zfacet, nbcol)		
+	par(mar=c(0,2.5,0,0), tcl=tcl)
+	pmat<- persp(marg[[1]], marg[[2]], z, zlim= range(z)*1.1, col = color[facetcol], shade= 0.1, border=NA, ticktype = "detailed", ltheta = 120,theta = theta, phi = phi, expand = 0.75, box=1, ... )
+	
+	list(pmat=pmat, x= marg[[1]], y= marg[[2]], z= z)
+}

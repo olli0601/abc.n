@@ -1,12 +1,20 @@
 Package: abc.n
 Version: 1.0-0
-Date: 2013/02/15
+Date: 2014/01/09
 Title: abc.n
 Author: {Oliver Ratmann, Anton Camacho}
 Maintainer: Oliver Ratmann <o.ratmann@imperial.ac.uk>
 Depends:
     R (>= 2.10)
-Description: tools for ABC based on n summary values
+Description: Using statistical decision theoretic arguments, ABC can be set up such that accuracy properties of the ABC approximation can be established without recursion to asymptotic arguments. 
+Description: The idea is to construct - through statistical modelling of so-called summary values - an appropriate 
+Description: parametric probability space on which the ABC approximation can be controlled. The distribution of the 
+Description: summary values specifies which decision test to use. The ABC approximation to the likelihood on this 
+Description: auxiliary space is the power function of the decision test. The decision tests have free parameters. 
+Description: These can be calibrated so that the power function is very similar to the likelihood on the summary space. 
+Description: Regularity conditions ensure that the accurate ABC approximation on the auxiliary space is also accurate 
+Description: on the original parameter space. This framework is referred to as ABC.star.
+Description: This package provides functions to calibrate decision tests to match the likelihood on the summary space, including the length of the simulated data set; calculate the correct tolerances to be used in conjunction with a specific test; check the regularity conditions for accurate parameter inference from ABC.star output 
 License: GPL (>=2)
 LazyLoad: yes
 Collate:

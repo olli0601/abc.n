@@ -10,14 +10,6 @@
 
 ########################################################################################
 
-	Warning: 
-
-	We are turning the Kullback Leibler calibrations into C code
-	and existing R code may be rather slow
-
-	The calibration routines are still experimental
-
-
 	Contributors:
 
 	If you d like to add calibration routines for different equivalence tests to this library,
