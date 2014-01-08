@@ -168,7 +168,7 @@ nabc.chisqstretch.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, scale, 
 #' @param max.it	this algorithm stops prematurely when the number of iterations to find the equivalence region exceeds 'max.it'
 #' @param pow_scale	Used to set the support of the power function. The power is truncated between \code{[tau.l/pow_scale,tau.u*pow_scale]} and then standardized.
 #' @param verbose	Logical. If \code{verbose==TRUE}, details of the calibration are printed to the console. 
-#' @return vector of length 6	
+#' @return vector of length 4	
 #' 	\item{tau.low}{lower tolerance of the equivalence region}	
 #' 	\item{cl}{lower point of the critical region, i.e. lower standard ABC tolerance}	
 #' 	\item{cu}{upper point of the critical region, i.e. upper standard ABC tolerance}	
@@ -215,25 +215,27 @@ nabc.chisqstretch.calibrate.taulow<- function(tau.up, scale, df, alpha=0.01, rho
 	c(tau.low=tau.low, cl=rej[1], cu=rej[2], error=error)
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Calibrate the equivalence region for the test of dispersion equivalence for given maximum power
+#' @title Calibrate the upper tolerance interval of the equivalence region for \code{chisqstretch}
+#' @description This function calibrates the upper tolerance interval of the equivalence region for the \code{chisqstretch} equivalence test
+#' so that the mode of the power function is at \code{rho.star=1} and so that the power function at \code{rho.star} euqals \code{mx.pw}. 
+#' This involves recursive recursive calls to re-calibrate the lower tolerance region.
 #' @export
+#' @inheritParams 	nabc.chisqstretch.pow
 #' @param mx.pw		maximum power at the point of reference (rho.star).
 #' @param tau.up.ub	guess on an upper bound on the upper tolerance of the equivalence region
-#' @param df		degrees of freedom
-#' @param alpha		level of the equivalence test
 #' @param rho.star	point of reference. Defaults to the point of equality rho.star=1.
 #' @param tol		this algorithm stops when the actual maximum power is less than 'tol' from 'mx.pw'
 #' @param max.it	this algorithm stops prematurely when the number of iterations to find the equivalence region exceeds 'max.it'
-#' @param for.mle	calibrate so that the mode of the power is at the MLE
+#' @param pow_scale	Used to set the support of the power function. The power is truncated between \code{[tau.l/pow_scale,tau.u*pow_scale]} and then standardized.
 #' @return	vector of length 6
-#' 	\item{1}{lower tolerance of the equivalence region}		
-#' 	\item{2}{upper tolerance of the equivalence region}
-#' 	\item{3}{actual maximum power associated with the equivalence region}
-#' 	\item{4}{error ie abs(actual power - mx.pw)}
-#' 	\item{5}{lower point of critical region}
-#' 	\item{6}{upper point of critical region}
-#' @examples yn<- 60
-#' 	nabc.chisqstretch.calibrate.tauup(0.9, 2.5, yn-1, 0.01)
+#' 	\item{tau.low}{lower tolerance of the equivalence region}		
+#' 	\item{tau.up}{upper tolerance of the equivalence region}
+#' 	\item{curr.mx.pw}{actual maximum power associated with the equivalence region}
+#' 	\item{error}{actual error between the power at rho.star and mx.pw}
+#' 	\item{cl}{lower point of the critical region, i.e. lower standard ABC tolerance}	
+#' 	\item{cu}{upper point of the critical region, i.e. upper standard ABC tolerance}	
+#' @example example/ex.chisqstretch.calibrate.tauup.R
+#'
 nabc.chisqstretch.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01, rho.star=1, tol= 1e-5, max.it=100, pow.scale=1.5, verbose=0)
 {
 	tau.low		<- cl <- cu	<- NA
@@ -275,16 +277,18 @@ nabc.chisqstretch.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=
 	c(tau.low=tau.low, tau.up=tau.up, curr.mx.pw=curr.mx.pw,	error=abs(error), cl=cl, cu=cu)
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Calibrate the number of simulated summary values and the equivalence region for the test of dispersion equivalence
+#' @title Calibrate the power function of \code{chisqstretch}
+#' @description This function calibrates the power function of \code{chisqstretch} so that its mode coincides 
+#' with the mode of the summary likelihood and so that its KL divergence to the summary likelihood is 
+#' minimized. The function minimizes the KL divergences and includes recursive calls to re-calibrate the
+#' upper and lower tolerance regions for every new prposed number of simulated summary values.  
 #' @export
-#' @param n.of.x	number of observed summary values
-#' @param s.of.Sx	standard deviation in the observed summary likelihood
-#' @param mx.pw		maximum power at the point of reference (rho.star).
-#' @param alpha		level of the equivalence test
-#' @param tau.up.ub	guess on an upper bound on the upper tolerance of the equivalence region
-#' @param tol		this algorithm stops when the actual variation in the ABC approximation to the summary likelihood is less than 'tol' from 's.of.Sx*s.of.Sx'
+#' @inheritParams 	nabc.chisqstretch.pow
+#' @inheritParams 	nabc.chisqstretch.sulkl
+#' @param plot		Logical. If \code{plot==TRUE}, the calibrated power function is plotted along with the summary likelihood.
+#' @param debug		Logical. If \code{debug==TRUE}, detailed optimization output for the number of simulated summary values is printed to the console.
+#' @param mx.pw		maximum power at the point of equality \code{rho.star}.
 #' @param max.it	this algorithm stops prematurely when the number of iterations to calibrate the number of simulated data points exceeds 'max.it'
-#' @param for.mle	calibrate so that the mode of the power is at the MLE
 #' @return	vector of length 8
 #' 	\item{1}{number of simulated summary values}
 #' 	\item{2}{lower tolerance of the equivalence region}		
@@ -294,25 +298,7 @@ nabc.chisqstretch.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=
 #' 	\item{6}{actual variation of the power}
 #' 	\item{7}{actual maximum power associated with the equivalence region}
 #' 	\item{8}{error ie abs(actual variation - variation in the observed summary likelihood)}
-#' @examples xn<- 60; alpha	<- 0.01; prior.u	<- 3; prior.l	<- 1/3; tau.u<- 2.5; xsig2	<- 1		
-#' 	#summary likelihood of sigma2 given sample mean and sum of squares
-#' 	th		<- seq(prior.l,prior.u,length.out=1e3)
-#' 	shape		<- (xn-2)/2	 
-#' 	scale		<- xsig2*xn*xn/(xn-1)/2
-#' 	y		<- densigamma(th, shape, scale)
-#' 	var.Sx	<- scale*scale/((shape-1)*(shape-1)*(shape-2))		
-#' 	#abc approximation to summary likelihood
-#' 	nabc.chisqstretch.n.of.y(xn, sqrt(var.Sx), 0.9, alpha, tau.u.ub=tau.u)
-#' 	yn		<- tmp[1]
-#' 	tau.l	<- tmp[2]
-#' 	tau.u	<- tmp[3]
-#' 	c.l		<- tmp[4]
-#' 	c.u		<- tmp[5]
-#' 	y2		<- nabc.chisqstretch.pow(th, yn-1, yn-1, c.l, c.u)
-#' #plot the summary likelihood and the abc approximation
-#' plot(th,y/mean(y),ylim=range(c(y/mean(y),y2/mean(y2))),type='l')
-#' lines(th,y2/mean(y2),col="blue")
-#max.it=100; debug=F; plot_debug=F; plot=F
+#' @example
 nabc.chisqstretch.calibrate<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=F)
 {	
 	KL.of.yn_ub<- KL.of.yn<- error <- curr.mx.pw <- tau.low <- cl <- cu	<- NA		
