@@ -7,7 +7,7 @@ n.of.y		<- 299
 df			<- n.of.y-1
 x			<- rnorm(n.of.x,0,1)
 s.of.x		<- sd(x)
-tmp			<- nabc.chisqstretch.calibrate.tauup(0.9, 3*s.of.x, scale, df, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
+tmp			<- chisqstretch.calibrate.tauup(0.9, 3*s.of.x, scale, df, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=1)
 rho			<- seq(0.4, 2, len=1024)
-pw			<- nabc.chisqstretch.pow(rho, n.of.x, df, tmp["cl"], tmp["cu"])		
+pw			<- chisqstretch.pow(rho, n.of.x, df, tmp["cl"], tmp["cu"])		
 plot(rho,pw,col="black", type='l')

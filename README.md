@@ -41,7 +41,7 @@
 
 	Calibration routines for dispersion equivalence of normally distributed summaries
 	start with
-	nabc.chisqstretch.*
+	chisqstretch.*
 
 	Calibration routines for location equivalence of normally distributed summaries
 	start with
@@ -49,7 +49,7 @@
 
 	Calibration routines for asymptotic equivalence of autocorrelation
 	start with
-	nabc.acf.*
+	ma.*
 
 	Various helper functions to reconstruct and display link functions and level sets
 	

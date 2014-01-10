@@ -5,7 +5,10 @@ Title: abc.n
 Author: {Oliver Ratmann, Anton Camacho}
 Maintainer: Oliver Ratmann <o.ratmann@imperial.ac.uk>
 Depends:
-    R (>= 2.10)
+    R (>= 2.10),
+    data.table,
+    ggplot2,
+	reshape2
 Description: Using statistical decision theoretic arguments, ABC can be set up such that accuracy properties of the ABC approximation can be established without recursion to asymptotic arguments. 
 Description: The idea is to construct - through statistical modelling of so-called summary values - an appropriate 
 Description: parametric probability space on which the ABC approximation can be controlled. The distribution of the 
