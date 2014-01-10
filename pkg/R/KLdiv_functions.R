@@ -4,9 +4,8 @@
 #' @param x value at which integrand is evaluated. Can be a vector.
 #' @param dP,dQ name of the functions that compute the density of P and Q
 #' @param P_arg,Q_arg list of arguments for \code{dP} and \code{dQ}
-#' @export
 #'
-nabc.kl.integrand<-function(x,dP,dQ,P_arg,Q_arg)
+kl.integrand<-function(x,dP,dQ,P_arg,Q_arg)
 {
 	#this function must accept x as a vector	
 	log_P_x	<- do.call(dP,c(list(x,log=T),P_arg))				
@@ -26,7 +25,7 @@ nabc.kl.integrand<-function(x,dP,dQ,P_arg,Q_arg)
 	return(ans)
 }
 
-nabc.kl.2D<- function(df1, df2, nbin=100)
+kl.2D<- function(df1, df2, nbin=100)
 {
 	require(ash)
 	
@@ -60,8 +59,7 @@ nabc.kl.2D<- function(df1, df2, nbin=100)
 #' @param KL_args additional arguments to be passed to \code{KL_divergence}.
 #' @param verbose logical, if \code{TRUE}, print warnings.
 #' @return the minimized Kullback-Leibler divergence (scalar).
-#' @export
-nabc.kl.optimize<- function(x_value, x_name, is_integer=FALSE, KL_divergence, KL_args, verbose=FALSE) 
+kl.optimize<- function(x_value, x_name, is_integer=FALSE, KL_divergence, KL_args, verbose=FALSE) 
 {
 	if (verbose)		cat(paste("\nOptimizing x=",x_value))
 	if(is_integer)

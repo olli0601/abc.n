@@ -126,7 +126,7 @@ chisqstretch.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, scale, df, t
 	integral_range	<- pow_support			
 	lkl_arg			<- list(n.of.x= n.of.x, s.of.x= s.of.x, trafo= (n.of.x-1)/n.of.x*s.of.x*s.of.x, norm = lkl_norm, support = lkl_support)
 	pow_arg			<- list(scale = scale, df = df, c.l=c.l, c.u=c.u, norm=pow_norm, support=pow_support, trafo= 1)	
-	tmp 			<- integrate(nabc.kl.integrand, lower = integral_range[1], upper = integral_range[2], dP=chisqstretch.sulkl, dQ=chisqstretch.pow, P_arg=lkl_arg, Q_arg=pow_arg)
+	tmp 			<- integrate(kl.integrand, lower = integral_range[1], upper = integral_range[2], dP=chisqstretch.sulkl, dQ=chisqstretch.pow, P_arg=lkl_arg, Q_arg=pow_arg)
 	KL_div			<- tmp$value
 	if (tmp$message != "OK") 
 	{
@@ -328,7 +328,7 @@ chisqstretch.calibrate<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, m
 	if(debug)	cat(paste("\nupper and lower bounds on m:",yn.lb, yn.ub))
 	
 	KL_args					<- list(n.of.x=n.of.x, s.of.x=s.of.x, scale=scale, tau.u=3*s.of.x, mx.pw=mx.pw, alpha=alpha, calibrate.tau.u=T, plot=F)	
-	tmp 					<- optimize(nabc.kl.optimize, interval = c(yn.lb-1, yn.ub-1), x_name = "df", is_integer = T, KL_divergence = "chisqstretch.calibrate.tolerances.getkl", KL_args = KL_args, verbose = debug, tol = 1)
+	tmp 					<- optimize(kl.optimize, interval = c(yn.lb-1, yn.ub-1), x_name = "df", is_integer = T, KL_divergence = "chisqstretch.calibrate.tolerances.getkl", KL_args = KL_args, verbose = debug, tol = 1)
 	
 	n.of.y 										<- round(tmp$minimum)+1
 	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, debug=0, calibrate.tau.u=T, plot=plot)

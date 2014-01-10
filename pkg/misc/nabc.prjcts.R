@@ -2964,7 +2964,7 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.increasing.m<- function()		#
 					}
 					pow_arg											<- list(scale=length(x), df=yn-1, c.l=abc.param["c.l"], c.u=abc.param["c.u"], norm=pow_norm, support=range(acc.h$dens$x), trafo=(length(x)-1)/length(x)*sd(x)*sd(x))
 					suppressWarnings({ #suppress numerical inaccuracy warnings if any								
-								KL.div.th									<- integrate(nabc.kl.integrand, lower=min(acc.h$dens$x), upper=max(acc.h$dens$x), dP=chisqstretch.sulkl, dQ=chisqstretch.pow, P_arg=lkl_arg, Q_arg=pow_arg)
+								KL.div.th									<- integrate(kl.integrand, lower=min(acc.h$dens$x), upper=max(acc.h$dens$x), dP=chisqstretch.sulkl, dQ=chisqstretch.pow, P_arg=lkl_arg, Q_arg=pow_arg)
 							})
 					#
 					#	compute empirical KL between summary lkl (uniform prior so this is posterior on prior support) and ABC posterior
@@ -2975,7 +2975,7 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.increasing.m<- function()		#
 					acc.mc.dens.log									<- approxfun(x= acc.h$dens$x, y= log(acc.h$dens$y), method="linear", yleft=-Inf, yright=-Inf, rule=2 )
 					tmp												<- function(x, log=T){ if(log){ acc.mc.dens.log(x)	}else{	acc.mc.dens(x)	}	}										
 					suppressWarnings({ #suppress numerical inaccuracy warnings
-						KL.div.mc 									<- integrate(nabc.kl.integrand, lower=min(acc.h$dens$x), upper=max(acc.h$dens$x), dP=chisqstretch.sulkl, dQ=tmp, P_arg=lkl_arg, Q_arg=list())						
+						KL.div.mc 									<- integrate(kl.integrand, lower=min(acc.h$dens$x), upper=max(acc.h$dens$x), dP=chisqstretch.sulkl, dQ=tmp, P_arg=lkl_arg, Q_arg=list())						
 					})
 			
 					c(yn=yn, KL.div.th=KL.div.th$value, KL.div.mc=KL.div.mc$value)					
@@ -6105,7 +6105,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					if(plot)	dev.off()						
 					df1			<- data.table(	th1=ans.ok.nlo[["data"]]["th.a",acc.s2a],	th2=ans.ok.nlo[["data"]]["th.s2",acc.s2a]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two	
+					kl			<- kl.2D(df1, df2, nbin=100)$two	
 					ans			<- data.table(acc=acc.prob,  dist.MAP=dist.MAP,  dist.MAP.on.rho=dist.MAP.on.rho, kl=kl, type="nlo", a=xa, x.map=x.map, x.map.on.rho=x.map.on.rho)
 					#
 					#	calibrated ABC*, test var on all suval, ignoring autocorrelations
@@ -6128,7 +6128,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					if(plot)	dev.off()						
 					df1			<- data.table(	th1=ans.ok.nlo[["data"]]["th.a",acc.s2a],	th2=ans.ok.nlo[["data"]]["th.s2",acc.s2a]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two	
+					kl			<- kl.2D(df1, df2, nbin=100)$two	
 					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP,  dist.MAP.on.rho=dist.MAP.on.rho, kl=kl, type="nlo-sd", a=xa, x.map=x.map, x.map.on.rho=x.map.on.rho))
 					#
 					#	calibrated ABC*, test autocorr and var on thinned suval, 5 tests
@@ -6165,7 +6165,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2a.all],	th2=ans.ok[["data"]]["th.s2",acc.s2a.all]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
 					
-					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two
+					kl			<- kl.2D(df1, df2, nbin=100)$two
 					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP,  dist.MAP.on.rho=dist.MAP.on.rho, kl=kl, type="all5", a=xa, x.map=x.map, x.map.on.rho=x.map.on.rho))
 					#
 					#	calibrated ABC*, test autocorr and var on thinned suval, 2 tests
@@ -6211,7 +6211,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					if(plot)	dev.off()					
 					df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2a.t2],	th2=ans.ok[["data"]]["th.s2",acc.s2a.t2]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two
+					kl			<- kl.2D(df1, df2, nbin=100)$two
 					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP,  dist.MAP.on.rho=dist.MAP.on.rho, kl=kl, type="2tests", a=xa, x.map=x.map, x.map.on.rho=x.map.on.rho))
 					#
 					#	calibrated ABC*, test var on all suval, ignoring autocorrelations
@@ -6237,7 +6237,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					if(plot)	dev.off()						
 					df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2],	th2=ans.ok[["data"]]["th.s2",acc.s2]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two	
+					kl			<- kl.2D(df1, df2, nbin=100)$two	
 					ans			<- rbind(ans, data.table(acc=acc.prob,  dist.MAP=dist.MAP,  dist.MAP.on.rho=dist.MAP.on.rho, kl=kl, type="2tests-sd", a=xa, x.map=x.map, x.map.on.rho=x.map.on.rho))					
 					#
 					#	compare to naive ABC
@@ -6260,7 +6260,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					acc.prob	<- length(acc.s2a)/ncol(ans.eq[["data"]])
 					df1			<- data.table(	th1=ans.eq[["data"]]["th.a",acc.s2a],	th2=ans.eq[["data"]]["th.s2",acc.s2a]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two	
+					kl			<- kl.2D(df1, df2, nbin=100)$two	
 					file				<- files.a[1,file]
 					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_stdabc005_2Dposterior.pdf",sep='')
 					if(plot)	pdf(file=file, 4, 4)
@@ -6292,7 +6292,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					acc.prob	<- length(acc.s2a)/ncol(ans.eq[["data"]])
 					df1			<- data.table(	th1=ans.eq[["data"]]["th.a",acc.s2a],	th2=ans.eq[["data"]]["th.s2",acc.s2a]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two	
+					kl			<- kl.2D(df1, df2, nbin=100)$two	
 					file				<- files.a[1,file]
 					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_stdabc20_2Dposterior.pdf",sep='')
 					if(plot)	pdf(file=file, 4, 4)
@@ -6322,7 +6322,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					acc.prob	<- length(acc.s2a)/ncol(ans.eq[["data"]])
 					df1			<- data.table(	th1=ans.eq[["data"]]["th.a",acc.s2a],	th2=ans.eq[["data"]]["th.s2",acc.s2a]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two	
+					kl			<- kl.2D(df1, df2, nbin=100)$two	
 					file				<- files.a[1,file]
 					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_stdabc05_2Dposterior.pdf",sep='')
 					if(plot)	pdf(file=file, 4, 4)
@@ -6354,7 +6354,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					acc.prob	<- length(acc.s2a)/ncol(ans.eq[["data"]])
 					df1			<- data.table(	th1=ans.eq[["data"]]["th.a",acc.s2a],	th2=ans.eq[["data"]]["th.s2",acc.s2a]	)			
 					df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-					kl			<- nabc.kl.2D(df1, df2, nbin=100)$two	
+					kl			<- kl.2D(df1, df2, nbin=100)$two	
 					file				<- files.a[1,file]
 					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_stdabc10_2Dposterior.pdf",sep='')
 					if(plot)	pdf(file=file, 4, 4)
@@ -6733,7 +6733,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			if(plot)	dev.off()						
 			df1			<- data.table(	th1=ans.ok.nlo[["data"]]["th.a",acc.s2a],	th2=ans.ok.nlo[["data"]]["th.s2",acc.s2a]	)			
 			df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-			kl.ok		<- nabc.kl.2D(df1, df2, nbin=100)			
+			kl.ok		<- kl.2D(df1, df2, nbin=100)			
 #
 #	calibrated ABC*, test autocorr and var on thinned suval, throw away thinned part
 #	
@@ -6797,7 +6797,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			#
 			df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2],	th2=ans.ok[["data"]]["th.s2",acc.s2]	)			
 			df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-			kl.sd		<- nabc.kl.2D(df1, df2, nbin=100)			
+			kl.sd		<- kl.2D(df1, df2, nbin=100)			
 			#	plot SD+ACF-ABC approximation to posterior
 			file					<- paste(dir.name,"/nABC.MA1_yncalibrated_",N,"_",xn,"_",round(prior.l.a,d=2),"_",round(prior.u.a,d=2),"_",round(tau.u,d=2),"_",round(prior.l.sig2,d=2),"_",round(prior.u.sig2,d=2),"_",round(xsig2.tau.u,d=2),"_m",m,"_2Dposterior.pdf",sep='')
 			if(plot)	pdf(file=file, 4, 4)
@@ -6814,7 +6814,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			#tmp	<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["rho.a",acc.s2a],ans.ok[["data"]]["rho.s2",acc.s2a], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
 			df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2a.all],	th2=ans.ok[["data"]]["th.s2",acc.s2a.all]	)			
 			df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-			kl.ok		<- nabc.kl.2D(df1, df2, nbin=100)
+			kl.ok		<- kl.2D(df1, df2, nbin=100)
 			#
 			#	compare to naive ABC
 			#
@@ -6840,7 +6840,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 						{
 							df1			<- data.table(	th1=ans.eq[["data"]]["th.a",acc.s2a[[i]]],	th2=ans.eq[["data"]]["th.s2",acc.s2a[[i]]]	)			
 							df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
-							nabc.kl.2D(df1, df2, nbin=100)$two									
+							kl.2D(df1, df2, nbin=100)$two									
 						})
 			mode	<- lapply(seq_along(tmp1),function(i)
 						{

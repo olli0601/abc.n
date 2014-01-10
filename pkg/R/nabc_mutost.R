@@ -215,7 +215,7 @@ nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.
 		integral_range	<- pow_support
 		lkl_arg 		<- list(n.of.x = n.of.x, s.of.x = s.of.x, norm = lkl_norm, support = lkl_support)
 		pow_arg 		<- list(df = n.of.y - 1, s.of.T = s.of.y/sqrt(n.of.y), tau.u = tau.u, alpha = alpha, norm = pow_norm, support = pow_support)
-		tmp 			<- integrate(nabc.kl.integrand, lower = integral_range[1], upper = integral_range[2], dP = nabc.mutost.sulkl, dQ = nabc.mutost.pow, P_arg = lkl_arg, Q_arg = pow_arg)
+		tmp 			<- integrate(kl.integrand, lower = integral_range[1], upper = integral_range[2], dP = nabc.mutost.sulkl, dQ = nabc.mutost.pow, P_arg = lkl_arg, Q_arg = pow_arg)
 		KL_div 			<- tmp$value
 		if (tmp$message != "OK")	warning(tmp$message)
 		pw.cmx 			<- ifelse(calibrate.tau.u, pw.cmx, nabc.mutost.pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha))
@@ -315,7 +315,7 @@ nabc.mutost.calibrate<- function(KL_args, tau.u.lb=1, max.it = 100, debug = 0, p
 				pdf("KL_optimization.pdf", onefile = T)		
 			KL_args$plot 			<- plot_debug
 			KL_args["n.of.y"] 		<- NULL
-			tmp 					<- optimize(nabc.kl.optimize, interval = c(yn.lb, yn.ub), x_name = "n.of.y", is_integer = T, KL_divergence = KL_divergence, KL_args = KL_args, verbose = debug, tol = 1)
+			tmp 					<- optimize(kl.optimize, interval = c(yn.lb, yn.ub), x_name = "n.of.y", is_integer = T, KL_divergence = KL_divergence, KL_args = KL_args, verbose = debug, tol = 1)
 			if (plot_debug) 
 				dev.off()
 			KL_args$n.of.y 			<- round(tmp$minimum)
@@ -358,7 +358,7 @@ nabc.mutost.calibrate<- function(KL_args, tau.u.lb=1, max.it = 100, debug = 0, p
 				pdf("KL_optimization.pdf", onefile = T)
 			KL_args$plot 			<- plot_debug
 			KL_args["tau.u"]		<- NULL
-			tmp 					<- optimize(nabc.kl.optimize, interval = c(tau.u.lb,tau.u.ub), x_name="tau.u" ,KL_divergence= KL_divergence, KL_args = KL_args, verbose = debug)
+			tmp 					<- optimize(kl.optimize, interval = c(tau.u.lb,tau.u.ub), x_name="tau.u" ,KL_divergence= KL_divergence, KL_args = KL_args, verbose = debug)
 			if(plot_debug)
 				dev.off()
 			KL_args$tau.u 	<- tmp$minimum
