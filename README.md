@@ -32,7 +32,7 @@
 	R CMD build pkg
 
 	To install this R package:
-	R CMD INSTALL abc.n_1.0-0.tar.gz
+	R CMD INSTALL abc.star_1.0-0.tar.gz
 
 
 #########################################################################################

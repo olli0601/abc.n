@@ -87,7 +87,7 @@ if(length(args))
 #	re-load all R files
 require(data.table)
 function.list<-c(list.files(path= paste(CODE.HOME,"R",sep='/'), pattern = ".R$", all.files = FALSE,
-		full.names = TRUE, recursive = FALSE),paste(CODE.HOME,"misc","nabc.prjcts.R",sep='/'),paste(CODE.HOME,"misc","profiling.R",sep='/'))
+		full.names = TRUE, recursive = FALSE),paste(CODE.HOME,"misc","nabc.prjcts.R",sep='/'))
 sapply(function.list,function(x) source(x,echo=FALSE,print.eval=FALSE, verbose=FALSE))
 ###############################################################################
 #	run script
