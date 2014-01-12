@@ -9,7 +9,8 @@ Depends:
     data.table,
     pscl,
     ggplot2,
-	reshape2
+	reshape2,
+	ash
 Description: Using statistical decision theoretic arguments, ABC can be set up such that accuracy properties of the ABC approximation can be established without recursion to asymptotic arguments. 
 Description: The idea is to construct - through statistical modelling of so-called summary values - an appropriate 
 Description: parametric probability space on which the ABC approximation can be controlled. The distribution of the 
@@ -23,8 +24,4 @@ Description: Calibrated decision tests for ABC* based on summary values
 License: GPL (>=2)
 LazyLoad: yes
 Collate:
-    'nabc_functions.R'
-    'KLdiv_functions.R'
-    'nabc_chisqstretch.R'
-    'nabc_corrnorm.R'
-    'nabc_mutost.R'
+    

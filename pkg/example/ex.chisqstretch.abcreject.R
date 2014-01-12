@@ -55,7 +55,7 @@ chi2stretch.hist<- function(x, theta, nbreaks= 20, breaks= NULL, width= 0.5, plo
 x				<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 x 				<- (x - mean(x))/sd(x) * sqrt(xsigma2) + xmu
 #	calibrated ABC* parameters
-abc.param		<- chisqstretch.calibrate(length(x), sd(x), mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=F)
+abc.param		<- chisqstretch.calibrate(length(x), sd(x), mx.pw=0.9, alpha=0.01, max.it=100, debug=FALSE, plot=FALSE)
 #	get ABC* simulations
 simu			<- chi2stretch.simu(N, prior.l, prior.u, x, abc.param['n.of.y'], ymu)
 #	evaluate ABC* simulations

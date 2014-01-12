@@ -197,7 +197,7 @@ chisqstretch.calibrate.taulow<- function(tau.up, scale, df, alpha=0.01, rho.star
 	tau.low.ub	<- ifelse(tmp+1<max.it,2*tau.low.lb,tau.up)
 	if(verbose)	cat(paste("\nregion for tau.low is",tau.low.lb,tau.low.ub))	
 	error		<- 1
-	while(abs(error)>tol && round(tau.low.lb,d=10)!=round(tau.low.ub,d=10) && max.it>0)
+	while(abs(error)>tol && round(tau.low.lb,digits=10)!=round(tau.low.ub,digits=10) && max.it>0)
 	{
 		max.it	<- max.it-1
 		tau.low	<- (tau.low.lb + tau.low.ub)/2
@@ -205,7 +205,7 @@ chisqstretch.calibrate.taulow<- function(tau.up, scale, df, alpha=0.01, rho.star
 		rej		<- .Call("abcScaledChiSq",	c(scale,df,tau.low,tau.up,alpha,1e-10,100,0.05)	)
 		if(rej[4]>tol)	stop("compute tau.low: rejection region does not have level alpha within tolerance")
 		pw		<- chisqstretch.pow(rho,scale,df,rej[1],rej[2])
-#print( c(rho[ which.max(pw) ],pw[ which.max(pw) ], tau.low.lb, tau.low.ub,round(tau.low.lb,d=10)==round(tau.low.ub,d=10) ))	
+#print( c(rho[ which.max(pw) ],pw[ which.max(pw) ], tau.low.lb, tau.low.ub,round(tau.low.lb,digits=10)==round(tau.low.ub,digits=10) ))	
 		error	<- rho[ which.max(pw) ] - rho.star
 		if(verbose)	cat(paste("\ntrial tau.l=",tau.low,"pw.max is",max(pw),"at",rho[ which.max(pw) ], "it",max.it))
 #print( error )			
@@ -261,7 +261,7 @@ chisqstretch.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01,
 	tau.up.lb	<- 1
 	error		<- 1	
 	
-	while(abs(error)>tol && round(tau.up.lb,d=10)!=round(tau.up.ub,d=10) && max.it>0)
+	while(abs(error)>tol && round(tau.up.lb,digits=10)!=round(tau.up.ub,digits=10) && max.it>0)
 	{
 		max.it						<- max.it-1
 		tau.up						<- (tau.up.lb + tau.up.ub)/2
@@ -275,7 +275,7 @@ chisqstretch.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01,
 			tau.up.lb<- tau.up
 		else
 			tau.up.ub<- tau.up
-#print(c(abs(error), round(tau.up.lb,d=10)!=round(tau.up.ub,d=10)) )	
+#print(c(abs(error), round(tau.up.lb,digits=10)!=round(tau.up.ub,digits=10)) )	
 	}
 	if(max.it==0)	warning("chisqstretch.calibrate.tauup: reached max.it")
 	c(tau.low=tau.low, tau.up=tau.up, curr.mx.pw=curr.mx.pw,	error=abs(error), cl=cl, cu=cu)
@@ -308,18 +308,18 @@ chisqstretch.calibrate<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, m
 {	
 	KL.of.yn_ub<- KL.of.yn<- error <- curr.mx.pw <- tau.low <- cl <- cu	<- NA		
 	#KL for initial n.of.y
-	KL.of.yn		<- chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, debug=0, calibrate.tau.u=T, plot=F)["KL_div"]	
+	KL.of.yn		<- chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]	
 	#KL always decreases from n.of.x. Find upper bound yn.ub such that KL first increases again.	
 	curr.it 		<- max.it
 	yn.ub 			<- 2 * n.of.y		
-	KL.of.yn_ub		<- chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, yn.ub-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, debug=0, calibrate.tau.u=T, plot=F)["KL_div"]		
+	KL.of.yn_ub		<- chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, yn.ub-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]		
 	while (KL.of.yn_ub < KL.of.yn && curr.it > 0) 
 	{
 		#print(c(yn.ub, KL.of.yn_ub, KL.of.yn, curr.it))
 		curr.it 		<- curr.it - 1
 		KL.of.yn 		<- KL.of.yn_ub
 		yn.ub 			<- 2 * yn.ub
-		KL.of.yn_ub		<- chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, yn.ub-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, debug=0, calibrate.tau.u=T, plot=F)["KL_div"]
+		KL.of.yn_ub		<- chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, yn.ub-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]
 		if(debug)	cat(paste("\ntrial upper bound m=",yn.ub,"with KL",KL.of.yn_ub))
 	}			
 	if (curr.it == 0) 	stop("could not find upper bound for yn")					
@@ -331,6 +331,6 @@ chisqstretch.calibrate<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, m
 	tmp 					<- optimize(kl.optimize, interval = c(yn.lb-1, yn.ub-1), x_name = "df", is_integer = T, KL_divergence = "chisqstretch.calibrate.tolerances.getkl", KL_args = KL_args, verbose = debug, tol = 1)
 	
 	n.of.y 										<- round(tmp$minimum)+1
-	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, debug=0, calibrate.tau.u=T, plot=plot)
+	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=plot)
 	c(n.of.y=n.of.y, tau.l=tau.l, tau.u=tau.u, cl=c.l, cu=c.u, pw.cmx=pw.cmx, KL_div=KL_div)		
 }

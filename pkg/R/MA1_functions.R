@@ -88,6 +88,64 @@ ma.cor<- function(x, leave.out=0, len= ceiling(length(x)/(1+leave.out)) )
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
+#' @title Compute the 2d mode of a 2D density 
+#' @description This function computes the 2d mode of a 2D density based on average shifted histograms
+#' @import KernSmooth
+#' @import fields
+#' @export 
+ma.add.contour<- function(x,y,xlim=NA,ylim=NA, nlevels=5, width.infl=0.25, gridsize=c(100,100), contour.col="black", ...)
+{
+	if(any(is.na(xlim)))	xlim<- range(x)*1.05
+	if(any(is.na(ylim)))	ylim<- range(y)*1.05	
+	x.bw<- width.infl*diff(summary(x)[c(2,5)])
+	y.bw<- width.infl*diff(summary(y)[c(2,5)])
+	f <- bkde2D(cbind(x, y), range.x=list(xlim,ylim), bandwidth=c(x.bw,y.bw), gridsize=gridsize)	
+	contour(f$x1, f$x2, f$fhat, nlevels= nlevels, add=1, col=contour.col, ...)						
+}
+#------------------------------------------------------------------------------------------------------------------------
+#' @title Compute the 2d mode of a 2D density 
+#' @description This function computes the 2d mode of a 2D density based on average shifted histograms
+#' @import ash
+#' @import KernSmooth
+#' @import fields
+#' @export 
+ma.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,xlab='x',ylab='y',n.hists=5,nbin=2, nlevels=5, width.infl=0.25, gridsize=c(100,100), method="kde", plot=0, contour.col="black", cols= head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50), ...)
+{
+	if(any(is.na(xlim)))	xlim<- range(x)*1.05
+	if(any(is.na(ylim)))	ylim<- range(y)*1.05
+	if(method=="kde")
+	{
+		bins<- bin2(cbind(x, y), ab=rbind(xlim,ylim),nbin=nbin*c(nclass.Sturges(x),nclass.Sturges(y)))
+		f <- ash2(bins,rep(n.hists,2))
+		mxidx<- c( (which.max(f$z)-1)%%nrow(f$z)+1, (which.max(f$z)-1)%/%ncol(f$z)+1 ) #row, col
+		mx<- c(		mean( f$x[ c(mxidx[1],ifelse(mxidx[1]<length(f$x),mxidx[1]+1,mxidx[1])) ] ),
+				mean( f$y[ c(mxidx[2],ifelse(mxidx[2]<length(f$y),mxidx[2]+1,mxidx[2])) ] )		)
+		if(plot==1)
+		{
+			image(f$x,f$y,f$z, col=cols, ...)				
+			contour(f$x,f$y,f$z,add=TRUE, nlevels= nlevels, col=contour.col)
+			points(mx, col="red", pch=19)
+		}
+	}
+	else if(method=="ash")
+	{
+		x.bw<- width.infl*diff(summary(x)[c(2,5)])
+		y.bw<- width.infl*diff(summary(y)[c(2,5)])
+		f <- bkde2D(cbind(x, y), range.x=list(xlim,ylim), bandwidth=c(x.bw,y.bw), gridsize=gridsize)
+		mxidx<- c( (which.max(f$fhat)-1)%%nrow(f$fhat)+1, (which.max(f$fhat)-1)%/%ncol(f$fhat)+1 ) #row, col	
+		#print(mxidx)
+		#print(f$x2[ c(mxidx[2],ifelse(mxidx[2]<length(f$x2),mxidx[2]+1,mxidx[2])) ] )
+		mx<- c(		mean( f$x1[ c(mxidx[1],ifelse(mxidx[1]<length(f$x1),mxidx[1]+1,mxidx[1])) ] ),
+				mean( f$x2[ c(mxidx[2],ifelse(mxidx[2]<length(f$x2),mxidx[2]+1,mxidx[2])) ] )		)
+		if(plot)
+		{
+			image(f$x1,f$x2,f$fhat, col=cols,xlab=xlab,ylab=ylab )
+			contour(f$x1, f$x2, f$fhat, nlevels= nlevels, add=1, col=contour.col, ...)			
+		}
+	}	
+	mx
+}
+#------------------------------------------------------------------------------------------------------------------------
 #' @title Generate an MA(1) pseudo data set 
 #' @description This function generates an MA(1) pseudo data set subject to constraints on the sample autocorrelation, the sample variance and the MLE of the time series.
 #' All these statistics of the time series are within a certain tolerance value of the corresponding population level statistics.   

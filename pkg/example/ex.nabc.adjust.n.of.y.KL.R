@@ -22,19 +22,19 @@ tau.u.ub <- 2
 
 ## example 1: test of location equivalence for normally distributed variables (muTOST)
 #compute the Kullback-Leibler divergence between the summary likelihood and the standardized power; and plot. 
-nabc.mutost.kl(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub, plot = T)
+nabc.mutost.kl(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u =TRUE, tau.u = tau.u.ub, plot =TRUE)
 
 #adjust n.of.y to minimize the Kullback-Leibler divergence, and plot result.
 nabc.calibrate.m.and.tau.yesmxpw.yesKL("nabc.mutost.kl", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, s.of.y = s.of.y, 
-	mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, tau.u = tau.u.ub), plot = T)
+	mx.pw = mx.pw, alpha = alpha, calibrate.tau.u =TRUE, tau.u = tau.u.ub), plot =TRUE)
 
 ## example 2: test of dispersion equivalence for normally distributed variables (chisqstretch)
 #compute the Kullback-Leibler divergence between the summary likelihood and the standardized power; and plot. 
-chisqstretch.kl(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = T, tau.u = tau.u.ub, plot = T)
+chisqstretch.kl(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u =TRUE, tau.u = tau.u.ub, plot =TRUE)
 
 #adjust n.of.y to minimize the Kullback-Leibler divergence, and plot result.
 nabc.calibrate.m.and.tau.yesmxpw.yesKL("chisqstretch.kl", args = list(n.of.x = n.of.x, s.of.x = s.of.x, n.of.y = n.of.y, 
-	s.of.y = s.of.y, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, tau.u = tau.u.ub), plot = T)
+	s.of.y = s.of.y, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u =TRUE, tau.u = tau.u.ub), plot =TRUE)
 
 
 

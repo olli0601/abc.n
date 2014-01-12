@@ -8,10 +8,10 @@ xn				<- 150
 x				<- ma.get.pseudo.data(xn, 0, xa, xsigma2, tol=1e-2, verbose=0)
 #	calibrate the power function for the subset (x1,x2), (x4,x5), (x7,x8), ...
 zx				<- ma.cor(x, leave.out=2)
-abc.param.a		<- corrz.calibrate(zx["n"], mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=2, debug=F, plot=T)
+abc.param.a		<- corrz.calibrate(zx["n"], mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=2, debug=FALSE, plot=TRUE)
 abc.param.a
 #	calibrate the power function for the subset (x3,x4), (x6,x7), (x9,x10), ...
 #	only almost the same as for the subset above because the number of pairs is 49
 zx				<- ma.cor(x[-c(1,2)], leave.out=2)
-abc.param.a		<- corrz.calibrate(zx["n"], mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=2, debug=F, plot=T)
+abc.param.a		<- corrz.calibrate(zx["n"], mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=2, debug=FALSE, plot=TRUE)
 abc.param.a

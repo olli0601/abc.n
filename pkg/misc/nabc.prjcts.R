@@ -374,9 +374,9 @@ project.nABC.plotGAUSSresults<- function()
 	stop()
 }
 #------------------------------------------------------------------------------------------------------------------------
-project.nABC.movingavg.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,xlab='x',ylab='y',n.hists=5,nbin=2, nlevels=5, width.infl=0.25, gridsize=c(100,100), method="kde", plot=0, contour.col="black", cols= head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50), ...)
+ma.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,xlab='x',ylab='y',n.hists=5,nbin=2, nlevels=5, width.infl=0.25, gridsize=c(100,100), method="kde", plot=0, contour.col="black", cols= head( rev(gray(seq(0,.95,len=trunc(50*1.4)))), 50), ...)
 {
-	if(!method%in%c("kde","ash"))	stop("project.nABC.movingavg.get.2D.mode: error at 1a")
+	if(!method%in%c("kde","ash"))	stop("ma.get.2D.mode: error at 1a")
 	if(any(is.na(xlim)))	xlim<- range(x)*1.05
 	if(any(is.na(ylim)))	ylim<- range(y)*1.05
 	if(method=="kde")
@@ -852,14 +852,14 @@ project.nABC.movingavg<- function()
 							}														
 							#ans.sd
 							acc<- which( ans[["data"]]["v.error",]<=ans[["v.cir"]]  &  ans[["data"]]["v.error",]>=ans[["v.cil"]] )
-							tmp<- project.nABC.movingavg.get.2D.mode(ans[["data"]]["a.theta",acc],ans[["data"]]["v.theta",acc], xlim= c(-0.4,0.4),ylim=c(0.8,1.2),plot=0, nbin=10, nlevels=20)
+							tmp<- ma.get.2D.mode(ans[["data"]]["a.theta",acc],ans[["data"]]["v.theta",acc], xlim= c(-0.4,0.4),ylim=c(0.8,1.2),plot=0, nbin=10, nlevels=20)
 							#abline(h=ans[["xv"]],col="red"); abline(v=ans[["xa"]],col="red")
 							out<- c(out,tmp)
 							#ans.sdacf
 							acc2<- which( 	ans[["data"]]["a.error",]<=ans[["a.cir"]]  &  ans[["data"]]["a.error",]>=ans[["a.cil"]]	& 
 											ans[["data"]]["v.error",]<=ans[["v.cir"]]  &  ans[["data"]]["v.error",]>=ans[["v.cil"]] )
-							tmp<- project.nABC.movingavg.get.2D.mode(ans[["data"]]["a.theta",acc2],ans[["data"]]["v.theta",acc2], xlim= c(-0.2,0.4),ylim=c(0.8,1.2), plot=0, nbin=10, nlevels=20)
-							#tmp<- project.nABC.movingavg.get.2D.mode(ans[["data"]]["a.link",acc2],ans[["data"]]["v.link",acc2], xlim= c(-0.2,0.4),ylim=c(0.8,1.2), plot=1, nbin=10, nlevels=20)
+							tmp<- ma.get.2D.mode(ans[["data"]]["a.theta",acc2],ans[["data"]]["v.theta",acc2], xlim= c(-0.2,0.4),ylim=c(0.8,1.2), plot=0, nbin=10, nlevels=20)
+							#tmp<- ma.get.2D.mode(ans[["data"]]["a.link",acc2],ans[["data"]]["v.link",acc2], xlim= c(-0.2,0.4),ylim=c(0.8,1.2), plot=1, nbin=10, nlevels=20)
 							#abline(h=ans[["xv"]],col="red"); abline(v=ans[["xa"]],col="red")
 							out<- c(out,tmp)
 							names(out)<- c("xa","xv","ya.dmode.sd","yv.dmode.sd","ya.dmode.sdacf","yv.dmode.sdacf")
@@ -1096,9 +1096,9 @@ print(c(ax,sig2x))
 							acc<- which( 	ans[["data"]]["a.error",]<=out[1,"acf.cu"]  &  ans[["data"]]["a.error",]>=out[1,"acf.cl"]	& 
 											ans[["data"]]["v.error",]<=out[1,"sd.cu"]  &  ans[["data"]]["v.error",]>=out[1,"sd.cl"] )																									
 							out[1,c("acf.tau.l","acf.tau.u","sd.tau.l","sd.tau.u","acc")]<-	c(fixed.tau["a",c("tau.l","tau.u")],fixed.tau["v",c("tau.l","tau.u")],length(acc)/ncol(ans[["data"]]))
-							out[1,c("a.hmode","v.hmode")]	<- project.nABC.movingavg.get.2D.mode(ans[["data"]]["a.theta",acc],ans[["data"]]["v.theta",acc], xlim= c(-0.2,0.4),ylim=c(1/1.7,1.7), plot=0, nbin=10, nlevels=20)
+							out[1,c("a.hmode","v.hmode")]	<- ma.get.2D.mode(ans[["data"]]["a.theta",acc],ans[["data"]]["v.theta",acc], xlim= c(-0.2,0.4),ylim=c(1/1.7,1.7), plot=0, nbin=10, nlevels=20)
 							#abline(h=ans[["xv"]],col="red"); abline(v=ans[["xa"]],col="red")
-							out[1,c("acf.hmode","sd.hmode")]<- project.nABC.movingavg.get.2D.mode(ans[["data"]]["a.link",acc],ans[["data"]]["v.link",acc], xlim= c(-0.2,0.4),ylim=c(1/1.7,1.7), plot=0, nbin=10, nlevels=20)
+							out[1,c("acf.hmode","sd.hmode")]<- ma.get.2D.mode(ans[["data"]]["a.link",acc],ans[["data"]]["v.link",acc], xlim= c(-0.2,0.4),ylim=c(1/1.7,1.7), plot=0, nbin=10, nlevels=20)
 							out[1,"a.hmode.uniest"]			<- project.nABC.movingavg.gethist(ans[["data"]]["a.theta",acc], out[1,"xa"], nbreaks= 50, width= 0.5, plot=1)[["dmode"]]
 							alink.fxtau						<- ans[["data"]]["a.link",acc]-ans[["xa"]]							
 							link.fxtau						<- nabc.get.locfit.links(2, as.data.frame(cbind( a=ans[["data"]]["a.theta",1:50000], sigma2=ans[["data"]]["v.theta",1:50000], VAR=ans[["data"]]["v.error",1:50000], ACF=ans[["data"]]["a.error",1:50000]/sqrt(floor(xn / (1+xmapa.leave.out)) - 3))), th.thin=1, th.sep=40	)
@@ -1110,9 +1110,9 @@ print(c(ax,sig2x))
 							acc<- which( 	ans[["data"]]["a.error",]<=out[2,"acf.cu"]  &  ans[["data"]]["a.error",]>=out[2,"acf.cl"]	& 
 											ans[["data"]]["v.error",]<=out[2,"sd.cu"]  &  ans[["data"]]["v.error",]>=out[2,"sd.cl"] )							
 							out[2,"acc"]<-	length(acc)/ncol(ans[["data"]])														
-							out[2,c("a.hmode","v.hmode")]<- project.nABC.movingavg.get.2D.mode(ans[["data"]]["a.theta",acc],ans[["data"]]["v.theta",acc], xlim= c(-0.2,0.4),ylim=c(1/1.7,1.7), plot=0, nbin=10, nlevels=20)
+							out[2,c("a.hmode","v.hmode")]<- ma.get.2D.mode(ans[["data"]]["a.theta",acc],ans[["data"]]["v.theta",acc], xlim= c(-0.2,0.4),ylim=c(1/1.7,1.7), plot=0, nbin=10, nlevels=20)
 							#abline(h=ans[["xv"]],col="red"); abline(v=ans[["xa"]],col="red")
-							out[2,c("acf.hmode","sd.hmode")]<- project.nABC.movingavg.get.2D.mode(ans[["data"]]["a.link",acc],ans[["data"]]["v.link",acc], xlim= c(-0.2,0.4),ylim=c(1/1.7,1.7), plot=0, nbin=10, nlevels=20)
+							out[2,c("acf.hmode","sd.hmode")]<- ma.get.2D.mode(ans[["data"]]["a.link",acc],ans[["data"]]["v.link",acc], xlim= c(-0.2,0.4),ylim=c(1/1.7,1.7), plot=0, nbin=10, nlevels=20)
 							out[2,"a.hmode.uniest"]	<- project.nABC.movingavg.gethist(ans[["data"]]["a.theta",acc], out[1,"xa"], nbreaks= 50, width= 0.5, plot=1)[["dmode"]]
 							alink.fxpw				<- ans[["data"]]["a.link",acc]-ans[["xa"]]
 							link.fxpw				<- nabc.get.locfit.links(2, as.data.frame(cbind( a=ans[["data"]]["a.theta",1:50000], sigma2=ans[["data"]]["v.theta",1:50000], VAR=ans[["data"]]["v.error",1:50000], ACF=ans[["data"]]["a.error",1:50000]/sqrt(floor(xn / (1+xmapa.leave.out)) - 3))), th.thin=1, th.sep=40	)														
@@ -1578,7 +1578,7 @@ stop()
 		lines (trans3d(ma.rho2a(z.xma.pa), out$y, z= z.xma.pa, pmat = out$pmat), col = "red", lty=1, lwd=1.5)		
 		dev.off()
 stop()		
-		tmp<- project.nABC.movingavg.get.2D.mode(ans["a.ytheta",acc],ans["v.ytheta",acc], xlim= c(-0.2,0.4),ylim=c(0.8,1.2), plot=0)
+		tmp<- ma.get.2D.mode(ans["a.ytheta",acc],ans["v.ytheta",acc], xlim= c(-0.2,0.4),ylim=c(0.8,1.2), plot=0)
 		print(tmp)
 stop()
 					
@@ -2515,7 +2515,7 @@ project.nABC.compareSEIRS<- function()
 		j2		<- 2
 		xs1		<- lapply(seq_along(post),function(i){		c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xnames[j1]]), recursive=1)		})	
 		xs2		<- lapply(seq_along(post),function(i){		c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xnames[j2]]), recursive=1)		})		
-		tmp		<- project.nABC.movingavg.get.2D.mode(xs1[[2]], xs2[[2]], xlim= c(3.32,3.65),ylim=c(9.2,10.7),plot=1, nbin=10, levels=c(1, 5, 10, 12), method="ash", width.infl=0.35, xlab=xlab[j1], ylab=xlab[j2])				
+		tmp		<- ma.get.2D.mode(xs1[[2]], xs2[[2]], xlim= c(3.32,3.65),ylim=c(9.2,10.7),plot=1, nbin=10, levels=c(1, 5, 10, 12), method="ash", width.infl=0.35, xlab=xlab[j1], ylab=xlab[j2])				
 		abline(v=xtrue[1], lty=3)
 		abline(h=xtrue[2], lty=3)
 		project.nABC.movingavg.add.contour(xs1[[1]], xs2[[1]],  xlim= c(3.32,3.65), ylim=c(9.2,10.7), levels=c(1, 12, 50, 90 ), width.infl=0.3, contour.col="white")		#
@@ -2528,7 +2528,7 @@ project.nABC.compareSEIRS<- function()
 		j2		<- 3
 		xs1		<- lapply(seq_along(post),function(i){		c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xnames[j1]]), recursive=1)		})	
 		xs2		<- lapply(seq_along(post),function(i){		c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xnames[j2]]), recursive=1)		})		
-		tmp		<- project.nABC.movingavg.get.2D.mode(xs1[[2]], xs2[[2]], xlim= c(3.32,3.65),ylim=c(0.072,0.086),plot=1, nbin=10, levels=c(200, 800, 1150), method="ash", width.infl=0.4, xlab=xlab[j1], ylab=xlab[j2])				
+		tmp		<- ma.get.2D.mode(xs1[[2]], xs2[[2]], xlim= c(3.32,3.65),ylim=c(0.072,0.086),plot=1, nbin=10, levels=c(200, 800, 1150), method="ash", width.infl=0.4, xlab=xlab[j1], ylab=xlab[j2])				
 		abline(v=xtrue[j1], lty=3)
 		abline(h=xtrue[j2], lty=3)
 		project.nABC.movingavg.add.contour(xs1[[1]], xs2[[1]],  xlim= c(3.32,3.65), ylim=c(0.072,0.086), levels=c(200, 1150, 5000, 12000), width.infl=0.4, contour.col="white")		#
@@ -2541,7 +2541,7 @@ project.nABC.compareSEIRS<- function()
 		j2		<- 3
 		xs1		<- lapply(seq_along(post),function(i){		c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xnames[j1]]), recursive=1)		})	
 		xs2		<- lapply(seq_along(post),function(i){		c(sapply(seq_along(post[[i]][["samples"]]),function(r)	post[[i]][["samples"]][[r]][,xnames[j2]]), recursive=1)		})		
-		tmp		<- project.nABC.movingavg.get.2D.mode(xs1[[2]], xs2[[2]], xlim= c(9.2,10.7),ylim=c(0.072,0.086),plot=1, nbin=10, levels=c(100,250,350), method="ash", width.infl=0.3, xlab=xlab[j1], ylab=xlab[j2])				
+		tmp		<- ma.get.2D.mode(xs1[[2]], xs2[[2]], xlim= c(9.2,10.7),ylim=c(0.072,0.086),plot=1, nbin=10, levels=c(100,250,350), method="ash", width.infl=0.3, xlab=xlab[j1], ylab=xlab[j2])				
 		abline(v=xtrue[j1], lty=3)
 		abline(h=xtrue[j2], lty=3)
 		project.nABC.movingavg.add.contour(xs1[[1]], xs2[[1]],  xlim= c(9.2,10.7), ylim=c(0.072,0.086), levels=c(100,1000, 2500), width.infl=0.3, contour.col="white")		#
@@ -5817,6 +5817,102 @@ analyse_MCMC_MA1_burn.and.thin<- function(posterior,thin_every=0,burn=0)
 	posterior
 }
 #------------------------------------------------------------------------------------------------------------------------
+nabc.test.acf.get.data.for.package<- function()
+{
+	#get posterior
+	dir.name				<- paste("/Users/Oliver/workspace_sandbox/phylody/data","nABC.acf",sep='/')
+	xas						<- c(0.1, 0.25)
+	dummy					<- sapply(xas, function(xa)
+			{
+				moving.avg				<- readRDS(file= paste(dir.name,'/',"131220_anton_mcmc_leave.out.a=2_leave.out.s2=1_a=",xa,".rds",sep='') )
+				xn.exaxtposterior		<- 150 
+				moving.avg				<- analyse_MCMC_MA1_cast2datatable(moving.avg)	
+				moving.avg$posterior	<- analyse_MCMC_MA1_burn.and.thin(moving.avg$posterior, thin_every=10, burn=0)
+				ma.exact				<- moving.avg
+				file					<- paste("/Users/Oliver/git/abc.n/pkg/data/","ma_mcmc_a=",xa,".rda",sep='')
+				save(ma.exact, file=file)
+			})
+	#get abc approx pre-run files
+	tmp			<- list.files(dir.name, pattern="^nABC.MA1_yncalibrated_")
+	tmp			<- sapply(strsplit(tmp,'_'), function(x)	tail(x,1) )
+	f.name.end	<- tmp[substr(tmp,1,1)=='a']
+	tmp			<- data.table(file=list.files(dir.name, pattern=".R$"))
+	files		<- tmp[,	{
+				f.name.end.idx<- sapply(f.name.end, function(z)		grepl(z,file))
+				list(a= ifelse(any(f.name.end.idx), f.name.end[f.name.end.idx], NA_character_))
+			},by=file]
+	files		<- subset(files, !is.na(a))[, list(a=substr(a,2,nchar(a)-2)) ,by=file]
+	set(files, NULL, 'a', as.numeric(files[,a]))
+	setkey(files, 'a')		
+	files		<- files[,	{
+				tmp<- strsplit(file,'_')[[1]]
+				list(cali= tmp[2], N=tmp[3], a=a)
+			}, by=file]
+	files		<- files[,		{
+				tmp<- ifelse(length(N)<2,1,2)
+				list( file= file[tmp] )
+			}	,by=c('a','cali')]
+	#save abc star approximation to package
+	dummy					<- sapply(xas, function(xa)
+			{
+				cat(paste("\nprocess",xa))
+				files.a<- subset(files,a==xa)
+				f.name					<- paste(dir.name, files.a[1,file],sep='/')
+				cat(paste("\nload ",f.name))
+				options(show.error.messages = FALSE, warn=1)		
+				readAttempt				<-try(suppressWarnings(load(f.name)))						
+				options(show.error.messages = TRUE)
+				cat(paste("\nloaded ",readAttempt))
+				ans.ok$data				<- as.integer(round( ans.ok$data[,1:1e6]*1e4, d=0 ))
+				ma.abc.star				<- ans.ok					
+				file					<- paste("/Users/Oliver/git/abc.n/pkg/data/","ma_abc.star_a=",xa,".rda",sep='')
+				save(ma.abc.star, file=file, compress='bzip2', compression_level=9)									
+			})
+	#
+	#
+	#	stop here to save space
+	#	TODO save as as.integer
+
+	#save standard abc approximation to package
+	dummy					<- sapply(xas, function(xa)
+			{
+				cat(paste("\nprocess",xa))
+				files.a<- subset(files,a==xa)
+				f.name					<- paste(dir.name, files.a[3,file],sep='/')
+				cat(paste("\nload ",f.name))
+				options(show.error.messages = FALSE, warn=1)		
+				readAttempt				<-try(suppressWarnings(load(f.name)))						
+				options(show.error.messages = TRUE)
+				cat(paste("\nloaded ",readAttempt))
+				ma.abc.std				<- ans.eq
+				
+				file					<- paste("/Users/Oliver/git/abc.n/pkg/data/","ma_abc.std_a=",xa,".rda",sep='')
+				save(ma.abc.std, file=file)									
+			})
+	
+	#save abc star, ignoring autocorrelations, to package
+	dummy					<- sapply(xas, function(xa)
+			{
+				cat(paste("\nprocess",xa))
+				files.a<- subset(files,a==xa)
+				f.name					<- paste(dir.name, files.a[2,file],sep='/')
+				cat(paste("\nload ",f.name))
+				options(show.error.messages = FALSE, warn=1)		
+				readAttempt				<-try(suppressWarnings(load(f.name)))						
+				options(show.error.messages = TRUE)
+				cat(paste("\nloaded ",readAttempt))
+				ma.abc.star.ignoreautocorr		<- ans.ok.nlo
+				
+				file					<- paste("/Users/Oliver/git/abc.n/pkg/data/","ma_abc.star.ignore.autocorr_a=",xa,".rda",sep='')
+				save(ma.abc.star.ignoreautocorr, file=file)									
+			})	
+	
+	
+	
+	
+	
+}
+#------------------------------------------------------------------------------------------------------------------------
 nabc.test.acf.montecarlo.vary.a<- function()
 {
 	my.mkdir(DATA,"nABC.acf")
@@ -6050,7 +6146,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					moving.avg				<- analyse_MCMC_MA1_cast2datatable(moving.avg)	
 					moving.avg$posterior	<- analyse_MCMC_MA1_burn.and.thin(moving.avg$posterior, thin_every=10, burn=0)
 					x						<- moving.avg$data$x
-					x.map					<- project.nABC.movingavg.get.2D.mode(moving.avg$posterior[,a],moving.avg$posterior[,sig2], xlim= c(-0.4,0.4),ylim=c(0.6,1/0.6),plot=0, nbin=10,  method="ash")					
+					x.map					<- ma.get.2D.mode(moving.avg$posterior[,a],moving.avg$posterior[,sig2], xlim= c(-0.4,0.4),ylim=c(0.6,1/0.6),plot=0, nbin=10,  method="ash")					
 					x.map.on.rho			<- ma.rho2a( moving.avg$data$unthinned$s_stat$autocorr )
 					x.map.on.rho			<- c( x.map.on.rho, ma.rho2sig2( moving.avg$data$unthinned$s_stat$variance, x.map.on.rho ) )					
 					#
@@ -6091,8 +6187,8 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))
 					tmp					<- acc.s2a						
-					#tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok.nlo[["data"]]["th.a",tmp],ans.ok.nlo[["data"]]["th.s2",tmp], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
-					tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok.nlo[["data"]]["th.a",tmp],ans.ok.nlo[["data"]]["th.s2",tmp], xlim= c(-0.3,0.5),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					#tmp					<- ma.get.2D.mode(ans.ok.nlo[["data"]]["th.a",tmp],ans.ok.nlo[["data"]]["th.s2",tmp], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					tmp					<- ma.get.2D.mode(ans.ok.nlo[["data"]]["th.a",tmp],ans.ok.nlo[["data"]]["th.s2",tmp], xlim= c(-0.3,0.5),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)
 					dist.MAP			<- sqrt(sum(c(tmp-x.map)^2))
@@ -6115,7 +6211,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))
 					tmp					<- acc.s2a						
-					tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok.nlo[["data"]]["th.a",tmp],ans.ok.nlo[["data"]]["th.s2",tmp], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					tmp					<- ma.get.2D.mode(ans.ok.nlo[["data"]]["th.a",tmp],ans.ok.nlo[["data"]]["th.s2",tmp], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)
 					dist.MAP			<- sqrt(sum(c(tmp-x.map)^2))
@@ -6151,7 +6247,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))
 					tmp					<- acc.s2a.all						
-					tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					tmp					<- ma.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)
 					dist.MAP			<- sqrt(sum(c(tmp-x.map)^2))
@@ -6198,7 +6294,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))
 					tmp					<- acc.s2a.t2						
-					tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					tmp					<- ma.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)
 					dist.MAP			<- sqrt(sum(c(tmp-x.map)^2))
@@ -6221,8 +6317,8 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))
 					tmp					<- acc.s2						
-					#tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
-					tmp					<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,1.5,2,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					#tmp					<- ma.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					tmp					<- ma.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,1.5,2,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)					
 					dist.MAP			<- sqrt(sum(c(tmp-x.map)^2))
@@ -6263,7 +6359,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_stdabc005_2Dposterior.pdf",sep='')
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))		
-					tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					tmp			<- ma.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)					
 					dist.MAP	<- sqrt(sum(c(tmp-x.map)^2))
@@ -6295,7 +6391,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_stdabc20_2Dposterior.pdf",sep='')
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))		
-					tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					tmp			<- ma.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)					
 					dist.MAP	<- sqrt(sum(c(tmp-x.map)^2))
@@ -6325,7 +6421,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_stdabc05_2Dposterior.pdf",sep='')
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))		
-					tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					tmp			<- ma.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)					
 					dist.MAP	<- sqrt(sum(c(tmp-x.map)^2))
@@ -6357,7 +6453,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 					file				<- paste(dir.name,"/",substr(file, 1, nchar(file)-2),"_stdabc10_2Dposterior.pdf",sep='')
 					if(plot)	pdf(file=file, 4, 4)
 					par(mar=c(4.5,4.5,0.5,0.5))		
-					tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+					tmp			<- ma.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a],ans.eq[["data"]]["th.s2",acc.s2a], xlim= c(-0.5,0.5),ylim=c(0.5,2),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
 					abline(h=xsigma2, lty=2)
 					abline(v=xa, lty=2)					
 					dist.MAP	<- sqrt(sum(c(tmp-x.map)^2))
@@ -6721,7 +6817,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			if(plot)	pdf(file=file, 4, 4)
 			par(mar=c(4.5,4.5,0.5,0.5))
 			tmp	<- acc.s2a						
-			tmp	<- project.nABC.movingavg.get.2D.mode(ans.ok.nlo[["data"]]["th.a",tmp],ans.ok.nlo[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+			tmp	<- ma.get.2D.mode(ans.ok.nlo[["data"]]["th.a",tmp],ans.ok.nlo[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
 			sqrt(sum(tmp-c(xa,xsigma2))^2)
 			project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white", lty=1, lwd=1, labcex=0.6)			
 			acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
@@ -6781,7 +6877,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			if(plot)	pdf(file=file, 4, 4)
 			par(mar=c(4.5,4.5,0.5,0.5))
 			tmp	<- acc.s2						
-			tmp	<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
+			tmp	<- ma.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
 			project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10,13), contour.col="white")
 			acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
 			points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")
@@ -6801,7 +6897,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			if(plot)	pdf(file=file, 4, 4)
 			par(mar=c(4.5,4.5,0.5,0.5))
 			tmp	<- acc.s2a.all						
-			tmp	<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
+			tmp	<- ma.get.2D.mode(ans.ok[["data"]]["th.a",tmp],ans.ok[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, levels=c(1,3,5,10), method="ash", xlab="a", ylab=expression(sigma^2), cols=head( gray(seq(.3,.7,len=50)), 50))
 			sqrt(sum(tmp-c(xa,xsigma2))^2)
 			project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10), contour.col="white")
 			acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
@@ -6809,7 +6905,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			abline(h=xsigma2, lty=2)
 			abline(v=xa, lty=2)
 			if(plot)	dev.off()			
-			#tmp	<- project.nABC.movingavg.get.2D.mode(ans.ok[["data"]]["rho.a",acc.s2a],ans.ok[["data"]]["rho.s2",acc.s2a], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
+			#tmp	<- ma.get.2D.mode(ans.ok[["data"]]["rho.a",acc.s2a],ans.ok[["data"]]["rho.s2",acc.s2a], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
 			df1			<- data.table(	th1=ans.ok[["data"]]["th.a",acc.s2a.all],	th2=ans.ok[["data"]]["th.s2",acc.s2a.all]	)			
 			df2			<- data.table(	th1=moving.avg$posterior[,a], 			th2=moving.avg$posterior[,sig2]			)
 			kl.ok		<- kl.2D(df1, df2, nbin=100)
@@ -6842,7 +6938,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 						})
 			mode	<- lapply(seq_along(tmp1),function(i)
 						{
-							project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a[[i]]],ans.eq[["data"]]["th.s2",acc.s2a[[i]]], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=0, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
+							ma.get.2D.mode(ans.eq[["data"]]["th.a",acc.s2a[[i]]],ans.eq[["data"]]["th.s2",acc.s2a[[i]]], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=0, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))
 						})
 			sapply(seq_along(mode),function(i)		sqrt(sum(mode[[i]]-c(xa,xsigma2))^2)	)		
 			
@@ -6851,7 +6947,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			if(plot)	pdf(file=file, 4, 4)
 			par(mar=c(4.5,4.5,0.5,0.5))
 			tmp			<- acc.s2a						
-			tmp			<- project.nABC.movingavg.get.2D.mode(ans.eq[["data"]]["th.a",tmp],ans.eq[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=7, method="ash", xlab="a", ylab=expression(sigma^2))
+			tmp			<- ma.get.2D.mode(ans.eq[["data"]]["th.a",tmp],ans.eq[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=7, method="ash", xlab="a", ylab=expression(sigma^2))
 			project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], levels=c(1,3,5,10,13), contour.col="white")			
 			acc.arima	<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")
 			points(acc.arima$coef, acc.arima$sigma2, pch=18, col="white")						
@@ -6899,7 +6995,7 @@ nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 			if(plot)	pdf(file=file, 4, 4)
 			par(mar=c(4.5,4.5,0.5,0.5))
 			tmp								<- acc.s2a
-			tmp								<- project.nABC.movingavg.get.2D.mode(ans.upper[["data"]]["th.a",tmp],ans.upper[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))			
+			tmp								<- ma.get.2D.mode(ans.upper[["data"]]["th.a",tmp],ans.upper[["data"]]["th.s2",tmp], xlim= c(-0.4,0.4),ylim=c(0.6,1.5),plot=1, nbin=10, nlevels=5, method="ash", xlab="a", ylab=expression(sigma^2))			
 			project.nABC.movingavg.add.contour(moving.avg$posterior[,a]+0.01, moving.avg$posterior[,sig2]-0.035, nlevels=5, contour.col="white", levels=c(2,4,6,8,10,12, 17))
 			project.nABC.movingavg.add.contour(moving.avg$posterior[,a], moving.avg$posterior[,sig2], nlevels=5, contour.col="white", levels=c(2,4,6,8,10,12, 17))
 			acc.arima						<- arima(moving.avg$data$x, order=c(0,0,1), include.mean=0, method="CSS-ML")

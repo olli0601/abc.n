@@ -55,7 +55,7 @@ corrz.pow.norm<- function(tau.u, sigma, alpha=0.01, support=c(-Inf,Inf))
 #' @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
 #' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived from the other. 
 #' @seealso \code{\link{chisqstretch.calibrate}}
-#' @return Summary likelihood for the error parameter \code{\rho}
+#' @return Summary likelihood for the error parameter \code{rho}
 #' @export	
 #'
 corrz.sulkl<- function(rho, sigma, norm = 1, support= c(-Inf,Inf), log=FALSE)
@@ -230,6 +230,7 @@ corrz.calibrate.tolerances.getkl <- function(s.of.x, s.of.T, tau.u, mx.pw=0.9, a
 #' 	\item{cl}{lower point of the critical region, i.e. lower standard ABC tolerance}	
 #' 	\item{cu}{upper point of the critical region, i.e. upper standard ABC tolerance}	
 #' @example example/ex.chisqstretch.calibrate.R
+#' @example example/ex.chisqstretch.abcreject.R
 #' @seealso \code{\link{corrz.pow}}, \code{\link{corrz.sulkl}}
 #' 
 corrz.calibrate<- function(n.of.x, n.of.y=n.of.x, n2s= function(n){ 1/sqrt(n-3) }, s2n=function(s){ (1/s)^2+3 }, mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=2, debug=F, plot=F)

@@ -1,6 +1,7 @@
 
 
 #' Integrand of the Kullback-Leibler divergence D(P||Q) for generic distributions
+#' @export
 #' @param x value at which integrand is evaluated. Can be a vector.
 #' @param dP,dQ name of the functions that compute the density of P and Q
 #' @param P_arg,Q_arg list of arguments for \code{dP} and \code{dQ}
@@ -25,10 +26,10 @@ kl.integrand<-function(x,dP,dQ,P_arg,Q_arg)
 	return(ans)
 }
 
+#'	@title Compute the KL divergence for a two dimensional density
+#' 	@export
 kl.2D<- function(df1, df2, nbin=100)
 {
-	require(ash)
-	
 	df1.lim		<- df1[, lapply(.SD, range)]
 	df2.lim		<- df2[, lapply(.SD, range)]
 	df.lim		<- as.matrix( rbind(df1.lim, df2.lim)[, lapply(.SD, range)] )
@@ -52,6 +53,7 @@ kl.2D<- function(df1, df2, nbin=100)
 }
 
 #' A wrapper to minimize \code{KL_divergence} over the parameter \code{x_name} using the function \link{optimize}
+#' @export
 #' @param x_value value tested.
 #' @param x_name name of the parameter over which minimization is performed.
 #' @param is_integer if \code{TRUE}, \code{x_value} is rounded to the closest integer. See \link{round}.
