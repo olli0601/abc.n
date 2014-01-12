@@ -10,7 +10,8 @@ Depends:
     pscl,
     ggplot2,
 	reshape2,
-	ash
+	ash,
+	nortest
 Description: Using statistical decision theoretic arguments, ABC can be set up such that accuracy properties of the ABC approximation can be established without recursion to asymptotic arguments. 
 Description: The idea is to construct - through statistical modelling of so-called summary values - an appropriate 
 Description: parametric probability space on which the ABC approximation can be controlled. The distribution of the 

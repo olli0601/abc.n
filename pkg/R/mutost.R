@@ -668,7 +668,7 @@ nabc.mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, t
 	args		<- args[1]
 	if(verbose)	cat(paste("\ninput call=",args,"annealing=",annealing,"obs.sd=",obs.sd,"tau.u.ub=",tau.u.ub,"alpha=",alpha))
 	mx.pw		<- 0.9
-	ans["pfam.pval"]	<-	nabc.get.pfam.pval(sim, normal.test)	
+	ans["pfam.pval"]	<-	abccheck.normal(sim, normal.test)	
 	if(!any(diff(sim)>0))	return(ans)		
 	obs.mean	<- mean(obs)	
 	if(verbose)		
@@ -777,7 +777,7 @@ old.nabc.mutost.onesample<- function(sim, obs, obs.n=NA, obs.sd=NA, args= NA, ve
 	if(annealing<1)				stop("incorrect annealing parameter")
 #print(standardize)
 #standardize<- 0
-	ans["pfam.pval"]<-	nabc.get.pfam.pval(sim,normal.test)	
+	ans["pfam.pval"]<-	abccheck.normal(sim,normal.test)	
 	if(!any(diff(sim)>0))	return(ans)
 	obs.n		<- ifelse(!is.na(obs.n),obs.n,length(obs))
 	obs.mean	<- mean(obs)
@@ -1092,7 +1092,7 @@ nabc.mutost<- function(sim, obs, args= NA, verbose= FALSE, alpha= 0, tau.u= 0, t
 		tmp<- sim
 	else 
 		tmp<- obs
-	ans["pfam.pval"]<-	nabc.get.pfam.pval(tmp,normal.test)
+	ans["pfam.pval"]<-	abccheck.normal(tmp,normal.test)
 	
 	if(!any(diff(sim)>0))
 	{	

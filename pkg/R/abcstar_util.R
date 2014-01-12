@@ -43,19 +43,16 @@ g = function(...) {
 	return(List)
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Test if summary values are normally distributed
+#' @title Test if summary values are normally distributed
 #' @export
 #' @param x 			summary values
 #' @param norma.test 	name of function with which normality of the summary values is tested
 #' @return p value of the test
-#' @examples nabc.get.pfam.pval(rnorm(1e4),"shapiro.test")
-nabc.get.pfam.pval<- function(x,normal.test)
+#' @examples abccheck.normal(rnorm(1e4),"shapiro.test")
+abccheck.normal<- function(x,normal.test)
 {
 	if(!normal.test%in%c("shapiro.test","lillie.test","cvm.test","ad.test","pearson.test","sf.test"))		
-		stop("nabc.get.pfam.pval: error at 1a")
-	if(normal.test%in%c("lillie.test","cvm.test","ad.test","pearson.test","sf.test"))		
-		require(nortest, lib.loc=LIB.LOC)
-	
+		stop("abccheck.normal: error at 1a")	
 	ifelse(	any(diff(x)>0), 
 			ifelse(normal.test%in%c("shapiro.test","sf.test") && length(x)>5000, 
 					eval(call(normal.test,x[1:5000]))$p.value, 
@@ -63,7 +60,7 @@ nabc.get.pfam.pval<- function(x,normal.test)
 			0)
 }
 ###############################################################################
-my.mkdir<-function(root,data.name)
+package.mkdir<-function(root,data.name)
 {
 	if(length(dir(root,pattern=paste('^',data.name,'$',sep='')))==0)
 		system(paste("mkdir ",paste(root,data.name,sep='/'),sep=''))

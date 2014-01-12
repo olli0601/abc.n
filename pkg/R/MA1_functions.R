@@ -279,7 +279,7 @@ ma.equivalence<- function(sim, obs, args=NA, verbose= FALSE, alpha=0, leave.out=
 	if(tau.l>0 )		stop("ma.equivalence: error at 1h")
 	if(leave.out<0)		stop("ma.equivalence: error at 1i")
 	ans<- NABC.DEFAULT.ANS	
-	ans["pfam.pval"]<-	nabc.get.pfam.pval(sim,normal.test) 						
+	ans["pfam.pval"]<-	abccheck.normal(sim,normal.test) 						
 	
 	#compute z-scores for sim and obs
 	z.sim<- ma.cor(sim, leave.out=leave.out)

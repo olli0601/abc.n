@@ -542,7 +542,7 @@ project.nABC.movingavg.avgdetJac<- function(a.tau.l, a.tau.u, ax, vx, s, alpha, 
 project.nABC.changeofvariables<- function()
 {
 	dir.name<- paste(DATA,"nABC.cov",sep='/')
-	my.mkdir(DATA,"nABC.cov")
+	package.mkdir(DATA,"nABC.cov")
 	
 	cv.link<- function(x,a=0.2){  tmp<- x; tmp[x<=a]<- 2*x[x<=a]; tmp[x>a]<- 0.5*x[x>a]+2*a-0.5*a; tmp	}	
 	cov.gethist<- function(a, r.n, r.sigma)
@@ -655,7 +655,7 @@ project.nABC.changeofvariables<- function()
 #------------------------------------------------------------------------------------------------------------------------
 project.nABC.movingavg<- function()
 {
-	my.mkdir(DATA,"nABC.movingavg_mode")
+	package.mkdir(DATA,"nABC.movingavg_mode")
 	dir.name<- paste(DATA,"nABC.movingavg_mode",sep='/')
 	subprog<- 3
 	resume<- 1
@@ -1435,7 +1435,7 @@ stop()
 	if(0)	#check mode estimation & link function for estimating both sigma2 and mapa	USE ACF & SD(lag2)
 	{
 		require(locfit)
-		my.mkdir(DATA,"nABC.movingavg_mode")
+		package.mkdir(DATA,"nABC.movingavg_mode")
 		dir.name<- paste(DATA,"nABC.movingavg_mode",sep='/')
 		resume<- 1
 		verbose<- 1
@@ -1586,7 +1586,7 @@ stop()
 	if(0)	#check mode estimation & link function for estimating both sigma2 and mapa	USE SD(lag2)
 	{
 		require(locfit)
-		my.mkdir(DATA,"nABC.movingavg_mode")
+		package.mkdir(DATA,"nABC.movingavg_mode")
 		dir.name<- paste(DATA,"nABC.movingavg_mode",sep='/')
 		resume<- 1
 		verbose<- 1
@@ -1738,7 +1738,7 @@ stop()
 	}
 	if(0)	#check mode estimation & link function for tau=0.025 and various ma.n
 	{
-		my.mkdir(DATA,"nABC.MA_test")
+		package.mkdir(DATA,"nABC.MA_test")
 		dir.name<- paste(DATA,"nABC.MA_test",sep='/')
 		resume<- 1
 		N<- 5e5
@@ -1939,9 +1939,9 @@ nabc.test.SEIR.repeatsimusforfixedtheta<- function()
 	#d.name1					<- "nABC.SEIIRS.repeat.stdABCsym"
 	match					<- "pdPr20m"
 	#match					<- "pdPr32"
-	my.mkdir(DATA,d.name1)	
+	package.mkdir(DATA,d.name1)	
 	d.name					<- paste(DATA,d.name1,sep='/')
-	my.mkdir(d.name, 'tmp')
+	package.mkdir(d.name, 'tmp')
 	grace.after.annealing	<- 1
 	resume					<- 1
 	ZIPPED					<- 1
@@ -2082,7 +2082,7 @@ nabc.test.SEIR.repeatsimusforfixedtheta<- function()
 #------------------------------------------------------------------------------------------------------------------------
 project.nABC.compareSEIRS<- function()
 {	
-	my.mkdir(DATA,"nABC.SEIIRScompare")
+	package.mkdir(DATA,"nABC.SEIIRScompare")
 	d.name<- paste(DATA,"nABC.SEIIRScompare",sep='/')
 
 	if(0)	#plot stuff for paper
@@ -2700,7 +2700,7 @@ stop()
 #------------------------------------------------------------------------------------------------------------------------
 project.nABC.StretchedChi2.illustratepower<- function()		#illustrate power of scaled ChiSquare
 {
-	my.mkdir(DATA,"nABC.StretchedChisq")
+	package.mkdir(DATA,"nABC.StretchedChisq")
 	dir.name	<- paste(DATA,"nABC.StretchedChisq",sep='/')
 	
 	print("illustrate power")		
@@ -2841,7 +2841,7 @@ stop()
 #------------------------------------------------------------------------------------------------------------------------
 nabc.test.chi2stretch.montecarlo.calibrated.tau.and.increasing.m<- function()		#check MLE, yn>xn
 {
-	my.mkdir(DATA,"nABC.chi2stretch")
+	package.mkdir(DATA,"nABC.chi2stretch")
 	dir.name	<- paste(DATA,"nABC.chi2stretch",sep='/')
 	pdf.width	<- 4
 	pdf.height	<- 5	
@@ -2998,7 +2998,7 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.increasing.m<- function()		#
 #------------------------------------------------------------------------------------------------------------------------
 nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m<- function()		#check MLE, yn>xn
 {
-	my.mkdir(DATA,"nABC.chi2stretch")
+	package.mkdir(DATA,"nABC.chi2stretch")
 	dir.name	<- paste(DATA,"nABC.chi2stretch",sep='/')
 	pdf.width	<- 4
 	pdf.height	<- 5	
@@ -3278,7 +3278,7 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m<- function()		#check MLE, 
 #------------------------------------------------------------------------------------------------------------------------
 project.nABC.StretchedChi2<- function()
 {	
-	my.mkdir(DATA,"nABC.StretchedChisq")
+	package.mkdir(DATA,"nABC.StretchedChisq")
 	dir.name<- paste(DATA,"nABC.StretchedChisq",sep='/')
 	subprog<- 7
 	pdf.width<- 4
@@ -4704,7 +4704,7 @@ project.nABC.StretchedF<- function()
 		fade<- 0.5
 		nproc<- 8
 		nbreaks<- 75
-		my.mkdir(DATA,"nABC.StretchedF")
+		package.mkdir(DATA,"nABC.StretchedF")
 		dir.name<- paste(DATA,"nABC.StretchedF",sep='/')				
 		resume<- 1
 		
@@ -4921,7 +4921,7 @@ project.nABC.StretchedF<- function()
 		fade<- 0.5
 		nproc<- 8
 		nbreaks<- 75
-		my.mkdir(DATA,"nABC.StretchedF")
+		package.mkdir(DATA,"nABC.StretchedF")
 		dir.name<- paste(DATA,"nABC.StretchedF",sep='/')				
 		resume<- 1
 		
@@ -5059,7 +5059,7 @@ project.nABC.StretchedF<- function()
 		}
 		if(!resume || inherits(readAttempt, "try-error"))
 		{
-			my.mkdir(DATA,"nABC.StretchedF.sigmainference")
+			package.mkdir(DATA,"nABC.StretchedF.sigmainference")
 			dir.name<- paste(DATA,"nABC.StretchedF.sigmainference",sep='/')
 			cat(paste("\nnABC.StretchedF:\ndir.name is ",dir.name,"\nN\t",N,"\nM\t",M,"\nxn\t",xn,"\ntau.l\t",tau.l,"\ntau.u\t",tau.u))
 			
@@ -5182,7 +5182,7 @@ print(c(ncol(ans),length(acc)/ncol(ans),ans["cil",1],ans["cir",1]))
 		}
 		if(!resume || inherits(readAttempt, "try-error"))
 		{
-			my.mkdir(DATA,"nABC.StretchedF.sigmainference")			
+			package.mkdir(DATA,"nABC.StretchedF.sigmainference")			
 			cat(paste("\nnABC.StretchedF:\ndir.name is ",dir.name,"\nN\t",N,"\nM\t",M,"\nxn\t",xn,"\ntau.l\t",tau.l,"\ntau.u\t",tau.u))
 			
 			#compute sigma histograms with fix.sigma and asymmetric tau --> should give bias
@@ -5303,7 +5303,7 @@ print(c(ncol(ans),length(acc)/ncol(ans),ans["cil",1],ans["cir",1]))
 		}
 		if(!resume || inherits(readAttempt, "try-error"))
 		{
-			my.mkdir(DATA,"nABC.StretchedF.sigmainference")
+			package.mkdir(DATA,"nABC.StretchedF.sigmainference")
 			dir.name<- paste(DATA,"nABC.StretchedF.sigmainference",sep='/')
 			cat(paste("\nnABC.StretchedF: dir.name is ",dir.name))
 			
@@ -5915,7 +5915,7 @@ nabc.test.acf.get.data.for.package<- function()
 #------------------------------------------------------------------------------------------------------------------------
 nabc.test.acf.montecarlo.vary.a<- function()
 {
-	my.mkdir(DATA,"nABC.acf")
+	package.mkdir(DATA,"nABC.acf")
 	dir.name	<- paste(DATA,"nABC.acf",sep='/')	
 	pdf.width	<- 4
 	pdf.height	<- 5
@@ -6546,7 +6546,7 @@ nabc.test.acf.montecarlo.vary.a<- function()
 nabc.test.acf.montecarlo.calibrated.tau.and.m<- function()
 {
 	
-	my.mkdir(DATA,"nABC.acf")
+	package.mkdir(DATA,"nABC.acf")
 	dir.name	<- paste(DATA,"nABC.acf",sep='/')	
 	pdf.width	<- 4
 	pdf.height	<- 5
@@ -7204,7 +7204,7 @@ nabc.test.mutost.calibrate<- function()
 project.nABC.TOST<- function()
 {
 	require(PowerTOST)	
-	my.mkdir(DATA,"nABC.mutost")
+	package.mkdir(DATA,"nABC.mutost")
 	dir.name<- paste(DATA,"nABC.mutost",sep='/')
 	subprog<- 5
 	pdf.width<- 4
