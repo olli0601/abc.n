@@ -13,7 +13,7 @@
 #' @param log 		Logical; if \code{TRUE}, densities d are given as log(d). 
 #' @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
 #' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived (numerically) from the other.
-#' @seealso \code{\link{corrz.pow.norm}}
+#' @seealso \code{\link{chisqstretch.calibrate}}, \code{\link{corrz.pow.norm}}
 #' @example example/ex.corrz.pow.R
 #' @return Power of the test for the values of \code{rho}.
 #' 
@@ -54,7 +54,7 @@ corrz.pow.norm<- function(tau.u, sigma, alpha=0.01, support=c(-Inf,Inf))
 #' @param log 		logical; if \code{TRUE}, densities d are given as log(d). 
 #' @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
 #' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived from the other. 
-#' @seealso \code{\link{chisqstretch.calibrate}}
+#' @seealso \code{\link{chisqstretch.calibrate}}, \code{\link{corrz.sulkl.norm}}
 #' @return Summary likelihood for the error parameter \code{rho}
 #' @export	
 #'
@@ -75,6 +75,10 @@ corrz.sulkl<- function(rho, sigma, norm = 1, support= c(-Inf,Inf), log=FALSE)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' @title Area under the density of the summary likelihood of the autocorrelation error for normal summary values
+#' @inheritParams corrz.sulkl
+#' @param Tsd	standard deviation of the test statistic
+#' @return Integral of the summary likelihood on the support
+#' @seealso \code{\link{corrz.sulkl}}
 corrz.sulkl.norm<- function(Tsd, support= c(-Inf,Inf))
 {
 	diff(pnorm(support,mean=0,sd=Tsd))
@@ -82,11 +86,11 @@ corrz.sulkl.norm<- function(Tsd, support= c(-Inf,Inf))
 #------------------------------------------------------------------------------------------------------------------------
 #' Compute the ABC tolerances of the asymptotic equivalence test for autocorrelations at lag 1
 #' @export
-#' @param tau.l	lower tolerance of the equivalence region
-#' @param tau.u	upper tolerance of the equivalence region
-#' @param n		number of pairs (x_i,x_i-1) after thinning of the time series x_1, x_2, ...
-#' @param alpha	level of the equivalence test
-#' @return vector of length 2, first entry is lower ABC tolerance, second entry is upper ABC tolerance
+#' @inheritParams corrz.pow
+#' @return vector of length 2
+#' 	\item{cl}{lower point of the critical region, i.e. lower standard ABC tolerance}		
+#' 	\item{cu}{upper point of the critical region, i.e. upper standard ABC tolerance}
+#' @seealso \code{\link{corrz.calibrate}}
 #' @examples	tau.u<- 0.09
 #' 	tau.l<- -tau.u
 #' 	sim.n<-	5e3
@@ -99,18 +103,22 @@ corrz.criticalregion<- function(tau.u, sigma, alpha=0.01)
 #------------------------------------------------------------------------------------------------------------------------
 #' Calibrate the equivalence region of the asymptotic equivalence test for autocorrelations at lag 1 for given maximum power
 #' @export
+#' @inheritParams corrz.pow
 #' @param mx.pw		maximum power at the point of reference (rho.star).
+#' @param pow_scale Used to set the support of the pdf associated to the power function. The power is truncated between \code{[tau.l/pow_scale,tau.u*pow_scale]} and then standardized.
 #' @param tau.up.ub	guess on an upper bound on the upper tolerance of the equivalence region
-#' @param n			number of pairs (x_i,x_i-1) after thinning of the time series x_1, x_2, ...
-#' @param alpha		level of the equivalence test
 #' @param rho.star	point of reference. Defaults to the point of equality rho.star=0.
 #' @param tol		this algorithm stops when the actual maximum power is less than 'tol' from 'mx.pw'
 #' @param max.it	this algorithm stops prematurely when the number of iterations to find the equivalence region exceeds 'max.it'
-#' @return	vector of length 4
-#' 	\item{1}{lower tolerance of the equivalence region}		
-#' 	\item{2}{upper tolerance of the equivalence region}
-#' 	\item{3}{actual maximum power associated with the equivalence region}
-#' 	\item{4}{error ie abs(actual power - mx.pw)}
+#' @param verbose	Logical. If \code{verbose==TRUE}, detailed calibration output is printed to the console
+#' @return	vector of length 6
+#' 	\item{tau.l}{lower tolerance of the equivalence region}		
+#' 	\item{tau.u}{upper tolerance of the equivalence region}
+#' 	\item{curr.mx.pw}{actual maximum power associated with the equivalence region}
+#' 	\item{error}{actual error between the maximum power and mx.pw}
+#' 	\item{cl}{lower point of the critical region, i.e. lower standard ABC tolerance}		
+#' 	\item{cu}{upper point of the critical region, i.e. upper standard ABC tolerance}
+#' @seealso \code{\link{corrz.calibrate}}
 #' @examples tau.u<- 0.09
 #' 	tau.l<- -tau.u
 #' 	sim.n<-	5e3
@@ -135,7 +143,7 @@ corrz.calibrate.tolerances<- function(mx.pw, tau.up.ub, sigma, alpha=0.01, rho.s
 	if(verbose)	cat(paste("\nFound upper bound",tau.up.ub,"with power",curr.mx.pw,"at rho=",rho[ which.max(pw) ]))
 	tau.up.lb	<- 0
 	error		<- 1	
-	while(abs(error)>tol && round(tau.up.lb,d=10)!=round(tau.up.ub,d=10) && max.it>0)
+	while(abs(error)>tol && round(tau.up.lb,digits=10)!=round(tau.up.ub,digits=10) && max.it>0)
 	{
 		max.it		<- max.it-1
 		tau.up		<- (tau.up.lb + tau.up.ub)/2
@@ -148,7 +156,7 @@ corrz.calibrate.tolerances<- function(mx.pw, tau.up.ub, sigma, alpha=0.01, rho.s
 			tau.up.lb	<- tau.up
 		else
 			tau.up.ub	<- tau.up
-#print(c(abs(error), round(tau.up.lb,d=10)!=round(tau.up.ub,d=10)) )	
+#print(c(abs(error), round(tau.up.lb,digits=10)!=round(tau.up.ub,digits=10)) )	
 	}
 	if(max.it==0)	warning("reached max.it")
 	ans				<- c(-tau.up, tau.up, curr.mx.pw, abs(error))	
@@ -157,7 +165,24 @@ corrz.calibrate.tolerances<- function(mx.pw, tau.up.ub, sigma, alpha=0.01, rho.s
 }
 #------------------------------------------------------------------------------------------------------------------------
 #	mx.pw=0.9; alpha=0.01; pow_scale=2; debug = 0; calibrate.tau.u=T; plot = F; verbose=0
-corrz.calibrate.tolerances.getkl <- function(s.of.x, s.of.T, tau.u, mx.pw=0.9, alpha=0.01, pow_scale=2, debug = 0, calibrate.tau.u=T, plot = F, verbose=0) 
+#' @title KL divergence between the summary likelihood and the power function of \code{corrz}
+#' @description Compute the Kullback-Leibler divergence between the summary likelihood and the power function of the \code{corrz} equivalence test.
+#' The KL divergence is required to calibrate the number of simulated data points of the test.
+#' @inheritParams corrz.pow
+#' @inheritParams corrz.calibrate.tolerances
+#' @param s.of.x	standard deviation of the test statistic for the observed summary values; used to construct the summary likelihood
+#' @param s.of.T	standard deviation of the test statistic for the simulted summary values; used to construct the power function
+#' @param calibrate.tau.u	If \code{calibrate.tau.u==TRUE} the upper tolerance of the equivalence region (\code{tau.u}) is calibrated so that power at the point of reference is equal to \code{mx.pw}
+#' @param plot		Logical. If \code{plot==TRUE}, the power of the calibrated test is plotted along with the summary likelihood.
+#' @return	vector of length 6
+#' 	\item{KL_div}{KL divergence between the power and the summary likelihood}
+#' 	\item{tau.l}{lower tolerance of the equivalence region}		
+#' 	\item{tau.u}{upper tolerance of the equivalence region}
+#' 	\item{pw.cmx}{actual maximum power associated with the equivalence region}
+#' 	\item{cl}{lower point of the critical region, i.e. lower standard ABC tolerance}		
+#' 	\item{cu}{upper point of the critical region, i.e. upper standard ABC tolerance}
+#' @seealso \code{\link{corrz.calibrate}}
+corrz.calibrate.tolerances.getkl <- function(s.of.x, s.of.T, tau.u, mx.pw=0.9, alpha=0.01, pow_scale=2, calibrate.tau.u=T, plot = F, verbose=0) 
 {
 	tau.l<- pw.cmx<- error<- cl<- cu<- NA	
 	if(calibrate.tau.u) 
@@ -212,14 +237,13 @@ corrz.calibrate.tolerances.getkl <- function(s.of.x, s.of.T, tau.u, mx.pw=0.9, a
 #' upper and lower tolerance regions for every new proposed number of simulated summary values.  
 #' @export
 #' @inheritParams 	corrz.pow
+#' @inheritParams 	corrz.calibrate.tolerances
 #' @param n.of.x	Number of observed summary values. Each summary data point is a pair of two values.
 #' @param n.of.y	Number of simulated summary values. Each summary data point is a pair of two values.
 #' @param n2s		Function to transform the number of data points into the standard deviation of the test statistic.
 #' @param s2n		Function to transform the standard deviation of the test statistic into the number of data points.
-#' @param pow_scale Used to set the support of the pdf associated to the power function. The power is truncated between \code{[tau.l/pow_scale,tau.u*pow_scale]} and then standardized.
 #' @param plot		Logical. If \code{plot==TRUE}, the calibrated power function is plotted along with the summary likelihood.
 #' @param debug		Logical. If \code{debug==TRUE}, detailed optimization output for the number of simulated summary values is printed to the console.
-#' @param mx.pw		maximum power at the point of equality \code{rho.star}.
 #' @param max.it	this algorithm stops prematurely when the number of iterations to calibrate the number of simulated data points exceeds 'max.it'
 #' @return	vector of length 7
 #' 	\item{n.of.y}{number of simulated summary values}

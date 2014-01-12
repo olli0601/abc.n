@@ -69,6 +69,7 @@ ma.rho2a <- function(x, ax = 0)
 #' @export
 #' @param x 		numerical vector of time series values
 #' @param leave.out thinning, how many values in the pair sequence (x_i,x_i-1) should be left out. Defaults to zero.
+#' @param len		number of (x_i,x_i-1) pairs 
 #' @return vector of length 3	
 #' 	\item{cor}{autocorrelation in the thinned sequence}
 #' 	\item{z}{Z-transformation of the autocorrelation (this is atanh of "cor")}
@@ -90,21 +91,22 @@ ma.cor<- function(x, leave.out=0, len= ceiling(length(x)/(1+leave.out)) )
 #------------------------------------------------------------------------------------------------------------------------
 #' @title Compute the 2d mode of a 2D density 
 #' @description This function computes the 2d mode of a 2D density based on average shifted histograms
-#' @import KernSmooth
-#' @import fields
-#' @export 
-ma.add.contour<- function(x,y,xlim=NA,ylim=NA, nlevels=5, width.infl=0.25, gridsize=c(100,100), contour.col="black", ...)
-{
-	if(any(is.na(xlim)))	xlim<- range(x)*1.05
-	if(any(is.na(ylim)))	ylim<- range(y)*1.05	
-	x.bw<- width.infl*diff(summary(x)[c(2,5)])
-	y.bw<- width.infl*diff(summary(y)[c(2,5)])
-	f <- bkde2D(cbind(x, y), range.x=list(xlim,ylim), bandwidth=c(x.bw,y.bw), gridsize=gridsize)	
-	contour(f$x1, f$x2, f$fhat, nlevels= nlevels, add=1, col=contour.col, ...)						
-}
-#------------------------------------------------------------------------------------------------------------------------
-#' @title Compute the 2d mode of a 2D density 
-#' @description This function computes the 2d mode of a 2D density based on average shifted histograms
+#' @param	x			first dimension of random variable 
+#' @param	y			second dimension of random variable
+#' @param	xlim		range of first dimension of random variable
+#' @param	ylim		range of second dimension of random variable
+#' @param	xlab		name of first dimension of random variable
+#' @param	ylab		name of second dimension of random variable
+#' @param	n.hists		number of average shifted histograms
+#' @param	nbin		number of bins for histogram
+#' @param	nlevels		number of contour levels
+#' @param	width.infl	bandwidth inflation of kernel density estimate
+#' @param	gridsize	gridsize of kernel density estimate
+#' @param	method		either 'kde' or 'ash'
+#' @param	plot		Logical
+#' @param	contour.col	color of contours
+#' @param	cols		color gradient of density estimate	
+#' @param	...			further options
 #' @import ash
 #' @import KernSmooth
 #' @import fields
@@ -146,9 +148,35 @@ ma.get.2D.mode<- function(x,y,xlim=NA,ylim=NA,xlab='x',ylab='y',n.hists=5,nbin=2
 	mx
 }
 #------------------------------------------------------------------------------------------------------------------------
+#' @title Compute the 2d mode of a 2D density 
+#' @description This function computes the 2d mode of a 2D density based on average shifted histograms
+#' @import KernSmooth
+#' @import fields
+#' @inheritParams ma.get.2D.mode
+#' @export 
+ma.add.contour<- function(x,y,xlim=NA,ylim=NA, nlevels=5, width.infl=0.25, gridsize=c(100,100), contour.col="black", ...)
+{
+	if(any(is.na(xlim)))	xlim<- range(x)*1.05
+	if(any(is.na(ylim)))	ylim<- range(y)*1.05	
+	x.bw<- width.infl*diff(summary(x)[c(2,5)])
+	y.bw<- width.infl*diff(summary(y)[c(2,5)])
+	f <- bkde2D(cbind(x, y), range.x=list(xlim,ylim), bandwidth=c(x.bw,y.bw), gridsize=gridsize)	
+	contour(f$x1, f$x2, f$fhat, nlevels= nlevels, add=1, col=contour.col, ...)						
+}
+#------------------------------------------------------------------------------------------------------------------------
 #' @title Generate an MA(1) pseudo data set 
 #' @description This function generates an MA(1) pseudo data set subject to constraints on the sample autocorrelation, the sample variance and the MLE of the time series.
-#' All these statistics of the time series are within a certain tolerance value of the corresponding population level statistics.   
+#' All these statistics of the time series are within a certain tolerance value of the corresponding population level statistics.
+#' @param n				length of time series	
+#' @param mu			mean of time series
+#' @param a				\code{a} parameter
+#' @param sd			\code{sigma2} parameter
+#' @param leave.out.a	thinning of summary values for the autocorrelation test
+#' @param leave.out.s2	thinning of summary values for the variance test
+#' @param verbose		print verbose output to the console
+#' @param tol			tolerance with which expected MAP is matched in pseudo data
+#' @param return_eps_0	logical. If \code{return_eps_0==TRUE}, u0 used to create the time series is returned
+#' @return MA(1) time series
 #' @export 
 ma.get.pseudo.data<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbose=0, tol=2e-3, return_eps_0=FALSE )
 {

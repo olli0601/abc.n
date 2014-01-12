@@ -31,6 +31,7 @@ chi2stretch.simu<- function(N, prior.l, prior.u, x, yn, ymu)
 #	function to produce histogram
 chi2stretch.hist<- function(x, theta, nbreaks= 20, breaks= NULL, width= 0.5, plot=0, rtn.dens=0,...)
 {
+	EPS	<- 1e-12
 	#compute break points sth theta is in the middle
 	if(is.null(breaks))
 	{
@@ -51,6 +52,7 @@ chi2stretch.hist<- function(x, theta, nbreaks= 20, breaks= NULL, width= 0.5, plo
 	}
 	ans.h
 }
+
 #	pseudo data
 x				<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 x 				<- (x - mean(x))/sd(x) * sqrt(xsigma2) + xmu

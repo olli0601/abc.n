@@ -7,6 +7,7 @@
 #' @param df		degrees of freedom; typically \code{m-1} where \code{m} is the number of simulated summary values 
 #' @param c.l		lower point of the critical region of the test (equivalent to the lower standard ABC tolerance \code{epsilon^-})
 #' @param c.u 		upper point of the critical region of the test (equivalent to the upper standard ABC tolerance \code{epsilon^+})
+#' @param trafo		Parameter transformation to translate the power to \code{nu} space.
 #' @param norm 		normalization constant for the truncated power function.
 #' @param support 	vector of dimension 2. Support of the truncated power function.
 #' @param log l		ogical; if \code{TRUE}, densities d are given as log(d). 
@@ -164,6 +165,7 @@ chisqstretch.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, scale, df, t
 #' so that the mode of the power function is at \code{rho.star=1}.
 #' @export
 #' @inheritParams 	chisqstretch.pow
+#' @param alpha		size of the test
 #' @param tau.up	Upper tolerance of the equivalence region
 #' @param rho.star	point of reference. Defaults to the point of equality \code{rho.star=1}.
 #' @param tol		this algorithm stops when the actual point of reference is less than 'tol' from 'rho.star'
@@ -224,12 +226,13 @@ chisqstretch.calibrate.taulow<- function(tau.up, scale, df, alpha=0.01, rho.star
 #' This involves recursive recursive calls to re-calibrate the lower tolerance region.
 #' @export
 #' @inheritParams 	chisqstretch.pow
+#' @inheritParams 	chisqstretch.calibrate.taulow
 #' @param mx.pw		maximum power at the point of reference (rho.star).
 #' @param tau.up.ub	guess on an upper bound on the upper tolerance of the equivalence region
 #' @param rho.star	point of reference. Defaults to the point of equality rho.star=1.
 #' @param tol		this algorithm stops when the actual maximum power is less than 'tol' from 'mx.pw'
 #' @param max.it	this algorithm stops prematurely when the number of iterations to find the equivalence region exceeds 'max.it'
-#' @param pow_scale	Used to set the support of the power function. The power is truncated between \code{[tau.l/pow_scale,tau.u*pow_scale]} and then standardized.
+#' @param pow.scale	Used to set the support of the power function. The power is truncated between \code{[tau.l/pow_scale,tau.u*pow_scale]} and then standardized.
 #' @return	vector of length 6
 #' 	\item{tau.low}{lower tolerance of the equivalence region}		
 #' 	\item{tau.up}{upper tolerance of the equivalence region}
@@ -289,6 +292,8 @@ chisqstretch.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01,
 #' @export
 #' @inheritParams 	chisqstretch.pow
 #' @inheritParams 	chisqstretch.sulkl
+#' @inheritParams 	chisqstretch.calibrate.tauup
+#' @param n.of.y	number of simulated summary values
 #' @param plot		Logical. If \code{plot==TRUE}, the calibrated power function is plotted along with the summary likelihood.
 #' @param debug		Logical. If \code{debug==TRUE}, detailed optimization output for the number of simulated summary values is printed to the console.
 #' @param mx.pw		maximum power at the point of equality \code{rho.star}.
