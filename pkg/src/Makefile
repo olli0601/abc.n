@@ -19,4 +19,4 @@ make roxygen:
 	../misc/nabc.startme.R -exe=ROXYGENIZE -code.home=$(CWD)/..
 	
 make cleanup:
-	rm *.o		
+	rm -f *.o		
