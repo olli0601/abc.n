@@ -262,7 +262,7 @@ ma.get.pseudo.data<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbo
 #' \item{ar}{free entry. Here set to c^+.}
 #' \item{mx.pw}{Maximum power at the point of equality}
 #' \item{rho.mc}{sample estimate of 'rho'}
-#' @examples leave.out<- 2
+#' @examples \dontrun{leave.out<- 2
 #' tau.u<- 0.09
 #' alpha<- 0.01
 #' n<- 5e3
@@ -274,6 +274,7 @@ ma.get.pseudo.data<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbo
 #' y<-	rnorm(n+1,0,sigma)
 #' y<- y[-1] + y[-(n+1)]*a
 #' ma.equivalence(y,x,args)
+#' }
 ma.equivalence<- function(sim, obs, args=NA, verbose= FALSE, alpha=0, leave.out=0, normal.test= "sf.test")
 {
 	#verbose<- 0

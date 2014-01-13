@@ -4,8 +4,10 @@
 xa				<- 0.1
 xsigma2			<- 1	
 xn				<- 150	
+#	NOTE set this to 5e-3; only low to pass R CMD check
+tol				<- 5e-2
 #	generate an MA(1) pseudo data set such that the sample autocorrelation and variance are very close to the true values
-x				<- ma.get.pseudo.data(xn, 0, xa, xsigma2, tol=1e-2, verbose=0)
+x				<- ma.get.pseudo.data(xn, 0, xa, xsigma2, tol=tol, verbose=0)
 #	calibrate the power function for the subset (x1,x2), (x4,x5), (x7,x8), ...
 zx				<- ma.cor(x, leave.out=2)
 abc.param.a		<- corrz.calibrate(zx["n"], mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=2, debug=FALSE, plot=TRUE)

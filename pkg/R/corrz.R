@@ -95,7 +95,7 @@ corrz.sulkl.norm<- function(Tsd, support= c(-Inf,Inf))
 #' 	tau.l<- -tau.u
 #' 	sim.n<-	5e3
 #' leave.out<- 2
-#' corrz.criticalregion(tau.l, tau.u, floor(sim.n / (1+leave.out)), 0.01)
+#' corrz.criticalregion(tau.u, floor(sim.n / (1+leave.out)), alpha=0.01)
 corrz.criticalregion<- function(tau.u, sigma, alpha=0.01)
 {				 
 	c(cl=min(-tau.u/sigma+qnorm(1-alpha),0), cu=max(0,tau.u/sigma+qnorm(alpha)))

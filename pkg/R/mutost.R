@@ -91,7 +91,7 @@ nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf
 		if (any(in_support)) 
 		{
 			if(log)
-				ans[in_support] <- dt(rho[in_support]/ssn, df,log=T)-log(ssn*norm)
+				ans[in_support] <- dt(rho[in_support]/ssn, df,log=TRUE)-log(ssn*norm)
 			else
 				ans[in_support] <- dt(rho[in_support]/ssn, df)/ssn/norm		
 		}
@@ -127,7 +127,7 @@ nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf
 #' @examples
 #' 
 #' nabc.mutost.calibrate.tolerances.getkl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
-#' alpha=0.01, calibrate.tau.u=T, tau.u=1, plot=T)
+#' alpha=0.01, calibrate.tau.u=TRUE, tau.u=1, plot=TRUE)
 #'
 #------------------------------------------------------------------------------------------------------------------------
 nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, plot = F, legend.title='') 
@@ -415,11 +415,12 @@ nabc.mutost.calibrate.tolerances<- function(mx.pw, df, s.of.T, tau.up.ub, alpha,
 #' \item{cir}{upper ABC tolerance, here alpha}
 #' \item{mx.pw}{Maximum power at the point of equality}
 #' \item{rho.mc}{mean(sim) - obs.mean}
-#' @examples tau.u<- 0.5; tau.l<- -tau.u; alpha<- 0.01; xn<- yn<- 60; xmu<- ymu<- 0.5; xsigma2<- ysigma2<- 2
+#' @examples \dontrun{tau.u<- 0.5; tau.l<- -tau.u; alpha<- 0.01; xn<- yn<- 60; xmu<- ymu<- 0.5; xsigma2<- ysigma2<- 2
 #'	args<- paste("mutost",1,tau.u,alpha,sep='/')
 #'	x<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 #'	y<- rnorm(yn,ymu,sd=sqrt(ysigma2))
 #'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
+#' }
 nabc.mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, sd.tolerance=0.05, normal.test= "sf.test", plot=0, legend.txt="")
 {
 	#verbose	<- 1
@@ -479,7 +480,7 @@ nabc.mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, t
 		if(abc.param["n.of.y"]>length(sim))
 		{
 			cat(paste("\nnot enough simulated summary values available:",abc.param["n.of.y"], "requested, and used:", length(sim)))
-			abc.param	<- nabc.mutost.calibrate.tolerances.getkl(obs.n, obs.sd, length(sim), sd(sim), mx.pw, alpha, calibrate.tau.u=T, tau.u=3*obs.sd, debug=0, plot=F)
+			abc.param	<- nabc.mutost.calibrate.tolerances.getkl(obs.n, obs.sd, length(sim), sd(sim), mx.pw, alpha, calibrate.tau.u=TRUE, tau.u=3*obs.sd, debug=0, plot=FALSE)
 		}		
 #print(abc.param); print(sd(sim[seq_len(abc.param["n.of.y"])])); print(tmp); print(sd.tolerance)
 		if( abs( log( sd(sim[seq_len(abc.param["n.of.y"])]) / tmp ) ) > sd.tolerance)
@@ -506,7 +507,7 @@ nabc.mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, t
 	if(verbose)		
 		cat(paste("\nsim.mean",sim.mean,"sd sim=",sim.sd,"sd sim long=",tmp,"\n Free ABC parameters calibrated to m=",sim.n,"tau.u=",abc.param["tau.u"],"annealed tau.u=",tau.u))	
 	if(plot)
-		tmp		<- nabc.mutost.calibrate.tolerances.getkl(obs.n, obs.sd, sim.n, sd(sim), mx.pw, alpha, calibrate.tau.u=F, tau.u=abc.param["tau.u"], debug=0, plot=T, legend.title=legend.txt)
+		tmp		<- nabc.mutost.calibrate.tolerances.getkl(obs.n, obs.sd, sim.n, sd(sim), mx.pw, alpha, calibrate.tau.u=FALSE, tau.u=abc.param["tau.u"], debug=0, plot=TRUE, legend.title=legend.txt)
 	
 	tmp			<- c(	sqrt(sim.n)*(sim.mean-obs.mean-tau.l) / sim.sd,			#[1]	T-	test statistic for -tau (lower test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
 			sqrt(sim.n)*(sim.mean-obs.mean-tau.u) / sim.sd,			#[2]	T+	test statistic for tau (upper test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
@@ -680,12 +681,12 @@ nabc.mutost<- function(sim, obs, args= NA, verbose= FALSE, alpha= 0, tau.u= 0, t
 		plot(1,1,xlab=xlab, xlim= xlim,type='n',ylim=ylim,ylab="probability",main="")
 		if(moments[1,1]>2 && moments[2,1]>2)
 		{
-			plot(sim.h,freq=F,add=TRUE,col=my.fade.col("#0080FFFF",0.6),border=my.fade.col("#0080FFFF",0.6))
+			plot(sim.h,freq=FALSE,add=TRUE,col=my.fade.col("#0080FFFF",0.6),border=my.fade.col("#0080FFFF",0.6))
 			lines(seq( xlim[1], xlim[2], by= diff(xlim)/100 ), dnorm( 	seq( xlim[1], xlim[2], by= diff(xlim)/100 ), moments[1,2],  sqrt(moments[1,3])), col=my.fade.col("#0080FFFF",0.6) )
 			points( sim, rep(ylim[2],length(sim)),col=my.fade.col("#0080FFFF",0.6),pch=20,cex=2.5 )
 			points( obs, rep(ylim[2],length(obs)),pch=2,cex=1.5 )
 		}
-		plot(obs.h,freq=F,add=TRUE)
+		plot(obs.h,freq=FALSE,add=TRUE)
 		if(moments[1,1]>2 && moments[2,1]>2)
 			lines(seq( xlim[1], xlim[2], by= diff(xlim)/100 ), dnorm( 	seq( xlim[1], xlim[2], by= diff(xlim)/100 ), moments[2,2],  sqrt(moments[2,3])) )
 		else

@@ -8,7 +8,8 @@ xmu			<- 0
 xsigma2		<- 1
 prior.u		<- 4
 prior.l		<- 0.2
-N			<- 1e6
+#	NOTE set this to 1e6; only low to pass R CMD check
+N			<- 1e3
 #	function to precompute ABC* simulations
 chi2stretch.simu<- function(N, prior.l, prior.u, x, yn, ymu)		
 {		
@@ -64,4 +65,3 @@ simu			<- chi2stretch.simu(N, prior.l, prior.u, x, abc.param['n.of.y'], ymu)
 tstat			<- simu[["data"]]["T",] 
 acc				<- which( tstat>=abc.param["cl"]  &  tstat<=abc.param["cu"] )
 chi2stretch.hist(simu[["data"]]["ysigma2",acc], simu[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,2.25))
-
