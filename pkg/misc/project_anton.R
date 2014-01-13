@@ -264,18 +264,9 @@ nabc_MA1_plot_prior <- function(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2)
 	require(plyr)
 
 	if (prior_dist == "uniform_on_rho") {
-<<<<<<< HEAD
 		rho_1_bounds <- nabc.acf.sig22rho(sort(sig2_bounds), a = c(ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))), max(abs(a_bounds))), vx = variance) 
 		rho_2_bounds <- nabc.acf.a2rho(x = a_bounds, vx = autocorr)
 		new_sig2_bounds <- sort(rho_1_bounds) * variance/(1 + c(max(abs(a_bounds)), ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))))^2)
-=======
-		rho_1_bounds <- ma.sig22rho(sort(sig2_bounds), a = c(ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))), 
-			max(abs(a_bounds))), vx = variance)
-		rho_2_bounds <- ma.a2rho(x = a_bounds, vx = autocorr)
-		new_sig2_bounds <- sort(rho_1_bounds) * variance/(1 + c(max(abs(a_bounds)), ifelse(prod(a_bounds) <= 0, 0, 
-			min(abs(a_bounds))))^2)
-
->>>>>>> ef489a0a5cac18c3601b866727bcf6ae488bfab1
 	}
 
 	if (prior_dist == "uniform") {
