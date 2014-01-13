@@ -1,12 +1,15 @@
 
 
-#' Integrand of the Kullback-Leibler divergence D(P||Q) for generic distributions
-#' @param x value at which integrand is evaluated. Can be a vector.
-#' @param dP,dQ name of the functions that compute the density of P and Q
-#' @param P_arg,Q_arg list of arguments for \code{dP} and \code{dQ}
+#' @title Integrand of the Kullback-Leibler divergence D(P||Q) for generic distributions
 #' @export
+#' @param x value at which integrand is evaluated. Can be a vector.
+#' @param dP name of the functions that compute the density of P
+#' @param dQ name of the functions that compute the density of Q
+#' @param P_arg list of arguments for \code{dP}
+#' @param Q_arg list of arguments for \code{dQ}
+#' @return KL divergence
 #'
-nabc.kl.integrand<-function(x,dP,dQ,P_arg,Q_arg)
+kl.integrand<-function(x, dP, dQ, P_arg, Q_arg)
 {
 	#this function must accept x as a vector	
 	log_P_x	<- do.call(dP,c(list(x,log=T),P_arg))				
@@ -26,10 +29,14 @@ nabc.kl.integrand<-function(x,dP,dQ,P_arg,Q_arg)
 	return(ans)
 }
 
-nabc.kl.2D<- function(df1, df2, nbin=100)
+#' @title Compute the KL divergence for two dimensional densities P and Q
+#' @param df1	data.table with two columes th1 and th2, random draws from P
+#' @param df2	data.table with two columes th1 and th2, random draws from Q
+#' @param nbin	number of bins for both densities
+#' @return KL divergence
+#' @export
+kl.2D<- function(df1, df2, nbin=100)
 {
-	require(ash)
-	
 	df1.lim		<- df1[, lapply(.SD, range)]
 	df2.lim		<- df2[, lapply(.SD, range)]
 	df.lim		<- as.matrix( rbind(df1.lim, df2.lim)[, lapply(.SD, range)] )
@@ -53,6 +60,7 @@ nabc.kl.2D<- function(df1, df2, nbin=100)
 }
 
 #' A wrapper to minimize \code{KL_divergence} over the parameter \code{x_name} using the function \link{optimize}
+#' @export
 #' @param x_value value tested.
 #' @param x_name name of the parameter over which minimization is performed.
 #' @param is_integer if \code{TRUE}, \code{x_value} is rounded to the closest integer. See \link{round}.
@@ -60,8 +68,7 @@ nabc.kl.2D<- function(df1, df2, nbin=100)
 #' @param KL_args additional arguments to be passed to \code{KL_divergence}.
 #' @param verbose logical, if \code{TRUE}, print warnings.
 #' @return the minimized Kullback-Leibler divergence (scalar).
-#' @export
-nabc.kl.optimize<- function(x_value, x_name, is_integer=FALSE, KL_divergence, KL_args, verbose=FALSE) 
+kl.optimize<- function(x_value, x_name, is_integer=FALSE, KL_divergence, KL_args, verbose=FALSE) 
 {
 	if (verbose)		cat(paste("\nOptimizing x=",x_value))
 	if(is_integer)

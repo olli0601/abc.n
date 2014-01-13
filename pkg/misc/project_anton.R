@@ -2,9 +2,9 @@
 nabc_MA1_compute_rho_bounds <- function(a_bounds, sig2_bounds, variance, autocorr) {
 
 	#compute bounds on rho1 and rho2 based on those of a and sig2
-	rho_1_bounds <- nabc.acf.sig22rho(sort(sig2_bounds), a = c(ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))), 
+	rho_1_bounds <- ma.sig22rho(sort(sig2_bounds), a = c(ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))), 
 		max(abs(a_bounds))), vx = variance)
-	rho_2_bounds <- nabc.acf.a2rho(x = a_bounds, vx = autocorr)
+	rho_2_bounds <- ma.a2rho(x = a_bounds, vx = autocorr)
 
 	return(list(rho_1 = rho_1_bounds, rho_2 = rho_2_bounds))
 }
@@ -31,11 +31,11 @@ nabc_MA1_rprior <- function(sample_size=1, a_bounds = c(-0.3, 0.3), sig2_bounds 
 		
 		#sample a from prior induced by uniform prior on rho
 		rho_2 <- runif(sample_size, rho_bounds$rho_2[1], rho_bounds$rho_2[2]) #uniform on rho
-		a <- nabc.acf.rho2a(rho_2,autocorr)
+		a <- ma.rho2a(rho_2,autocorr)
 		
 		#sample sig2 from uniform
 		rho_1 <- runif(sample_size, rho_bounds$rho_1[1], rho_bounds$rho_1[2]) #uniform on rho
-		sig2 <- nabc.acf.rho2sig2(rho_1, a = a, vx=  variance)
+		sig2 <- ma.rho2sig2(rho_1, a = a, vx=  variance)
 		
 	}
 
@@ -70,13 +70,13 @@ nabc_MA1_is_within_prior_support <- function(a,sig2,a_bounds = c(-0.3, 0.3), sig
 		rho_bounds <- nabc_MA1_compute_rho_bounds(a_bounds, sig2_bounds, variance, autocorr)
 
 		#test if a is within the prior (equivalent to test rho_2)
-		rho_2 <- nabc.acf.a2rho(a,autocorr)
+		rho_2 <- ma.a2rho(a,autocorr)
 		if(!is_within_bounds(rho_2,rho_bounds$rho_2)){
 			return(FALSE)
 		}
 		
 		#test if sig2 is within the prior (equivalent to test rho_1)
-		rho_1 <- nabc.acf.sig22rho(sig2,a,variance)
+		rho_1 <- ma.sig22rho(sig2,a,variance)
 		if(!is_within_bounds(rho_1,rho_bounds$rho_1)){
 			return(FALSE)
 		}
@@ -98,10 +98,10 @@ nabc_MA1_dprior_a <- function(a,a_bounds= c(-0.3, 0.3),prior_dist=c("uniform","u
 	if(prior_dist=="uniform_on_rho"){
 		
 		#compute bounds on rho2 based on those of a
-		rho_2_bounds <- nabc.acf.a2rho(x = a_bounds, vx = autocorr)
+		rho_2_bounds <- ma.a2rho(x = a_bounds, vx = autocorr)
 		
 		#test which a are within the prior (equivalent to test rho_2)
-		rho_2 <- nabc.acf.a2rho(a,autocorr)
+		rho_2 <- ma.a2rho(a,autocorr)
 		ind <- which(is_within_bounds(rho_2, rho_2_bounds))
 		
 		x <- a[ind]
@@ -264,9 +264,18 @@ nabc_MA1_plot_prior <- function(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2)
 	require(plyr)
 
 	if (prior_dist == "uniform_on_rho") {
+<<<<<<< HEAD
 		rho_1_bounds <- nabc.acf.sig22rho(sort(sig2_bounds), a = c(ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))), max(abs(a_bounds))), vx = variance) 
 		rho_2_bounds <- nabc.acf.a2rho(x = a_bounds, vx = autocorr)
 		new_sig2_bounds <- sort(rho_1_bounds) * variance/(1 + c(max(abs(a_bounds)), ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))))^2)
+=======
+		rho_1_bounds <- ma.sig22rho(sort(sig2_bounds), a = c(ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))), 
+			max(abs(a_bounds))), vx = variance)
+		rho_2_bounds <- ma.a2rho(x = a_bounds, vx = autocorr)
+		new_sig2_bounds <- sort(rho_1_bounds) * variance/(1 + c(max(abs(a_bounds)), ifelse(prod(a_bounds) <= 0, 0, 
+			min(abs(a_bounds))))^2)
+
+>>>>>>> ef489a0a5cac18c3601b866727bcf6ae488bfab1
 	}
 
 	if (prior_dist == "uniform") {
@@ -427,10 +436,10 @@ nabc_MA1_MLE <- function(x, variance_thin=0, autocorr_thin=0){
 	n <- length(x)	
 	x_thin <- x[seq.int(1,n,by=1+variance_thin)]
 	n_thin <- length(x_thin)
-	x_cor <- nabc.acf.equivalence.cor(x,leave=autocorr_thin)[["cor"]]
+	x_cor <- ma.cor(x,leave=autocorr_thin)[["cor"]]
 	x_var <- var(x_thin)*(n_thin-1)/n_thin
 
-	a_MLE <- nabc.acf.nu2a(x_cor)
+	a_MLE <- ma.nu2a(x_cor)
 	sig2_MLE <- x_var/(1+ a_MLE^2)
 
 	return(list(MLE=data.frame(a=a_MLE,sig2=sig2_MLE),s_stat=data.frame(variance= x_var,autocorr= x_cor)))
@@ -1051,7 +1060,7 @@ main <- function() {
 		#foo n CPU
 		file_data <- file.path(dir_pdf,paste0("data_with_a=",a_true,"_nx=",n_x,"_tol=", tol,"_varThin=", variance_thin,"_corThin=", autocorr_thin,".rds"))
 		if(!file.exists(file_data)){
-			data <- project.nABC.movingavg.get.fixed.ts(n=n_x, mu=0, a=a_true, sd= sqrt(sig2_true), leave.out.a= autocorr_thin, leave.out.s2= variance_thin, verbose=1, tol=tol, return_eps_0=T)
+			data <- ma.get.pseudo.data(n=n_x, mu=0, a=a_true, sd= sqrt(sig2_true), leave.out.a= autocorr_thin, leave.out.s2= variance_thin, verbose=1, tol=tol, return_eps_0=T)
 			#data <- nabc_MA1_simulate(n=n_x,a=a_true,sig2=sig2_true,match_MLE=T,tol=c(a= a_tol,sig2= sig2_tol),variance_thin=1,autocorr_thin= 2)				
 			saveRDS(data,file= file_data)
 		}else{

@@ -10,14 +10,6 @@
 
 ########################################################################################
 
-	Warning: 
-
-	We are turning the Kullback Leibler calibrations into C code
-	and existing R code may be rather slow
-
-	The calibration routines are still experimental
-
-
 	Contributors:
 
 	If you d like to add calibration routines for different equivalence tests to this library,
@@ -40,7 +32,7 @@
 	R CMD build pkg
 
 	To install this R package:
-	R CMD INSTALL abc.n_1.0-0.tar.gz
+	R CMD INSTALL abc.star_1.0-0.tar.gz
 
 
 #########################################################################################
@@ -49,7 +41,7 @@
 
 	Calibration routines for dispersion equivalence of normally distributed summaries
 	start with
-	nabc.chisqstretch.*
+	chisqstretch.*
 
 	Calibration routines for location equivalence of normally distributed summaries
 	start with
@@ -57,7 +49,7 @@
 
 	Calibration routines for asymptotic equivalence of autocorrelation
 	start with
-	nabc.acf.*
+	ma.*
 
 	Various helper functions to reconstruct and display link functions and level sets
 	
