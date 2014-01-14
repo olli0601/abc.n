@@ -149,7 +149,7 @@ nabc_MA1_dprior <- function(a,sig2,a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5,
 
 
 
-nabc_plot_density2d <- function(data=NULL,var_names=NULL,x_lab=NULL,y_lab=NULL, contour=TRUE, mode=FALSE, smoothing = c("none","ash", "kde"), ash_smooth = c(5, 5), ash_kopt = c(2, 2), kde_width_infl = 0.25, grid_size = NULL, plot=TRUE) {
+nabc_plot_density2d <- function(data=NULL,var_names=NULL,x_lab=NULL,y_lab=NULL, contour=TRUE, mode=FALSE, smoothing = c("none","ash", "kde"), ash_smooth = c(5, 5), ash_kopt = c(2, 2), kde_width_infl = 0.25, grid_size = NULL, plot=TRUE, grey_mode=FALSE) {
 
 	
 	smoothing <- match.arg(smoothing)
@@ -226,17 +226,23 @@ nabc_plot_density2d <- function(data=NULL,var_names=NULL,x_lab=NULL,y_lab=NULL, 
 	
 	#my plot	
 	p <- ggplot(df_density2d, aes(x = x, y = y))
-	p <- p + geom_tile(aes(fill = density), alpha = 0.85)
+	p <- p + geom_tile(aes(fill = density), alpha = 1)
 	if(contour){
-		p <- p + geom_contour(aes(z = density, linetype = factor(..level..)), colour = "black")
+		p <- p + geom_contour(aes(z = density, linetype = factor(..level..)), colour = ifelse(grey_mode, "white", "black"))
 		p <- p + scale_linetype("contour")	
 	}
 	if(mode){
 		p <- p + geom_point(data = df_summary, aes(x = x, y = y, shape = summary))		
 	}
-	p <- p + scale_fill_gradientn("density", colours = rev(brewer.pal(11, "Spectral")))
-	p <- p + guides(fill = guide_colourbar(order = 1), linetype = guide_legend(reverse = T, 
-		keywidth = 2, order = 2))
+
+	if(grey_mode){
+		p <- p+scale_fill_gradient("density",low="white",high="grey30")+theme_bw()+theme(legend.key=element_rect(fill="grey70"))
+	}else{
+		p <- p + scale_fill_gradientn("density", colours = rev(brewer.pal(11, "Spectral")))				
+	}
+
+
+	p <- p + guides(fill = guide_colourbar(order = 1), linetype = guide_legend(reverse = T, keywidth = 2, order = 2))
 	p <- p + xlab(ifelse(is.null(x_lab), var_names[1], x_lab)) + ylab(ifelse(is.null(y_lab), var_names[2], y_lab))
 	
 	if(plot){
@@ -247,9 +253,7 @@ nabc_plot_density2d <- function(data=NULL,var_names=NULL,x_lab=NULL,y_lab=NULL, 
 }
 
 
-nabc_MA1_plot_prior <- function(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2), prior_dist = c("uniform", "uniform_on_rho"), 
-	variance = NULL, autocorr = NULL, method = c("analytic", "monte-carlo"), sample_size = 1e+05, smoothing = c("ash", 
-		"kde"), ash_smooth = c(5, 5), ash_kopt = c(2, 2), kde_width_infl = 0.25, grid_size = c(100, 100)) {
+nabc_MA1_plot_prior <- function(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2), prior_dist = c("uniform", "uniform_on_rho"), variance = NULL, autocorr = NULL, method = c("analytic", "monte-carlo"), sample_size = 1e+05, smoothing = c("ash", "kde"), ash_smooth = c(5, 5), ash_kopt = c(2, 2), kde_width_infl = 0.25, grid_size = c(100, 100), boundaries_rect=FALSE) {
 
 	prior_dist <- match.arg(prior_dist)
 	method <- match.arg(method)
@@ -260,12 +264,9 @@ nabc_MA1_plot_prior <- function(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2)
 	require(plyr)
 
 	if (prior_dist == "uniform_on_rho") {
-		rho_1_bounds <- ma.sig22rho(sort(sig2_bounds), a = c(ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))), 
-			max(abs(a_bounds))), vx = variance)
-		rho_2_bounds <- ma.a2rho(x = a_bounds, vx = autocorr)
-		new_sig2_bounds <- sort(rho_1_bounds) * variance/(1 + c(max(abs(a_bounds)), ifelse(prod(a_bounds) <= 0, 0, 
-			min(abs(a_bounds))))^2)
-
+		rho_1_bounds <- nabc.acf.sig22rho(sort(sig2_bounds), a = c(ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))), max(abs(a_bounds))), vx = variance) 
+		rho_2_bounds <- nabc.acf.a2rho(x = a_bounds, vx = autocorr)
+		new_sig2_bounds <- sort(rho_1_bounds) * variance/(1 + c(max(abs(a_bounds)), ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))))^2)
 	}
 
 	if (prior_dist == "uniform") {
@@ -276,11 +277,7 @@ nabc_MA1_plot_prior <- function(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2)
 	if (method == "monte-carlo") {
 
 		df_prior <- nabc_MA1_rprior(sample_size, a_bounds, sig2_bounds, prior_dist, variance, autocorr)
-		p <- nabc_plot_density2d(data = df_prior, var_names = c("a", "sig2"), y_lab = expression(sigma^2), mode = T, 
-			smoothing = smoothing, ash_smooth = ash_smooth, ash_kopt = ash_kopt, kde_width_infl = kde_width_infl, grid_size = grid_size, 
-			plot = F)
-
-
+		p <- nabc_plot_density2d(data = df_prior, var_names = c("a", "sig2"), y_lab = expression(sigma^2), mode = T, smoothing = smoothing, ash_smooth = ash_smooth, ash_kopt = ash_kopt, kde_width_infl = kde_width_infl, grid_size = grid_size, plot = F)
 	}
 
 	if (method == "analytic") {
@@ -319,26 +316,26 @@ nabc_MA1_plot_prior <- function(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2)
 			df_prior <- ddply(df_prior, "a", function(df) {
 
 				a <- df$a[1]
-				ind <- which(df$sig2 < min(rho_1_bounds) * variance/(1 + a^2) | df$sig2 > max(rho_1_bounds) * variance/(1 + 
-					a^2))
+				ind <- which(df$sig2 < min(rho_1_bounds) * variance/(1 + a^2) | df$sig2 > max(rho_1_bounds) * variance/(1 + a^2))
 				df$density[ind] <- NA
 				return(df)
 			})
 			df_prior <- na.omit(df_prior)
 
 			#limits on sig2 for given a
-			df_limits <- data.frame(a = f$a, ymin = min(rho_1_bounds) * variance/(1 + (f$a)^2), ymax = max(rho_1_bounds) * 
-				variance/(1 + (f$a)^2))
+			df_limits <- data.frame(a = f$a, ymin = min(rho_1_bounds) * variance/(1 + (f$a)^2), ymax = max(rho_1_bounds) * variance/(1 + (f$a)^2))
 			df_limits <- melt(df_limits, id.vars = "a", value.name = "sig2")
 
 		}
-		p <- nabc_plot_density2d(data = df_prior, var_names = c("a", "sig2"), y_lab = expression(sigma^2), mode =F, 
-			smoothing = "none",contour=T, plot = F)
-		if (prior_dist == "uniform_on_rho") {
-			p <- p + geom_line(data = df_limits, aes(x = a, y = sig2, group = variable), colour = "white")
-		}
+		p <- nabc_plot_density2d(data = df_prior, var_names = c("a", "sig2"), y_lab = expression(sigma^2), mode =F, smoothing = "none",contour=T, plot = F, grey_mode=TRUE)
+		# if (prior_dist == "uniform_on_rho") {
+		# 	p <- p + geom_line(data = df_limits, aes(x = a, y = sig2, group = variable), colour = "white")
+		# }
 	}
 
+	if(boundaries_rect){
+		p <- p+geom_rect(xmin=min(a_bounds),xmax=max(a_bounds),ymin=min(sig2_bounds),ymax=max(sig2_bounds),fill=NA,colour="black",linetype="dotted")
+	}
 
 	print(p)
 
@@ -980,16 +977,16 @@ main <- function() {
 	require(devtools)
 	require(data.table)
 
-	USE_CLUSTER <- T
+	USE_CLUSTER <- TRUE
 
-	dev_mode()
-	NABC_PKG <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/GitProjects/abc.n/pkg","~/Documents/GitProjects/nABC/git_abc.n/pkg")
-	load_all(NABC_PKG)
+	# dev_mode()
+	NABC_PKG <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/GitProjects/abc.n/pkg","/Users/Tonton/work/projects/abc_star/git/abc.n/pkg")
+	# load_all(NABC_PKG)
 
 	#source Olli's prjct:
 	source(file.path(NABC_PKG,"misc","nabc.prjcts.R"))
 
-	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_a_0_to_0.3_tol=5e-3","~/Documents/GitProjects/nABC/pdf")
+	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_a_0_to_0.3_tol=2.5e-3","/Users/Tonton/work/projects/abc_star/pdf")
 	dir.create(dir_pdf,rec=T)
 
 	if(0){
@@ -1000,15 +997,11 @@ main <- function() {
 		autocorr <- a_0/(1 + a_0^2)
 
 		pdf(file = file.path(dir_pdf, paste0("prior_induced_on_a=",a_0,"_sig2=",sig2_0,"_analytic.pdf")), 5, 6)
-		nabc_MA1_plot_prior(a_bounds = c(-0.4, 0.4), sig2_bounds = c(0.8, 1.5), prior_dist = "uniform_on_rho", variance = variance, 
-			autocorr = autocorr, method = "analytic", sample_size = 1e+05, smoothing = "ash", ash_smooth = c(5, 1), ash_kopt = c(2, 
-				2), kde_width_infl = 0.25, grid_size = c(100, 100))
+		nabc_MA1_plot_prior(a_bounds = c(-0.4, 0.4), sig2_bounds = c(0.8, 1.5), prior_dist = "uniform_on_rho", variance = variance, autocorr = autocorr, method = "analytic", sample_size = 1e+05, smoothing = "ash", ash_smooth = c(5, 1), ash_kopt = c(2, 2), kde_width_infl = 0.25, grid_size = c(100, 100))
 		dev.off()
 
 		pdf(file = file.path(dir_pdf, paste0("prior_induced_on_a=",a_0,"_sig2=",sig2_0,"_numerical.pdf")), 6, 6)
-		nabc_MA1_plot_prior(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2), prior_dist = "uniform_on_rho", variance = variance, 
-			autocorr = autocorr, method = "monte-carlo", sample_size = 1000, smoothing = "ash", ash_smooth = c(5, 1), 
-			ash_kopt = c(2, 2), kde_width_infl = 0.25, grid_size = c(100, 100))
+		nabc_MA1_plot_prior(a_bounds = c(-0.3, 0.3), sig2_bounds = c(0.5, 2), prior_dist = "uniform_on_rho", variance = variance, autocorr = autocorr, method = "monte-carlo", sample_size = 1000, smoothing = "ash", ash_smooth = c(5, 1), ash_kopt = c(2, 2), kde_width_infl = 0.25, grid_size = c(100, 100))
 		dev.off()
 
 		#check sampler
@@ -1032,17 +1025,27 @@ main <- function() {
 
 	n_x <- 150
 	index_a	<- as.numeric(Sys.getenv("ARG1")) + 1
-	a_true <- 0.1 # seq(0, 0.3, 0.025)[index_a]
+	a_true <- seq(0, 0.3, 0.025)[index_a]
 	sig2_true <- 1
-	tol <- 5e-3
+	tol <- 2.5e-3
 	variance_thin <- 1
 	autocorr_thin <- 2
 	n_iter <- 2000000
 	iter_adapt <- n_iter
 	a_bounds <- c(-0.45, 0.45)
 	sig2_bounds <- c(0.3, 1.7)
-	prior_dist <- "uniform_on_rho"
+	prior_dist <- "uniform"
+	variance <- (1 + a_true^2) * sig2_true
+	autocorr <- a_true/(1 + a_true^2)
 
+	# rho_1_bounds <- nabc.acf.sig22rho(sort(sig2_bounds), a = c(ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))), max(abs(a_bounds))), vx = variance) 
+	# rho_2_bounds <- nabc.acf.a2rho(x = a_bounds, vx = autocorr)
+	# print(rho_1_bounds)
+	# print(rho_2_bounds)
+
+	# png(file = file.path(dir_pdf, paste0("prior_induced.png")), width=6, height=6, units="in", res=300)
+	# nabc_MA1_plot_prior(a_bounds, sig2_bounds, prior_dist, variance, autocorr, method = "analytic", grid_size = c(100, 200),boundaries_rect=TRUE)
+	# dev.off()
 
 	if(1){
 		#foo n CPU
