@@ -977,7 +977,7 @@ main <- function() {
 	require(devtools)
 	require(data.table)
 
-	USE_CLUSTER <- FALSE
+	USE_CLUSTER <- TRUE
 
 	# dev_mode()
 	NABC_PKG <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/GitProjects/abc.n/pkg","/Users/Tonton/work/projects/abc_star/git/abc.n/pkg")
@@ -986,7 +986,7 @@ main <- function() {
 	#source Olli's prjct:
 	source(file.path(NABC_PKG,"misc","nabc.prjcts.R"))
 
-	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_a_0_to_0.3_tol=5e-3","/Users/Tonton/work/projects/abc_star/pdf")
+	dir_pdf <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/nABC/MA1_a_0_to_0.3_tol=2.5e-3","/Users/Tonton/work/projects/abc_star/pdf")
 	dir.create(dir_pdf,rec=T)
 
 	if(0){
@@ -1025,29 +1025,29 @@ main <- function() {
 
 	n_x <- 150
 	index_a	<- as.numeric(Sys.getenv("ARG1")) + 1
-	a_true <- 0.1 # seq(0, 0.3, 0.025)[index_a]
+	a_true <- seq(0, 0.3, 0.025)[index_a]
 	sig2_true <- 1
-	tol <- 5e-3
+	tol <- 2.5e-3
 	variance_thin <- 1
 	autocorr_thin <- 2
 	n_iter <- 2000000
 	iter_adapt <- n_iter
 	a_bounds <- c(-0.45, 0.45)
 	sig2_bounds <- c(0.3, 1.7)
-	prior_dist <- "uniform_on_rho"
+	prior_dist <- "uniform"
 	variance <- (1 + a_true^2) * sig2_true
 	autocorr <- a_true/(1 + a_true^2)
 
-	rho_1_bounds <- nabc.acf.sig22rho(sort(sig2_bounds), a = c(ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))), max(abs(a_bounds))), vx = variance) 
-	rho_2_bounds <- nabc.acf.a2rho(x = a_bounds, vx = autocorr)
-	print(rho_1_bounds)
-	print(rho_2_bounds)
+	# rho_1_bounds <- nabc.acf.sig22rho(sort(sig2_bounds), a = c(ifelse(prod(a_bounds) <= 0, 0, min(abs(a_bounds))), max(abs(a_bounds))), vx = variance) 
+	# rho_2_bounds <- nabc.acf.a2rho(x = a_bounds, vx = autocorr)
+	# print(rho_1_bounds)
+	# print(rho_2_bounds)
 
-	png(file = file.path(dir_pdf, paste0("prior_induced.png")), width=6, height=6, units="in", res=300)
-	nabc_MA1_plot_prior(a_bounds, sig2_bounds, prior_dist, variance, autocorr, method = "analytic", grid_size = c(100, 200),boundaries_rect=TRUE)
-	dev.off()
+	# png(file = file.path(dir_pdf, paste0("prior_induced.png")), width=6, height=6, units="in", res=300)
+	# nabc_MA1_plot_prior(a_bounds, sig2_bounds, prior_dist, variance, autocorr, method = "analytic", grid_size = c(100, 200),boundaries_rect=TRUE)
+	# dev.off()
 
-	if(0){
+	if(1){
 		#foo n CPU
 		file_data <- file.path(dir_pdf,paste0("data_with_a=",a_true,"_nx=",n_x,"_tol=", tol,"_varThin=", variance_thin,"_corThin=", autocorr_thin,".rds"))
 		if(!file.exists(file_data)){
@@ -1061,7 +1061,7 @@ main <- function() {
 
 
 	#parallel
-	# run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,1,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
+	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,1,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
 
 	if(0){
 
