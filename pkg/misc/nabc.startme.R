@@ -44,8 +44,10 @@ default.fun	<- "project.nABC.StretchedChi2"
 #default.fun	<- "nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m"
 #default.fun	<- "nabc.test.chi2stretch.montecarlo.calibrated.tau.and.increasing.m"
 #default.fun	<- "nabc.test.acf.montecarlo.calibrated.tau.and.m"
-default.fun	<- "nabc.test.acf.montecarlo.vary.a"
+#default.fun	<- "nabc.test.acf.montecarlo.vary.a"
+default.fun	<- 'nabc.test.acf.montecarlo.vary.a.uniftheta'
 #default.fun<- "project.nABC.movingavg"
+
 ###############################################################################
 #	select script specified with -exe on the command line. If missing, start default script 'default.fun'.
 argv<- list()
