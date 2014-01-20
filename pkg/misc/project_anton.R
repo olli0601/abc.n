@@ -976,12 +976,15 @@ main <- function() {
 	require(plyr)
 	require(devtools)
 	require(data.table)
-
-	USE_CLUSTER <- TRUE
+	# devtools::install_github("klutometis/roxygen")
+	# require(roxygen2)
+	USE_CLUSTER <- FALSE
 
 	# dev_mode()
 	NABC_PKG <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/GitProjects/abc.n/pkg","/Users/Tonton/work/projects/abc_star/git/abc.n/pkg")
-	# load_all(NABC_PKG)
+	# setwd(NABC_PKG)
+	# roxygenize(NABC_PKG)
+	load_all(NABC_PKG)
 
 	#source Olli's prjct:
 	source(file.path(NABC_PKG,"misc","nabc.prjcts.R"))
@@ -1047,7 +1050,7 @@ main <- function() {
 	# nabc_MA1_plot_prior(a_bounds, sig2_bounds, prior_dist, variance, autocorr, method = "analytic", grid_size = c(100, 200),boundaries_rect=TRUE)
 	# dev.off()
 
-	if(1){
+	if(0){
 		#foo n CPU
 		file_data <- file.path(dir_pdf,paste0("data_with_a=",a_true,"_nx=",n_x,"_tol=", tol,"_varThin=", variance_thin,"_corThin=", autocorr_thin,".rds"))
 		if(!file.exists(file_data)){
@@ -1061,7 +1064,7 @@ main <- function() {
 
 
 	#parallel
-	run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,1,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
+	# run_foo_on_nCPU(foo_name="run_parallel_MCMC_MA1", n_CPU=ifelse(USE_CLUSTER,1,2), use_cluster= USE_CLUSTER, data=data, n_iter= n_iter, iter_adapt= iter_adapt,a_bounds= a_bounds,sig2_bounds= sig2_bounds,prior_dist= prior_dist, dir_pdf=dir_pdf) 
 
 	if(0){
 
