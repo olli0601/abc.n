@@ -1,6 +1,179 @@
 NABC.DEFAULT.ANS<- {tmp<- c(0, 50, 1, NA, NA, NA, 0, 0, 0, 0, 0, 1, 1, 1, NA, NA, NA); names(tmp)<- c("lkl", "error", "pval","link.mc.obs","link.mc.sim", "rho.mc", "cil", "cir","tl","tr","al","ar","pfam.pval","ts.pval","nsim","mx.pow","rho.pow"); tmp}
 
 #------------------------------------------------------------------------------------------------------------------------
+#'Two sample TOST
+nabc.mutost <- function(sim, obs, args= NA, verbose= FALSE, alpha= 0, tau.u= 0, tau.l= -tau.u, plot= FALSE, xlab= NA, nbreaks= 40, normal.test= "sf.test")
+{
+	#verbose<- 1
+	ans<- NABC.DEFAULT.ANS
+	#compute two sample t-test on either z-scores or untransformed data points
+	if(any(is.na(sim)))	
+		stop("nabc.mutost: error at 1a")
+	if(any(is.na(obs)))	
+		stop("nabc.mutost: error at 1b")
+	#if not missing, arguments 'args' always overwrite 'alpha' and 'nc'
+	#expect args string of the form studenttXXX/beta/non-centrality
+	if(!is.na(args))
+	{
+		args<- strsplit(args,'/')[[1]]
+		if(length(args)==4)
+		{
+			standardize<- as.numeric( args[2] )
+			tau.u<- as.numeric( args[3] )
+			tau.l<- -as.numeric( args[3] )
+			alpha<- as.numeric( args[4] )
+		}
+		else if(length(args)==5)
+		{
+			standardize<- as.numeric( args[2] )
+			tau.l<-  as.numeric( args[3] )
+			tau.u<- as.numeric( args[4] )
+			alpha<- as.numeric( args[5] )
+		}
+		else
+			stop("nabc.mutost: error at 1c")
+		args<- args[1]
+	}
+#print(standardize)
+	if(!standardize%in%c(0,1))	
+		stop("nabc.mutost: error at 1e")
+	if(alpha<0 || alpha>1)		
+		stop("nabc.mutost: error at 1f")
+	if(tau.u<0 || tau.l>0)		
+		stop("nabc.mutost: error at 1g")
+#print(standardize)
+#standardize<- 0
+	if(length(sim)>3)		
+		tmp<- sim
+	else 
+		tmp<- obs
+	ans["pfam.pval"]<-	abccheck.normal(tmp,normal.test)
+
+	if(!any(diff(sim)>0))
+	{	
+		length(sim)<- 1
+		if(length(obs)<2)	
+			return(ans)
+	}
+	moments<- matrix(NA, 2, 3)	#store number of samples, mean and var in columns
+	moments[, 1]<- c( length(sim), length(obs) )	
+	if(standardize==1 && moments[1,1]>2 && moments[2,1]>2)
+	{	
+		sim<- mean(sim)
+		moments[1,1]<- 1
+		#moments[, 3]<- c(sd(sim), sd(obs))										#second attempt did not work - too much information lost
+		#sim<- sim * moments[2,3]/moments[1,3]		
+		##sim<- sim / ifelse(moments[1,1]>2,	moments[1,3], moments[2,3])		#first attempt did not work - essentially testing mu/sigma which is more difficult
+		##obs<- obs / ifelse(moments[2,1]>2,	moments[2,3], moments[1,3])
+	}
+	if(all(moments[,1]<2))	
+		stop("nabc.mutost: error at 3a")
+	#if(nc!=0)		stop("get.dist.studentt: non-centrality not yet implemented")
+	#convert tau from log(obs/sim)<tau to obs-sim<tau	
+	moments[,2]<- c( mean(sim), mean(obs) )
+	moments[,3]<- c( var(sim), var(obs) )
+	if(moments[1,1]>2 && moments[2,1]>2 && standardize==0)						#use unequal sample size, unequal variance
+	{
+		tmp<- moments[,3]/moments[,1]												#temporarily store 		var(sim)/sim.n, var(obs)/obs.n
+		tmp<- c(	(diff( moments[, 2] )-tau.l) / sqrt( sum(tmp) ),				#[1] t test statistic	 for -tau (lower test)
+			(diff( moments[, 2] )-tau.u) / sqrt( sum(tmp) ),			#[2] t test statistic	 for tau (upper test)
+			diff( moments[, 2] ) / sqrt( sum(tmp) ),					#[3] t test statistic	 for equality
+			sum(tmp)^2 / (		tmp[2]^2/(moments[2,1]-1)	+ tmp[1]^2/(moments[1,1]-1)		),				#[4] degrees of freedom: Welch Satterthwaite approximation
+			sqrt( sum(tmp) ),											#[5] estimate of standard deviation of the test statistic
+			sqrt(sum(moments[,3]*(moments[,1]-1))/(sum(moments[,1])-2))	#[6] common std dev, assuming equal variance. only for power calculations
+			)
+	}
+	else if(moments[1,1]>2 && moments[2,1]>2 && standardize==1)					#estimate common std dev as usual, then use unequal sample size, equal variance
+	{
+		tmp<- sqrt(sum(moments[,3]*(moments[,1]-1))/(sum(moments[,1])-2)*sum(1/moments[,1]))		#std dev of test statistic
+		tmp<- c(	(diff( moments[, 2] )-tau.l) / tmp,								#[1] t test statistic	 for -tau (lower test)
+			(diff( moments[, 2] )-tau.u) / tmp,							#[2] t test statistic	 for tau (upper test)
+			diff( moments[, 2] ) / tmp,									#[3] t test statistic	 for equality
+			sum(moments[,1])-2,											#[4] degrees of freedom
+			tmp,														#[5] estimate of standard deviation of the test statistic
+			sqrt(sum(moments[,3]*(moments[,1]-1))/(sum(moments[,1])-2))	#[6] estimate of standard deviation of the pooled sample
+			)
+	}
+	else if(moments[1,1]==1 || moments[2,1]==1)					#set common std dev to the std dev in the sample whose sample size is > 1, and use unequal sample size, pooled variance
+	{															
+		#this is the same, if standardized or not
+		tmp<- !is.na(moments[,3])
+		tmp<- c(	(diff( moments[, 2] )-tau.l) / sqrt( moments[tmp,3] / moments[tmp,1] ),			#[1]	test statistic for -tau (lower test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
+			(diff( moments[, 2] )-tau.u) / sqrt( moments[tmp,3] / moments[tmp,1] ),		#[2]	test statistic for tau (upper test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
+			diff( moments[, 2] ) / sqrt( moments[tmp,3] / moments[tmp,1] ),				#[3]	test statistic for equality; estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
+			moments[tmp,1]-1,															#[4] 	degrees of freedom
+			sqrt( moments[tmp,3]/moments[tmp,1] ),										#[5]	estimate of the std dev of the test statistic is simply the std dev in the sample whose sample size is > 1 divided by that sample size
+			sqrt( moments[tmp,3] )														#[6]  	standard deviation of the sample
+			)
+		args<- paste(args,".equalvariance",sep='')
+	}
+	else	stop("nabc.mutost: error at 3b")
+	#cat( paste( "\nloc.cdf= ",pnorm( tau / ( tmp[6] * sqrt(2) ) ) - 0.5 ) )
+
+	which.not.reject<- which( c(pt( tmp[1], tmp[4] )<1-alpha, pt( tmp[2], tmp[4] )>alpha))
+	if(length(which.not.reject)%in%c(0,2))		#both upper and lower test statistics indicate mean difference < -tau and mean difference > tau  	OR 		mean difference >= -tau and mean difference <= tau
+	{
+		#figure out which one is closer to boundary, and schedule that this one is reported
+		which.not.reject<- which.min(abs(c(1-alpha-pt( tmp[1], tmp[4] ), pt( tmp[2], tmp[4] )-alpha )))
+	}
+
+
+	#POWER[[length(POWER)+1]]<<- c(tau.l, tau.u, tmp[6], sum(moments[,1]), tmp[4], tmp[5] )	#PowerTOST:::.power.TOST(alpha=alpha, tau.l, tau.u, seq(tau.l, tau.u, length.out= 1e3), tmp[6], sum(moments[,1]), tmp[4], bk = 4)	
+
+	#print(which.not.reject)
+	ans[c("lkl","pval","error")]<- c(dt( tmp[3], tmp[4]), pt( tmp[3], tmp[4] ),ifelse(which.not.reject==1, 1-pt( tmp[which.not.reject], tmp[4] ),pt( tmp[which.not.reject], tmp[4] )))
+	ans[c("al","ar")]	<- 	c(min(tau.l/tmp[5]+qt( 1-alpha, tmp[4] ),0), max(0, tau.u/tmp[5]+qt( alpha, tmp[4] ))		)		#'ar' is upper boundary point c+ of TOST for the traditional two-sided t-test statistic T= (bar(x)-bar(y)) / s, and likewise 'al' for c-								
+	ans["mx.pow"]		<-	1-diff(pt( ans[c("al","ar")], tmp[4]))	#the corresponding alpha quantile of the traditional t-test with acceptance region [c-,c+] and above s, df						
+	ans["pval"]			<-	( ans["pval"] - ans["mx.pow"]/2 ) / ( 1 - ans["mx.pow"] )							#rescaled p-value that is expected to follow U(0,1) under the point null hypothesis
+	ans[c("cil","cir")]	<-	c(0, alpha)
+	ans["mx.pow"]		<-	nabc.mutost.pow(0, tmp[4], tau.u, tmp[5], alpha) 				
+	ans["link.mc.sim"]	<- 	moments[1,2]
+	ans["link.mc.obs"]	<- 	moments[2,2]
+	ans["rho.mc"]		<- 	diff(moments[,2]) / tmp[5]
+	#ans["al"]<- tmp[3]
+
+	if(verbose)	
+		cat(paste(paste("\n{",args,"<-list(sim.mean=",moments[1, 2] ,", obs.mean=",moments[2,2] ,", sim.n=",moments[1, 1] ,", obs.n=",moments[2,1] ,", per.capita.s=",tmp[6],", df=",tmp[4],", alpha=",alpha,", tau.l=",tau.l,", tau.u=",tau.u,", tl=",tmp[1],", tu=",tmp[2],", cil=", tau.l/tmp[5]+qt( 1-alpha, tmp[4] ),", ciu=", tau.u/tmp[5]-qt( 1-alpha, tmp[4] ),", ",sep=''),paste(names(ans), ans, collapse=', ', sep='='),")}",sep=''))
+	if(plot)
+	{
+		breaks<-  range(c(sim,obs))
+		breaks[1]<- breaks[1]*ifelse(breaks[1]<0, 1.2, 0.8)
+		breaks[2]<- breaks[2]*ifelse(breaks[2]>0, 1.2, 0.8)
+		breaks<- seq(from= breaks[1], to= breaks[2], by= (breaks[2]-breaks[1])/nbreaks)
+		xlim<- range(c(sim,obs))
+		if(moments[1,1]>2 && moments[2,1]>2)
+		{
+			sim.h<- hist(sim,	breaks= breaks,	plot= F)
+			obs.h<- hist(obs,	breaks= breaks,	plot= F)
+		}
+		else
+		{
+			if(which(!is.na(moments[,3]))==1)			#1 if sim has > 1 sample size, 2 if obs has > 1 sample size
+			sim.h<-obs.h<- hist(sim,	breaks= breaks,	plot= F)
+			else
+				sim.h<-obs.h<- hist(obs,	breaks= breaks,	plot= F)
+		}
+		ylim<- c(0,max(c(obs.h$intensities, sim.h$intensities),na.rm=TRUE)*1.1)
+		plot(1,1,xlab=xlab, xlim= xlim,type='n',ylim=ylim,ylab="probability",main="")
+		if(moments[1,1]>2 && moments[2,1]>2)
+		{
+			plot(sim.h,freq=FALSE,add=TRUE,col=my.fade.col("#0080FFFF",0.6),border=my.fade.col("#0080FFFF",0.6))
+			lines(seq( xlim[1], xlim[2], by= diff(xlim)/100 ), dnorm( 	seq( xlim[1], xlim[2], by= diff(xlim)/100 ), moments[1,2],  sqrt(moments[1,3])), col=my.fade.col("#0080FFFF",0.6) )
+			points( sim, rep(ylim[2],length(sim)),col=my.fade.col("#0080FFFF",0.6),pch=20,cex=2.5 )
+			points( obs, rep(ylim[2],length(obs)),pch=2,cex=1.5 )
+		}
+		plot(obs.h,freq=FALSE,add=TRUE)
+		if(moments[1,1]>2 && moments[2,1]>2)
+			lines(seq( xlim[1], xlim[2], by= diff(xlim)/100 ), dnorm( 	seq( xlim[1], xlim[2], by= diff(xlim)/100 ), moments[2,2],  sqrt(moments[2,3])) )
+		else
+		{
+			lines(seq( xlim[1], xlim[2], by= diff(xlim)/100 ), dnorm( 	seq( xlim[1], xlim[2], by= diff(xlim)/100 ), moments[!is.na(moments[,3]),2],  tmp[5]) )
+			abline(v= moments[is.na(moments[,3]),2], col=my.fade.col("#0080FFFF",0.6))
+		}
+	}
+	ans
+}
+#------------------------------------------------------------------------------------------------------------------------
 #' Estimate summary parameter errors rho from unbiased Monte Carlo estimates rho.mc for all proposed theta including rejections 
 #' @export
 #' @param df			data frame with all proposed theta and corresponding rho.mc for each summary of interest 
