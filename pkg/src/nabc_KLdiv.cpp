@@ -27,7 +27,6 @@ void abc_generic_calibrate_tauup_for_KL(void (*KL_divergence)(void*), double (*K
     //do not calibrate tau_up for given max.pw
     KL_arg->calibrate_tau_up = 0;
     // current KL
-    KL_arg->tau_up	= KL_arg->tau_up;
     KL_divergence( KL_arg );
     previous_KL_div = KL_arg->KL_div;
     // next KL
