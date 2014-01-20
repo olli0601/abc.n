@@ -1,8 +1,7 @@
-
 #' Density of the power for muTOST
 #' 
 #' Compute the density of the (possible truncated) power of the equivalence test for population means of normal summary values
-#' @inheritParams nabc.mutost.calibrate.tolerances.getkl
+#' @inheritParams mutost.calibrate.tolerances.getkl
 #' @param rho vector of quantile
 #' @param norm normalization constant for the truncated power function.
 #' @param support vector of dimension 2. Support of the truncated power function.
@@ -11,7 +10,7 @@
 #' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived (numerically) from the other.
 #' @export
 #' 	
-nabc.mutost.pow <- function(rho, df, s.of.T, tau.u, alpha, norm=1, support=c(-Inf,Inf), log=FALSE)
+mutost.pow <- function(rho, df, s.of.T, tau.u, alpha, norm=1, support=c(-Inf,Inf), log=FALSE)
 {	
 	ans				<- rho
 	in_support		<- (rho >= support[1] & rho <= support[2])
@@ -38,7 +37,7 @@ nabc.mutost.pow <- function(rho, df, s.of.T, tau.u, alpha, norm=1, support=c(-In
 #' @param alpha		level of equivalence test
 #' @param tost.distr	name of distribution of tost
 #' @return vector of length 7
-nabc.generic.tost <- function(tost.args, tau.l, tau.u, alpha, tost.distr="t")
+generic.tost <- function(tost.args, tau.l, tau.u, alpha, tost.distr="t")
 {
 	ans<- numeric(7)
 	names(ans)<- c("error","p.error","lkl","cl","cu","ass.alpha","ass.pval")
@@ -69,7 +68,7 @@ nabc.generic.tost <- function(tost.args, tau.l, tau.u, alpha, tost.distr="t")
 #' Density of the summary likelihood for muTOST
 #' 
 #' Compute the density of the (possibly truncated) summary likelihood for population means of normal summary values
-#' @inheritParams nabc.mutost.calibrate.tolerances.getkl
+#' @inheritParams mutost.calibrate.tolerances.getkl
 #' @param rho vector of quantile
 #' @param norm scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
 #' @param support vector of dimension 2, support of the truncated summary likelihood.
@@ -79,7 +78,7 @@ nabc.generic.tost <- function(tost.args, tau.l, tau.u, alpha, tost.distr="t")
 #' \code{support=s.of.x/sqrt(n.of.x)*qt(c(1-norm,1+norm)/2,n.of.x-1)} and \code{norm=diff(pt(support/(s.of.x/sqrt(n.of.x)),n.of.x-1))}.
 #' @export	
 #'
-nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), log=FALSE, debug=0) 
+mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), log=FALSE, debug=0) 
 {
 	
 	stopifnot(n.of.x>0,s.of.x>0,norm<=1,norm>0,support[1]<=support[2])
@@ -135,10 +134,10 @@ nabc.mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf
 #' @import ggplot2 reshape2
 #' @examples
 #' 
-#' nabc.mutost.calibrate.tolerances.getkl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
+#' mutost.calibrate.tolerances.getkl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
 #' alpha=0.01, calibrate.tau.u=TRUE, tau.u=1, plot=TRUE)
 #'
-nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, plot = F, legend.title='') 
+mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, plot = F, legend.title='') 
 {
 	stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, n.of.y>=n.of.x, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0)
 
@@ -167,7 +166,7 @@ nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.
 		if (calibrate.tau.u) 
 		{
 			#calibrate tau.u constrained on yn, alpha and mx.pw	
-			tmp 	<- nabc.mutost.calibrate.tolerances(mx.pw, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha)
+			tmp 	<- mutost.calibrate.tolerances(mx.pw, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha)
 			tau.u 	<- tmp[2]
 			pw.cmx 	<- tmp[3]
 			if (abs(pw.cmx - mx.pw) > 0.09) 	
@@ -175,7 +174,7 @@ nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.
 		}
 		#truncate pow and compute pow_norm
 		pow_support <- c(-tau.u, tau.u) * pow_scale
-		#pow_norm <- integrate(nabc.mutost.pow, lower = pow_support[1], upper = pow_support[2], df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u= tau.u, alpha= alpha, norm=1, support= pow_support, log=FALSE)
+		#pow_norm <- integrate(mutost.pow, lower = pow_support[1], upper = pow_support[2], df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u= tau.u, alpha= alpha, norm=1, support= pow_support, log=FALSE)
 		suppressWarnings({ #suppress numerical inaccuracy warnings
 			pow_norm <- .Call("abc_mutost_integrate_pow", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
 		})		
@@ -187,21 +186,21 @@ nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.
 		integral_range	<- pow_support
 		lkl_arg 		<- list(n.of.x = n.of.x, s.of.x = s.of.x, norm = lkl_norm, support = lkl_support)
 		pow_arg 		<- list(df = n.of.y - 1, s.of.T = s.of.y/sqrt(n.of.y), tau.u = tau.u, alpha = alpha, norm = pow_norm, support = pow_support)
-		tmp 			<- integrate(kl.integrand, lower = integral_range[1], upper = integral_range[2], dP = nabc.mutost.sulkl, dQ = nabc.mutost.pow, P_arg = lkl_arg, Q_arg = pow_arg)
+		tmp 			<- integrate(kl.integrand, lower = integral_range[1], upper = integral_range[2], dP = mutost.sulkl, dQ = mutost.pow, P_arg = lkl_arg, Q_arg = pow_arg)
 		KL_div 			<- tmp$value
 		if (tmp$message != "OK")	
 			warning(tmp$message)
-		pw.cmx 			<- ifelse(calibrate.tau.u, pw.cmx, nabc.mutost.pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha))
-		#print(c(calibrate.tau.u, n.of.y, s.of.y, s.of.y/sqrt(n.of.y), alpha, tau.u, pw.cmx, nabc.mutost.pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha)))		
+		pw.cmx 			<- ifelse(calibrate.tau.u, pw.cmx, mutost.pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha))
+		#print(c(calibrate.tau.u, n.of.y, s.of.y, s.of.y/sqrt(n.of.y), alpha, tau.u, pw.cmx, mutost.pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha)))		
 	}
 
 	if (plot) 
 	{
 		rho 				<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
-		lkl 				<- nabc.mutost.sulkl(rho, n.of.x, s.of.x, lkl_norm, lkl_support)
+		lkl 				<- mutost.sulkl(rho, n.of.x, s.of.x, lkl_norm, lkl_support)
 		df_lkl 				<- data.frame(x = rho, no = lkl * lkl_norm, yes = lkl)
 		df_lkl$distribution <- "summary likelihood"
-		pow					<- nabc.mutost.pow(rho, df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u, alpha, norm=pow_norm, support= pow_support, log=FALSE)
+		pow					<- mutost.pow(rho, df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u, alpha, norm=pow_norm, support= pow_support, log=FALSE)
 		df_pow 				<- data.frame(x = rho, no = pow * pow_norm, yes = pow)
 		df_pow$distribution <- "ABC power"
 		df 					<- rbind(df_pow, df_lkl)
@@ -222,7 +221,7 @@ nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.
 #'Calibration for muTOST
 #'
 #'Calibrate the equivalence region for the test of location equivalence for given maximum power
-#' @param KL_args list of arguments needed to run \code{\link{nabc.mutost.calibrate.tolerances.getkl}} (see note below)
+#' @param KL_args list of arguments needed to run \code{\link{mutost.calibrate.tolerances.getkl}} (see note below)
 #' @param  max.it  this algorithm stops prematurely when the number of iterations to find the equivalence region exceeds 'max.it'
 #' @param  debug  flag if C implementation is used
 #' @param  plot  logical; if \code{TRUE} the summary likelihood and calibrated power are ploted (only when \code{debug==TRUE}).
@@ -230,12 +229,16 @@ nabc.mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.
 #' @param  verbose flag if detailed information on the computations should be printed to standard out
 #' @export
 #' @note \code{KL_args} is a named list with the following elements: \code{n.of.x}, \code{s.of.x}, \code{n.of.y}, \code{s.of.y}, \code{mx.pw}, \code{alpha}, \code{tau.u} and \code{pow_scale}.
-#' @seealso \code{\link{nabc.mutost.calibrate.tolerances.getkl}}
-#' @return
+#' @seealso \code{\link{mutost.calibrate.tolerances.getkl}}
+#' @return	vector of length 4
+#' 	\item{KL_div}{the Kullback Leibler divergence}		
+#' 	\item{n.of.y}{number of simulated summary values}		
+#' 	\item{tau.u}{upper tolerance of the equivalence region}
+#' 	\item{pw.cmx}{actual maximum power associated with the equivalence region}
 #' @examples \dontrun{
 #'
 #'}
-nabc.mutost.calibrate<- function(KL_args, max.it = 100, debug = 0, plot = FALSE, plot_debug = FALSE, verbose=FALSE) 
+mutost.calibrate<- function(KL_args, max.it = 100, debug = 0, plot = FALSE, plot_debug = FALSE, verbose=FALSE) 
 {	
 	stopifnot(max.it > 0)
 	stopifnot(all(c("n.of.x", "s.of.x", "n.of.y", "s.of.y", "mx.pw", "alpha", "tau.u", "pow_scale") %in% names(KL_args)))
@@ -245,7 +248,7 @@ nabc.mutost.calibrate<- function(KL_args, max.it = 100, debug = 0, plot = FALSE,
 	#see if power function "too tight" for yn=xn -> as a marker we use that KL(yn-1) < KL(yn). 
 	#In this case, 	the only way to minimize KL is to use yn<xn, which is not what we like.
 	#				instead, we give up on mx.pw=0.9	
-	KL_divergence			<-  "nabc.mutost.calibrate.tolerances.getkl"		
+	KL_divergence			<-  "mutost.calibrate.tolerances.getkl"		
 	KL_args$calibrate.tau.u <- T
 	KL_args$plot 			<- F			
 	KL.of.yn 				<- do.call(KL_divergence, KL_args)["KL_div"]	
@@ -376,8 +379,8 @@ nabc.mutost.calibrate<- function(KL_args, max.it = 100, debug = 0, plot = FALSE,
 #' 	\item{3}{actual maximum power associated with the equivalence region}
 #' 	\item{4}{error ie abs(actual power - mx.pw)}
 #' @examples yn<- 60; ysigma2<- 1; alpha<- 0.01
-#'	nabc.mutost.calibrate.tolerances(0.9, yn-1, sqrt(ysigma2/yn), 2, alpha )
-nabc.mutost.calibrate.tolerances<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star=0, tol= 1e-5, max.it=100, debug=0)
+#'	mutost.calibrate.tolerances(0.9, yn-1, sqrt(ysigma2/yn), 2, alpha )
+mutost.calibrate.tolerances<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star=0, tol= 1e-5, max.it=100, debug=0)
 {
 	if(!debug)
 	{
@@ -397,10 +400,10 @@ nabc.mutost.calibrate.tolerances<- function(mx.pw, df, s.of.T, tau.up.ub, alpha,
 #print( list(rho.star, df, tau.up.ub, s.of.T, alpha) )
 		curr.mx.pw	<- .Call("abcMuTOST_pow", as.double(rho.star), df, tau.up.ub, s.of.T, alpha)
 		#print( curr.mx.pw )
-		#curr.mx.pw	<- nabc.mutost.pow(rho.star, df, tau.up.ub, s.of.T, alpha)
+		#curr.mx.pw	<- mutost.pow(rho.star, df, tau.up.ub, s.of.T, alpha)
 		#print( curr.mx.pw )		
 	}
-	if(tmp==0)	stop("nabc.mutost.calibrate.tolerances: could not find tau.up.ub")	
+	if(tmp==0)	stop("mutost.calibrate.tolerances: could not find tau.up.ub")	
 #print(tau.up.ub); stop()
 		tau.up.lb	<- 0
 	error		<- 1	
@@ -410,7 +413,7 @@ nabc.mutost.calibrate.tolerances<- function(mx.pw, df, s.of.T, tau.up.ub, alpha,
 		tau.up		<- (tau.up.lb + tau.up.ub)/2
 		curr.mx.pw	<- .Call("abcMuTOST_pow", as.double(rho.star), df, tau.up, s.of.T, alpha)
 		#print( curr.mx.pw )
-		#curr.mx.pw	<- nabc.mutost.pow(rho.star, df, tau.up, s.of.T, alpha)
+		#curr.mx.pw	<- mutost.pow(rho.star, df, tau.up, s.of.T, alpha)
 		#print( curr.mx.pw )
 		error		<- curr.mx.pw - mx.pw
 #print(c(curr.mx.pw, tau.up, tau.up.lb, tau.up.ub, max.it))
@@ -420,7 +423,7 @@ nabc.mutost.calibrate.tolerances<- function(mx.pw, df, s.of.T, tau.up.ub, alpha,
 			tau.up.ub<- tau.up
 #print(c(abs(error), round(tau.up.lb,d=10)!=round(tau.up.ub,d=10)) )	
 	}
-	if(max.it==0)	warning("nabc.mutost.calibrate.tolerances: reached max.it")
+	if(max.it==0)	warning("mutost.calibrate.tolerances: reached max.it")
 #	stop("HERE")
 		c(-tau.up,tau.up,curr.mx.pw,abs(error))
 }
@@ -463,9 +466,9 @@ nabc.mutost.calibrate.tolerances<- function(mx.pw, df, s.of.T, tau.up.ub, alpha,
 #'	args<- paste("mutost",1,tau.u,alpha,sep='/')
 #'	x<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 #'	y<- rnorm(yn,ymu,sd=sqrt(ysigma2))
-#'	nabc.mutost.onesample(y, x, args= args, verbose= 0)
+#'	mutost.onesample(y, x, args= args, verbose= 0)
 #' }
-nabc.mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, sd.tolerance=0.05, normal.test= "sf.test", plot=0, legend.txt="")
+mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, sd.tolerance=0.05, normal.test= "sf.test", plot=0, legend.txt="")
 {
 	ans <- c(0, 50, 1, NA, NA, NA, 0, 0, 0, 0, 0, 1, 1, NA, NA, NA)
 	names(ans)<- c("lkl", "error", "pval","link.mc.obs","link.mc.sim", "rho.mc", "cil", "cir","tl","tr","al","ar","pfam.pval","nsim","mx.pow","rho.pow")
@@ -539,11 +542,11 @@ nabc.mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, t
 	while(n.sd.refine>0)
 	{
 		KL_args 		<- list(n.of.x=obs.n, s.of.x= obs.sd, n.of.y=min( obs.n, length(sim) ), s.of.y=tmp, mx.pw=mx.pw, alpha=alpha, tau.u=tau.u.ub, pow_scale=1.5, debug=0)
-		abc.param		<- nabc.mutost.calibrate( KL_args, 100, debug=0, plot_debug=0, plot=plot, verbose=0)
+		abc.param		<- mutost.calibrate( KL_args, 100, debug=0, plot_debug=0, plot=plot, verbose=0)
 		if(abc.param["n.of.y"]>length(sim))
 		{
 			cat(paste("\nnot enough simulated summary values available:",abc.param["n.of.y"], "requested, and used:", length(sim)))
-			abc.param	<- nabc.mutost.calibrate.tolerances.getkl(obs.n, obs.sd, length(sim), sd(sim), mx.pw, alpha, calibrate.tau.u=TRUE, tau.u=3*obs.sd, debug=0, plot=FALSE)
+			abc.param	<- mutost.calibrate.tolerances.getkl(obs.n, obs.sd, length(sim), sd(sim), mx.pw, alpha, calibrate.tau.u=TRUE, tau.u=3*obs.sd, debug=0, plot=FALSE)
 		}		
 #print(abc.param); print(sd(sim[seq_len(abc.param["n.of.y"])])); print(tmp); print(sd.tolerance)
 		if( abs( log( sd(sim[seq_len(abc.param["n.of.y"])]) / tmp ) ) > sd.tolerance)
@@ -570,7 +573,7 @@ nabc.mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, t
 	if(verbose)		
 		cat(paste("\nsim.mean",sim.mean,"sd sim=",sim.sd,"sd sim long=",tmp,"\n Free ABC parameters calibrated to m=",sim.n,"tau.u=",abc.param["tau.u"],"annealed tau.u=",tau.u))	
 	if(plot)
-		tmp		<- nabc.mutost.calibrate.tolerances.getkl(obs.n, obs.sd, sim.n, sd(sim), mx.pw, alpha, calibrate.tau.u=FALSE, tau.u=abc.param["tau.u"], debug=0, plot=TRUE, legend.title=legend.txt)
+		tmp		<- mutost.calibrate.tolerances.getkl(obs.n, obs.sd, sim.n, sd(sim), mx.pw, alpha, calibrate.tau.u=FALSE, tau.u=abc.param["tau.u"], debug=0, plot=TRUE, legend.title=legend.txt)
 
 	tmp			<- c(	sqrt(sim.n)*(sim.mean-obs.mean-tau.l) / sim.sd,			#[1]	T-	test statistic for -tau (lower test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
 		sqrt(sim.n)*(sim.mean-obs.mean-tau.u) / sim.sd,			#[2]	T+	test statistic for tau (upper test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
@@ -578,7 +581,7 @@ nabc.mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, t
 		sim.n-1,												#[4] 	degrees of freedom
 		sim.sd/sqrt(sim.n),										#[5]	estimate of the std dev of the test statistic is simply the std dev in the sample whose sample size is > 1 divided by that sample size
 		sim.sd )												#[6]  	standard deviation of the sample
-	tost.ans	<-	nabc.generic.tost(tmp, tau.l, tau.u, alpha, tost.distr="t")
+	tost.ans	<-	generic.tost(tmp, tau.l, tau.u, alpha, tost.distr="t")
 	#print("")
 	#print(tost.ans)
 
@@ -586,184 +589,12 @@ nabc.mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, t
 	ans[c("tl","tr","nsim")]	<- c(tau.l,tau.u,sim.n)
 	ans[c("lkl","pval")]<-  tost.ans[c("lkl","ass.pval")]
 	ans[c("al","ar")]	<- 	c(0,alpha)								
-	#ans["mx.pow"]		<-	nabc.mutost.pow(0, tmp[4], tmp[5], tau.u,  alpha)
-	ans["mx.pow"]		<-	nabc.mutost.pow(0, tmp[4], tmp[5], abc.param["tau.u"],  alpha)		#debugging	
+	#ans["mx.pow"]		<-	mutost.pow(0, tmp[4], tmp[5], tau.u,  alpha)
+	ans["mx.pow"]		<-	mutost.pow(0, tmp[4], tmp[5], abc.param["tau.u"],  alpha)		#debugging	
 	ans["link.mc.sim"]	<- 	sim.mean
 	ans["link.mc.obs"]	<- 	obs.mean
 	ans["rho.mc"]		<- 	sim.mean - obs.mean
-	ans["rho.pow"]		<-	nabc.mutost.pow(ans["rho.mc"], tmp[4], tmp[5], tau.u, alpha )
+	ans["rho.pow"]		<-	mutost.pow(ans["rho.mc"], tmp[4], tmp[5], tau.u, alpha )
 	if(verbose){	cat("\n"); print(ans)	}
-	ans
-}
-#------------------------------------------------------------------------------------------------------------------------
-nabc.mutost <- function(sim, obs, args= NA, verbose= FALSE, alpha= 0, tau.u= 0, tau.l= -tau.u, plot= FALSE, xlab= NA, nbreaks= 40, normal.test= "sf.test")
-{
-	#verbose<- 1
-	ans<- NABC.DEFAULT.ANS
-	#compute two sample t-test on either z-scores or untransformed data points
-	if(any(is.na(sim)))	
-		stop("nabc.mutost: error at 1a")
-	if(any(is.na(obs)))	
-		stop("nabc.mutost: error at 1b")
-	#if not missing, arguments 'args' always overwrite 'alpha' and 'nc'
-	#expect args string of the form studenttXXX/beta/non-centrality
-	if(!is.na(args))
-	{
-		args<- strsplit(args,'/')[[1]]
-		if(length(args)==4)
-		{
-			standardize<- as.numeric( args[2] )
-			tau.u<- as.numeric( args[3] )
-			tau.l<- -as.numeric( args[3] )
-			alpha<- as.numeric( args[4] )
-		}
-		else if(length(args)==5)
-		{
-			standardize<- as.numeric( args[2] )
-			tau.l<-  as.numeric( args[3] )
-			tau.u<- as.numeric( args[4] )
-			alpha<- as.numeric( args[5] )
-		}
-		else
-			stop("nabc.mutost: error at 1c")
-		args<- args[1]
-	}
-#print(standardize)
-	if(!standardize%in%c(0,1))	
-		stop("nabc.mutost: error at 1e")
-	if(alpha<0 || alpha>1)		
-		stop("nabc.mutost: error at 1f")
-	if(tau.u<0 || tau.l>0)		
-		stop("nabc.mutost: error at 1g")
-#print(standardize)
-#standardize<- 0
-	if(length(sim)>3)		
-		tmp<- sim
-	else 
-		tmp<- obs
-	ans["pfam.pval"]<-	abccheck.normal(tmp,normal.test)
-
-	if(!any(diff(sim)>0))
-	{	
-		length(sim)<- 1
-		if(length(obs)<2)	
-			return(ans)
-	}
-	moments<- matrix(NA, 2, 3)	#store number of samples, mean and var in columns
-	moments[, 1]<- c( length(sim), length(obs) )	
-	if(standardize==1 && moments[1,1]>2 && moments[2,1]>2)
-	{	
-		sim<- mean(sim)
-		moments[1,1]<- 1
-		#moments[, 3]<- c(sd(sim), sd(obs))										#second attempt did not work - too much information lost
-		#sim<- sim * moments[2,3]/moments[1,3]		
-		##sim<- sim / ifelse(moments[1,1]>2,	moments[1,3], moments[2,3])		#first attempt did not work - essentially testing mu/sigma which is more difficult
-		##obs<- obs / ifelse(moments[2,1]>2,	moments[2,3], moments[1,3])
-	}
-	if(all(moments[,1]<2))	
-		stop("nabc.mutost: error at 3a")
-	#if(nc!=0)		stop("get.dist.studentt: non-centrality not yet implemented")
-	#convert tau from log(obs/sim)<tau to obs-sim<tau	
-	moments[,2]<- c( mean(sim), mean(obs) )
-	moments[,3]<- c( var(sim), var(obs) )
-	if(moments[1,1]>2 && moments[2,1]>2 && standardize==0)						#use unequal sample size, unequal variance
-	{
-		tmp<- moments[,3]/moments[,1]												#temporarily store 		var(sim)/sim.n, var(obs)/obs.n
-		tmp<- c(	(diff( moments[, 2] )-tau.l) / sqrt( sum(tmp) ),				#[1] t test statistic	 for -tau (lower test)
-			(diff( moments[, 2] )-tau.u) / sqrt( sum(tmp) ),			#[2] t test statistic	 for tau (upper test)
-			diff( moments[, 2] ) / sqrt( sum(tmp) ),					#[3] t test statistic	 for equality
-			sum(tmp)^2 / (		tmp[2]^2/(moments[2,1]-1)	+ tmp[1]^2/(moments[1,1]-1)		),				#[4] degrees of freedom: Welch Satterthwaite approximation
-			sqrt( sum(tmp) ),											#[5] estimate of standard deviation of the test statistic
-			sqrt(sum(moments[,3]*(moments[,1]-1))/(sum(moments[,1])-2))	#[6] common std dev, assuming equal variance. only for power calculations
-			)
-	}
-	else if(moments[1,1]>2 && moments[2,1]>2 && standardize==1)					#estimate common std dev as usual, then use unequal sample size, equal variance
-	{
-		tmp<- sqrt(sum(moments[,3]*(moments[,1]-1))/(sum(moments[,1])-2)*sum(1/moments[,1]))		#std dev of test statistic
-		tmp<- c(	(diff( moments[, 2] )-tau.l) / tmp,								#[1] t test statistic	 for -tau (lower test)
-			(diff( moments[, 2] )-tau.u) / tmp,							#[2] t test statistic	 for tau (upper test)
-			diff( moments[, 2] ) / tmp,									#[3] t test statistic	 for equality
-			sum(moments[,1])-2,											#[4] degrees of freedom
-			tmp,														#[5] estimate of standard deviation of the test statistic
-			sqrt(sum(moments[,3]*(moments[,1]-1))/(sum(moments[,1])-2))	#[6] estimate of standard deviation of the pooled sample
-			)
-	}
-	else if(moments[1,1]==1 || moments[2,1]==1)					#set common std dev to the std dev in the sample whose sample size is > 1, and use unequal sample size, pooled variance
-	{															
-		#this is the same, if standardized or not
-		tmp<- !is.na(moments[,3])
-		tmp<- c(	(diff( moments[, 2] )-tau.l) / sqrt( moments[tmp,3] / moments[tmp,1] ),			#[1]	test statistic for -tau (lower test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
-			(diff( moments[, 2] )-tau.u) / sqrt( moments[tmp,3] / moments[tmp,1] ),		#[2]	test statistic for tau (upper test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
-			diff( moments[, 2] ) / sqrt( moments[tmp,3] / moments[tmp,1] ),				#[3]	test statistic for equality; estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
-			moments[tmp,1]-1,															#[4] 	degrees of freedom
-			sqrt( moments[tmp,3]/moments[tmp,1] ),										#[5]	estimate of the std dev of the test statistic is simply the std dev in the sample whose sample size is > 1 divided by that sample size
-			sqrt( moments[tmp,3] )														#[6]  	standard deviation of the sample
-			)
-		args<- paste(args,".equalvariance",sep='')
-	}
-	else	stop("nabc.mutost: error at 3b")
-	#cat( paste( "\nloc.cdf= ",pnorm( tau / ( tmp[6] * sqrt(2) ) ) - 0.5 ) )
-
-	which.not.reject<- which( c(pt( tmp[1], tmp[4] )<1-alpha, pt( tmp[2], tmp[4] )>alpha))
-	if(length(which.not.reject)%in%c(0,2))		#both upper and lower test statistics indicate mean difference < -tau and mean difference > tau  	OR 		mean difference >= -tau and mean difference <= tau
-	{
-		#figure out which one is closer to boundary, and schedule that this one is reported
-		which.not.reject<- which.min(abs(c(1-alpha-pt( tmp[1], tmp[4] ), pt( tmp[2], tmp[4] )-alpha )))
-	}
-
-
-	#POWER[[length(POWER)+1]]<<- c(tau.l, tau.u, tmp[6], sum(moments[,1]), tmp[4], tmp[5] )	#PowerTOST:::.power.TOST(alpha=alpha, tau.l, tau.u, seq(tau.l, tau.u, length.out= 1e3), tmp[6], sum(moments[,1]), tmp[4], bk = 4)	
-
-	#print(which.not.reject)
-	ans[c("lkl","pval","error")]<- c(dt( tmp[3], tmp[4]), pt( tmp[3], tmp[4] ),ifelse(which.not.reject==1, 1-pt( tmp[which.not.reject], tmp[4] ),pt( tmp[which.not.reject], tmp[4] )))
-	ans[c("al","ar")]	<- 	c(min(tau.l/tmp[5]+qt( 1-alpha, tmp[4] ),0), max(0, tau.u/tmp[5]+qt( alpha, tmp[4] ))		)		#'ar' is upper boundary point c+ of TOST for the traditional two-sided t-test statistic T= (bar(x)-bar(y)) / s, and likewise 'al' for c-								
-	ans["mx.pow"]		<-	1-diff(pt( ans[c("al","ar")], tmp[4]))	#the corresponding alpha quantile of the traditional t-test with acceptance region [c-,c+] and above s, df						
-	ans["pval"]			<-	( ans["pval"] - ans["mx.pow"]/2 ) / ( 1 - ans["mx.pow"] )							#rescaled p-value that is expected to follow U(0,1) under the point null hypothesis
-	ans[c("cil","cir")]	<-	c(0, alpha)
-	ans["mx.pow"]		<-	nabc.mutost.pow(0, tmp[4], tau.u, tmp[5], alpha) 				
-	ans["link.mc.sim"]	<- 	moments[1,2]
-	ans["link.mc.obs"]	<- 	moments[2,2]
-	ans["rho.mc"]		<- 	diff(moments[,2]) / tmp[5]
-	#ans["al"]<- tmp[3]
-
-	if(verbose)	
-		cat(paste(paste("\n{",args,"<-list(sim.mean=",moments[1, 2] ,", obs.mean=",moments[2,2] ,", sim.n=",moments[1, 1] ,", obs.n=",moments[2,1] ,", per.capita.s=",tmp[6],", df=",tmp[4],", alpha=",alpha,", tau.l=",tau.l,", tau.u=",tau.u,", tl=",tmp[1],", tu=",tmp[2],", cil=", tau.l/tmp[5]+qt( 1-alpha, tmp[4] ),", ciu=", tau.u/tmp[5]-qt( 1-alpha, tmp[4] ),", ",sep=''),paste(names(ans), ans, collapse=', ', sep='='),")}",sep=''))
-	if(plot)
-	{
-		breaks<-  range(c(sim,obs))
-		breaks[1]<- breaks[1]*ifelse(breaks[1]<0, 1.2, 0.8)
-		breaks[2]<- breaks[2]*ifelse(breaks[2]>0, 1.2, 0.8)
-		breaks<- seq(from= breaks[1], to= breaks[2], by= (breaks[2]-breaks[1])/nbreaks)
-		xlim<- range(c(sim,obs))
-		if(moments[1,1]>2 && moments[2,1]>2)
-		{
-			sim.h<- hist(sim,	breaks= breaks,	plot= F)
-			obs.h<- hist(obs,	breaks= breaks,	plot= F)
-		}
-		else
-		{
-			if(which(!is.na(moments[,3]))==1)			#1 if sim has > 1 sample size, 2 if obs has > 1 sample size
-			sim.h<-obs.h<- hist(sim,	breaks= breaks,	plot= F)
-			else
-				sim.h<-obs.h<- hist(obs,	breaks= breaks,	plot= F)
-		}
-		ylim<- c(0,max(c(obs.h$intensities, sim.h$intensities),na.rm=TRUE)*1.1)
-		plot(1,1,xlab=xlab, xlim= xlim,type='n',ylim=ylim,ylab="probability",main="")
-		if(moments[1,1]>2 && moments[2,1]>2)
-		{
-			plot(sim.h,freq=FALSE,add=TRUE,col=my.fade.col("#0080FFFF",0.6),border=my.fade.col("#0080FFFF",0.6))
-			lines(seq( xlim[1], xlim[2], by= diff(xlim)/100 ), dnorm( 	seq( xlim[1], xlim[2], by= diff(xlim)/100 ), moments[1,2],  sqrt(moments[1,3])), col=my.fade.col("#0080FFFF",0.6) )
-			points( sim, rep(ylim[2],length(sim)),col=my.fade.col("#0080FFFF",0.6),pch=20,cex=2.5 )
-			points( obs, rep(ylim[2],length(obs)),pch=2,cex=1.5 )
-		}
-		plot(obs.h,freq=FALSE,add=TRUE)
-		if(moments[1,1]>2 && moments[2,1]>2)
-			lines(seq( xlim[1], xlim[2], by= diff(xlim)/100 ), dnorm( 	seq( xlim[1], xlim[2], by= diff(xlim)/100 ), moments[2,2],  sqrt(moments[2,3])) )
-		else
-		{
-			lines(seq( xlim[1], xlim[2], by= diff(xlim)/100 ), dnorm( 	seq( xlim[1], xlim[2], by= diff(xlim)/100 ), moments[!is.na(moments[,3]),2],  tmp[5]) )
-			abline(v= moments[is.na(moments[,3]),2], col=my.fade.col("#0080FFFF",0.6))
-		}
-	}
 	ans
 }
