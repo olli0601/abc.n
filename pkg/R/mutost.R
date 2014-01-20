@@ -9,6 +9,7 @@
 #' @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
 #' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived (numerically) from the other.
 #' @export
+#' @example example/ex.mutost.pow.R
 #' 	
 mutost.pow <- function(rho, df, s.of.T, tau.u, alpha, norm=1, support=c(-Inf,Inf), log=FALSE)
 {	
@@ -134,12 +135,13 @@ mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), lo
 #' @import ggplot2 reshape2
 #' @examples
 #' 
-#' mutost.calibrate.tolerances.getkl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9,
-#' alpha=0.01, calibrate.tau.u=TRUE, tau.u=1, plot=TRUE)
+#' mutost.calibrate.tolerances.getkl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9, alpha=0.01, calibrate.tau.u=TRUE, tau.u=1, plot=TRUE)
 #'
 mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, plot = F, legend.title='') 
 {
-	stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, n.of.y>=n.of.x, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0)
+	
+
+	stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0)
 
 	if (!debug)		#ALL IN C 
 	{						
@@ -235,14 +237,13 @@ mutost.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx
 #' 	\item{n.of.y}{number of simulated summary values}		
 #' 	\item{tau.u}{upper tolerance of the equivalence region}
 #' 	\item{pw.cmx}{actual maximum power associated with the equivalence region}
-#' @examples \dontrun{
-#'
-#'}
+#' @example example/ex.mutost.calibrate.R
 mutost.calibrate<- function(KL_args, max.it = 100, debug = 0, plot = FALSE, plot_debug = FALSE, verbose=FALSE) 
 {	
+
 	stopifnot(max.it > 0)
 	stopifnot(all(c("n.of.x", "s.of.x", "n.of.y", "s.of.y", "mx.pw", "alpha", "tau.u", "pow_scale") %in% names(KL_args)))
-	with(KL_args, stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, n.of.y>=n.of.x, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0))
+	with(KL_args, stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0))
 	#print(KL_args)
 	
 	#see if power function "too tight" for yn=xn -> as a marker we use that KL(yn-1) < KL(yn). 
@@ -251,14 +252,18 @@ mutost.calibrate<- function(KL_args, max.it = 100, debug = 0, plot = FALSE, plot
 	KL_divergence			<-  "mutost.calibrate.tolerances.getkl"		
 	KL_args$calibrate.tau.u <- T
 	KL_args$plot 			<- F			
-	KL.of.yn 				<- do.call(KL_divergence, KL_args)["KL_div"]	
+	KL.of.yn 				<- do.call(KL_divergence, KL_args)["KL_div"]
+
+	
 	n.of.y 					<- KL_args$n.of.y	
 	KL_args$n.of.y 			<- n.of.y - 1
 	KL.of.yn_m1 			<- do.call(KL_divergence, KL_args)["KL_div"]		
 	decrease_n.of.y			<- as.logical(KL.of.yn_m1 < KL.of.yn)
 	if(verbose)	
 		cat(paste("\ninitial m=",n.of.y, "KL(m)=",KL.of.yn, "KL(m-1)=",KL.of.yn_m1))
-	KL_args$n.of.y 			<- n.of.y
+	KL_args$n.of.y 			<- n.of.y	
+	
+	
 	if (!debug)		#all in C 
 	{		
 		if(!decrease_n.of.y)		#case power function not "too tight", adjust yn for fixed mx.pw
@@ -282,7 +287,7 @@ mutost.calibrate<- function(KL_args, max.it = 100, debug = 0, plot = FALSE, plot
 			#case power function not "too tight", adjust yn for fixed mx.pw 
 			#we have KL(yn-1)>KL(yn), ie KL decreases as yn-1 is incremented. Find upper bound yn.ub such that KL first increases again. 						
 			curr.it 		<- max.it
-			yn.ub 			<- 2 * (n.of.y - 1)
+			yn.ub 			<- 2 * (KL_args$n.of.y - 1)
 			KL_args$n.of.y 	<- yn.ub
 			KL.of.yn_ub 	<- do.call(KL_divergence, KL_args)["KL_div"]
 			while (KL.of.yn_ub < KL.of.yn && curr.it > 0) 
@@ -462,12 +467,7 @@ mutost.calibrate.tolerances<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.
 #' \item{nsim}{number of simulated summary values}
 #' \item{mx.pow}{maximum power at the point of equality}
 #' \item{rho.pow}{power at the point rho.mc}
-#' @examples \dontrun{tau.u<- 0.5; tau.l<- -tau.u; alpha<- 0.01; xn<- yn<- 60; xmu<- ymu<- 0.5; xsigma2<- ysigma2<- 2
-#'	args<- paste("mutost",1,tau.u,alpha,sep='/')
-#'	x<- rnorm(xn,xmu,sd=sqrt(xsigma2))
-#'	y<- rnorm(yn,ymu,sd=sqrt(ysigma2))
-#'	mutost.onesample(y, x, args= args, verbose= 0)
-#' }
+#' @example example/ex.mutost.R
 mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, sd.tolerance=0.05, normal.test= "sf.test", plot=0, legend.txt="")
 {
 	ans <- c(0, 50, 1, NA, NA, NA, 0, 0, 0, 0, 0, 1, 1, NA, NA, NA)
@@ -523,7 +523,7 @@ mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, tau.l=
 
 	args		<- args[1]
 	if(verbose)	
-		cat(paste("\ninput call=",args,"annealing=",annealing,"obs.sd=",obs.sd,"tau.u.ub=",tau.u.ub,"alpha=",alpha))
+		cat(paste("\ninput call:",args,"annealing=",annealing,"obs.sd=",obs.sd,"tau.u.ub=",tau.u.ub,"alpha=",alpha))
 	
 	# mx.pw		<- 0.9
 	
