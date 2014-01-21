@@ -1,10 +1,10 @@
 CWD= $$(pwd)
 
 all:
-	@echo "*********************************************** "
-	@echo "********* MAKE DOCUMENTATION ****************** "
-	@echo "*********************************************** "	
-	make roxygen
+	# @echo "*********************************************** "
+	# @echo "********* MAKE DOCUMENTATION ****************** "
+	# @echo "*********************************************** "	
+	# make roxygen
 	@echo "*********************************************** "
 	@echo "********* BUILD SOURCE FILES ****************** "
 	@echo "*********************************************** "		
@@ -14,9 +14,9 @@ all:
 	@echo "*********************************************** "			
 	make cleanup
 	
-make roxygen:
-	echo $(CWD)
-	../misc/nabc.startme.R -exe=ROXYGENIZE -code.home=$(CWD)/..
+# make roxygen:
+# 	echo $(CWD)
+# 	../misc/nabc.startme.R -exe=ROXYGENIZE -code.home=$(CWD)/..
 	
 make cleanup:
 	rm -f *.o		
