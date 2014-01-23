@@ -26,7 +26,8 @@ inline void postIfError(const char* format, ...)
 	vprintf(format, args);
 	va_end(args);
 	fflush(stdout);
- 	std::exit(EXIT_FAILURE);
+	ERROR_ON(1,"exit from postIfError");
+ 	// std::exit(EXIT_FAILURE);
  	//throw std::runtime_error(nabcGlobals::BUFFER);
 }
 
