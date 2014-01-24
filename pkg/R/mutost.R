@@ -3,6 +3,10 @@
 #' Compute the density of the (possible truncated) power of the equivalence test for population means of normal summary values
 #' @inheritParams mutost.calibrate.tolerances.getkl
 #' @param rho vector of quantile
+#' @param df		degrees of freedom
+#' @param s.of.T	standard deviation of the test statistic
+#' @param tau.u		upper tolerance of equivalence region
+#' @param alpha		level of equivalence test
 #' @param norm normalization constant for the truncated power function.
 #' @param support vector of dimension 2. Support of the truncated power function.
 #' @param log logical; if \code{TRUE}, densities d are given as log(d). 

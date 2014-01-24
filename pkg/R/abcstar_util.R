@@ -48,6 +48,7 @@ g = function(...) {
 #' @param x 			summary values
 #' @param normal.test 	name of function with which normality of the summary values is tested
 #' @return p value of the test
+#' @import nortest
 #' @examples abccheck.normal(rnorm(1e4),"shapiro.test")
 abccheck.normal<- function(x,normal.test)
 {
@@ -79,7 +80,6 @@ package.dumpframes<- function()
 #' @import roxygen2
 package.roxygenize<- function()
 {
-	require(roxygen2)		
 	roxygenize(CODE.HOME)
 }
 ###############################################################################

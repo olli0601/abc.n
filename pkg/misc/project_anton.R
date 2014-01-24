@@ -983,7 +983,7 @@ main <- function() {
 	# dev_mode()
 	NABC_PKG <- ifelse(USE_CLUSTER,"/users/ecologie/camacho/GitProjects/abc.n/pkg","/Users/Tonton/work/projects/abc_star/git/abc.n/pkg")
 	# setwd(NABC_PKG)
-	# roxygenize(NABC_PKG)
+	roxygenize(NABC_PKG)
 	load_all(NABC_PKG)
 
 	#source Olli's prjct:
@@ -1108,7 +1108,7 @@ main <- function() {
 	}
 }
 
-main()
+# main()
 
 
 

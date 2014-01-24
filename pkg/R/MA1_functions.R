@@ -178,6 +178,7 @@ ma.add.contour<- function(x,y,xlim=NA,ylim=NA, nlevels=5, width.infl=0.25, grids
 #' @param return_eps_0	logical. If \code{return_eps_0==TRUE}, u0 used to create the time series is returned
 #' @return MA(1) time series
 #' @export 
+#' @import data.table
 ma.get.pseudo.data<- function(n, mu, a, sd, leave.out.a=2, leave.out.s2=1, verbose=0, tol=2e-3, return_eps_0=FALSE )
 {
 	verbose				<- 1

@@ -43,7 +43,7 @@ void oprinta(double const * const start,const int &n,std::ostream& os)
 
 void oseq_nout(const double &a, const double &b, const int &n, double * const ans)
 {
-	FAIL_ON(n<2,"oseq_nout: error at 1a %c");
+	ERROR_ON(n<2,"oseq_nout: error at 1a ");
 	double *xans=NULL, *yans=NULL;
 	int xn= n-1;
 	const double by= (b-a)/xn;
@@ -55,7 +55,7 @@ void oseq_nout(const double &a, const double &b, const int &n, double * const an
 
 void ovar(const int &n, double * const x, double * const fx, const double &mean, double &var)
 {
-	FAIL_ON(n<1,"ovar: error at 1a %c");
+	ERROR_ON(n<1,"ovar: error at 1a ");
 	int xn= n;
 	double *xx= x, *xfx= fx, norm=0;
     

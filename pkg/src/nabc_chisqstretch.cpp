@@ -52,21 +52,21 @@ void abcScaledChiSq_criticalregion(	const double scale, const double df, const d
 
 SEXP abcScaledChiSq(SEXP args)
 {
-	FAIL_ON(! Rf_isReal(args) ,"abcScaledChiSqu: error at 1a %c");
+	ERROR_ON(! Rf_isReal(args) ,"abcScaledChiSqu: error at 1a");
 	double scale=0, df=0, tl= 1, tu= 1, alpha= 0.01, tol= 1e-10, maxit= 100, incit= 0.05;
 	double *xans= NULL;
 	SEXP ans;
 
 	//convert SEXP into C
-	FAIL_ON(length(args)!=8,"abcScaledChiSqu: error at 1b %c");
-	FAIL_ON((scale= REAL(args)[0])<3,"abcScaledChiSqu: error at 1c %c");
-	FAIL_ON((df= REAL(args)[1])<2,"abcScaledChiSqu: error at 1d %c");
+	ERROR_ON(length(args)!=8,"abcScaledChiSqu: error at 1b ");
+	ERROR_ON((scale= REAL(args)[0])<3,"abcScaledChiSqu: error at 1c ");
+	ERROR_ON((df= REAL(args)[1])<2,"abcScaledChiSqu: error at 1d ");
 	tl= REAL(args)[2];
 	tu= REAL(args)[3];
-	//FAIL_ON((tl= REAL(args)[2])>1 || tl<0,"abcScaledChiSqu: error at 1e %c");
-	//FAIL_ON((tu= REAL(args)[3])<1,"abcScaledChiSqu: error at 1f %c");
-	FAIL_ON(tl>=tu,"abcScaledChiSqu: error at 1f %c");
-	FAIL_ON((alpha= REAL(args)[4])>1 || alpha<0,"abcScaledChiSqu: error at 1g %c");
+	//ERROR_ON((tl= REAL(args)[2])>1 || tl<0,"abcScaledChiSqu: error at 1e ");
+	//ERROR_ON((tu= REAL(args)[3])<1,"abcScaledChiSqu: error at 1f ");
+	ERROR_ON(tl>=tu,"abcScaledChiSqu: error at 1f ");
+	ERROR_ON((alpha= REAL(args)[4])>1 || alpha<0,"abcScaledChiSqu: error at 1g ");
 	tol= REAL(args)[5];
 	maxit= REAL(args)[6];
 	incit= REAL(args)[7];

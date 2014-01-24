@@ -35,7 +35,8 @@ kl.integrand<-function(x, dP, dQ, P_arg, Q_arg)
 #' @param nbin	number of bins for both densities
 #' @return KL divergence
 #' @export
-kl.2D<- function(df1, df2, nbin=100)
+#' @import data.table
+kl.2D <- function(df1, df2, nbin=100)
 {
 	df1.lim		<- df1[, lapply(.SD, range)]
 	df2.lim		<- df2[, lapply(.SD, range)]

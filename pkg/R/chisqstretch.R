@@ -56,7 +56,6 @@ chisqstretch.pow.norm<- function(scale, df, c.l, c.u, trafo= 1, support=c(0,Inf)
 #'
 chisqstretch.sulkl<- function(rho, n.of.x, s.of.x, trafo=(n.of.x-1)/n.of.x*s.of.x*s.of.x, norm = 1, support= c(0,Inf), log=FALSE) 
 {
-	require(pscl)
 	alpha	<- (n.of.x-2)/2	 
 	beta	<- s.of.x^2*(n.of.x-1)/2
 	ans 				<- rho
@@ -135,8 +134,6 @@ chisqstretch.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, scale, df, t
 	}
 	if (plot) 
 	{
-		library(ggplot2)
-		library(reshape2)
 		rho_lkl 			<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
 		lkl					<- chisqstretch.sulkl(rho_lkl, n.of.x, s.of.x, trafo= (n.of.x-1)/n.of.x*s.of.x*s.of.x, norm=lkl_norm, support=lkl_support)
 		df_lkl 				<- data.frame(x = rho_lkl, yes = lkl, no = lkl*lkl_norm )

@@ -8,6 +8,14 @@ mutost.pow(rho, df, s.of.T, tau.u, alpha, norm = 1, support = c(-Inf, Inf),
 \arguments{
   \item{rho}{vector of quantile}
 
+  \item{df}{degrees of freedom}
+
+  \item{s.of.T}{standard deviation of the test statistic}
+
+  \item{tau.u}{upper tolerance of equivalence region}
+
+  \item{alpha}{level of equivalence test}
+
   \item{norm}{normalization constant for the truncated
   power function.}
 
@@ -16,13 +24,6 @@ mutost.pow(rho, df, s.of.T, tau.u, alpha, norm = 1, support = c(-Inf, Inf),
 
   \item{log}{logical; if \code{TRUE}, densities d are given
   as log(d).}
-
-  \item{tau.u}{upper tolerance of the equivalence region.
-  If \code{calibrate.tau.u==TRUE}, it's just a guess on an
-  upper bound on the upper tolerance of the equivalence
-  region.}
-
-  \item{alpha}{level of the equivalence test}
 }
 \description{
 Compute the density of the (possible truncated) power of

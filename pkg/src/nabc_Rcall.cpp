@@ -3,18 +3,18 @@
 /*
 SEXP abcMuTOST_taulowup_var(SEXP args)
 {
-	FAIL_ON(!Rf_isReal(args) ,"abcMuTOST_tau_taulowup_var: error at 1a %c");
+	ERROR_ON(!Rf_isReal(args) ,"abcMuTOST_tau_taulowup_var: error at 1a ");
 	double sLkl=0, df=0, sT= 1, tu_ub= 1, alpha= 0.01, rho_eq=0, tol= 1e-10, maxit= 100;
 	double *xans= NULL;
 	SEXP ans;
     
 	//convert SEXP into C
-	FAIL_ON(length(args)!=8,					"abcMuTOST_tau_taulowup_var: error at 1b %c");
-	FAIL_ON((sLkl= REAL(args)[0])<=0,			"abcMuTOST_tau_taulowup_var: error at 1c %c");
-	FAIL_ON((df= REAL(args)[1])<2,				"abcMuTOST_tau_taulowup_var: error at 1d %c");
-	FAIL_ON((sT= REAL(args)[2])<=0,				"abcMuTOST_tau_taulowup_var: error at 1e %c");
-	FAIL_ON((tu_ub= REAL(args)[3])<0,			"abcMuTOST_tau_taulowup_var: error at 1f %c");
-	FAIL_ON((alpha= REAL(args)[4])>1 || alpha<0,"abcMuTOST_tau_taulowup_var: error at 1g %c");
+	ERROR_ON(length(args)!=8,					"abcMuTOST_tau_taulowup_var: error at 1b ");
+	ERROR_ON((sLkl= REAL(args)[0])<=0,			"abcMuTOST_tau_taulowup_var: error at 1c ");
+	ERROR_ON((df= REAL(args)[1])<2,				"abcMuTOST_tau_taulowup_var: error at 1d ");
+	ERROR_ON((sT= REAL(args)[2])<=0,				"abcMuTOST_tau_taulowup_var: error at 1e ");
+	ERROR_ON((tu_ub= REAL(args)[3])<0,			"abcMuTOST_tau_taulowup_var: error at 1f ");
+	ERROR_ON((alpha= REAL(args)[4])>1 || alpha<0,"abcMuTOST_tau_taulowup_var: error at 1g ");
 	rho_eq= REAL(args)[5];
 	tol= REAL(args)[6];
 	maxit= REAL(args)[7];
@@ -32,19 +32,19 @@ SEXP abcMuTOST_taulowup_var(SEXP args)
 /*
 SEXP abcMuTOST_nsim(SEXP args)
 {
-	FAIL_ON(!Rf_isReal(args) ,"abcMuTOST_nsim: error at 1a %c");
+	ERROR_ON(!Rf_isReal(args) ,"abcMuTOST_nsim: error at 1a ");
 	double nobs= 1, sLkl=0, mxpw=0, sSim=0, tu_ub= 1, alpha= 0.01, rho_eq=0, tol= 1e-10, maxit= 100;
 	double *xans= NULL;
 	SEXP ans;
     
 	//convert SEXP into C
-	FAIL_ON(length(args)!=9,					"abcMuTOST_nsim: error at 1b %c");
-	FAIL_ON((nobs= REAL(args)[0])<=0,			"abcMuTOST_nsim: error at 1c %c");
-	FAIL_ON((sLkl= REAL(args)[1])<=0,			"abcMuTOST_nsim: error at 1d %c");
-	FAIL_ON((mxpw= REAL(args)[2])<=0 || mxpw>1,	"abcMuTOST_nsim: error at 1e %c");
-	FAIL_ON((sSim= REAL(args)[3])<=0,			"abcMuTOST_nsim: error at 1f %c");
-	FAIL_ON((tu_ub= REAL(args)[4])<0,			"abcMuTOST_nsim: error at 1f %c");
-	FAIL_ON((alpha= REAL(args)[5])>1 || alpha<0,"abcMuTOST_nsim: error at 1g %c");
+	ERROR_ON(length(args)!=9,					"abcMuTOST_nsim: error at 1b ");
+	ERROR_ON((nobs= REAL(args)[0])<=0,			"abcMuTOST_nsim: error at 1c ");
+	ERROR_ON((sLkl= REAL(args)[1])<=0,			"abcMuTOST_nsim: error at 1d ");
+	ERROR_ON((mxpw= REAL(args)[2])<=0 || mxpw>1,	"abcMuTOST_nsim: error at 1e ");
+	ERROR_ON((sSim= REAL(args)[3])<=0,			"abcMuTOST_nsim: error at 1f ");
+	ERROR_ON((tu_ub= REAL(args)[4])<0,			"abcMuTOST_nsim: error at 1f ");
+	ERROR_ON((alpha= REAL(args)[5])>1 || alpha<0,"abcMuTOST_nsim: error at 1g ");
 	rho_eq= REAL(args)[6];
 	tol= REAL(args)[7];
 	maxit= REAL(args)[8];
@@ -62,17 +62,17 @@ SEXP abcMuTOST_nsim(SEXP args)
 
 SEXP abcIntersectLevelSets(SEXP m1, SEXP m2, SEXP s)
 {
-	FAIL_ON(! Rf_isMatrix(m1) ,"abcIntersectLevelSets: error at 1a %c");
-	FAIL_ON(! Rf_isMatrix(m2) ,"abcIntersectLevelSets: error at 1b %c");
-	FAIL_ON(! Rf_isReal(s) ,"abcIntersectLevelSets: error at 1c %c");
+	ERROR_ON(! Rf_isMatrix(m1) ,"abcIntersectLevelSets: error at 1a ");
+	ERROR_ON(! Rf_isMatrix(m2) ,"abcIntersectLevelSets: error at 1b ");
+	ERROR_ON(! Rf_isReal(s) ,"abcIntersectLevelSets: error at 1c ");
     
 	int i,j1,j2;
 	int nr1= Rf_nrows(m1), nr2= Rf_nrows(m2), nc1= Rf_ncols(m1), nc2= Rf_ncols(m2), ns= Rf_length(s);
 	double tmp, *xd= NULL, *ym2=NULL, *xm1= NULL, *xm2= NULL, *xs= NULL, *is=NULL;
 	SEXP ans;
     
-	FAIL_ON(nr1!=nr2,"abcIntersectLevelSets: error at 2a %c");
-	FAIL_ON(nr1!=ns,"abcIntersectLevelSets: error at 2b %c");
+	ERROR_ON(nr1!=nr2,"abcIntersectLevelSets: error at 2a ");
+	ERROR_ON(nr1!=ns,"abcIntersectLevelSets: error at 2b ");
     
 	PROTECT(ans=  Rf_allocMatrix(REALSXP, nc1, nc2));
 	for(i= nc1*nc2, xd= REAL(ans); 	i--;  *xd++= 0.);
