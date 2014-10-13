@@ -1,4 +1,4 @@
-#! /Library/Frameworks/R.framework/Versions/2.15/Resources/bin/Rscript
+#! /Library/Frameworks/R.framework/Versions/3.1/Resources/bin/Rscript
 ##
 ##	first line in shell script starts with #! and points to absolute path to Rscript
 ##	CHANGE  as needed
@@ -10,7 +10,7 @@
 # 	because the R files are re-loaded below
 #
 # usage from R:
-#> setwd("/Users/Oliver/git/abc.n/pkg")
+#> setwd("/Users/Oliver/git/abc.star")
 #> source("misc/nabc.startme.R")
 # usage from bash:
 #> misc/abc-n.startme.R --help
@@ -22,9 +22,9 @@ if(!any(args=='--args'))
 if(any(args=='--args'))
 	args<- args[-(1:match("--args", args)) ]
 ###############################################################################
-CODE.HOME	<<- "/Users/Oliver/git/abc.n/pkg"
-#CODE.HOME	<<- "/home/koelle/or7/utils/abc.n/pkg"
-#CODE.HOME	<<- "/work/or105/libs/abc.n/pkg"
+CODE.HOME	<<- "/Users/Oliver/git/abc.star"
+#CODE.HOME	<<- "/home/koelle/or7/utils/abc.star"
+#CODE.HOME	<<- "/work/or105/libs/abc.star"
 HOME		<<- "/Users/Oliver/workspace_sandbox/phylody"
 #HOME		<<- "/home/koelle/or7/phylody"
 #HOME		<<- "/work/or105/phylody"
