@@ -434,7 +434,7 @@ mutost.calibrate.tolerances<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.
 	}
 	if(max.it==0)	warning("mutost.calibrate.tolerances: reached max.it")
 #	stop("HERE")
-		c(-tau.up,tau.up,curr.mx.pw,abs(error))
+	c(-tau.up,tau.up,curr.mx.pw,abs(error))
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' Exact TOST for location equivalence.
