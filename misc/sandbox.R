@@ -1,5 +1,3 @@
-NABC.DEFAULT.ANS<- {tmp<- c(0, 50, 1, NA, NA, NA, 0, 0, 0, 0, 0, 1, 1, 1, NA, NA, NA); names(tmp)<- c("lkl", "error", "pval","link.mc.obs","link.mc.sim", "rho.mc", "cil", "cir","tl","tr","al","ar","pfam.pval","ts.pval","nsim","mx.pow","rho.pow"); tmp}
-
 #------------------------------------------------------------------------------------------------------------------------
 #'Two sample TOST
 nabc.mutost <- function(sim, obs, args= NA, verbose= FALSE, alpha= 0, tau.u= 0, tau.l= -tau.u, plot= FALSE, xlab= NA, nbreaks= 40, normal.test= "sf.test")
