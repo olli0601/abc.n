@@ -2,6 +2,7 @@ yia.check.normality<- function()
 {
 	indir	<- '~/Dropbox (Personal)/abc/Ioannis_LondonSchool'
 	infile	<- '141003_ibmoutput.RData'
+	infile	<- 'Data.RData'
 	file	<- paste(indir, infile, sep='/')
 	z		<- load(file)
 	
