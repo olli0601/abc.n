@@ -28,6 +28,7 @@ chisqstretch.pow <- function(rho, scale, df, c.l, c.u, norm=1, trafo=1, support=
 }
 #------------------------------------------------------------------------------------------------------------------------
 #' @title Area under the \code{chi2} power function
+#' @export
 #' @description This function computes the area under the power function \code{chisqstretch.pow.norm}.
 #' @inheritParams chisqstretch.pow
 #' @seealso \code{\link{chisqstretch.pow}}
@@ -180,7 +181,7 @@ chisqstretch.calibrate.taulow<- function(tau.up, scale, df, alpha=0.01, rho.star
 	{
 		tmp							<- tmp-1
 		tau.low.lb					<- tau.low.lb/2
-		rej							<- .Call("abcScaledChiSq",	c(scale,df,tau.low.lb,tau.up,alpha,1e-10,100,0.05)	)
+		rej							<- .Call("abcScaledChiSq",	c(scale,df,tau.low.lb,tau.up,alpha,1e-10,max.it,0.05)	)
 		if(rej[4]>tol)	stop("compute tau.low.lb: rejection region does not have level alpha within tolerance")
 		pw							<- chisqstretch.pow(rho,scale,df,rej[1],rej[2])
 		c.rho.max					<- rho[ which.max(pw) ]
@@ -194,7 +195,7 @@ chisqstretch.calibrate.taulow<- function(tau.up, scale, df, alpha=0.01, rho.star
 		max.it	<- max.it-1
 		tau.low	<- (tau.low.lb + tau.low.ub)/2
 #print(c(tau.low, tau.up))
-		rej		<- .Call("abcScaledChiSq",	c(scale,df,tau.low,tau.up,alpha,1e-10,100,0.05)	)
+		rej		<- .Call("abcScaledChiSq",	c(scale,df,tau.low,tau.up,alpha,1e-10,max.it,0.05)	)
 		if(rej[4]>tol)	stop("compute tau.low: rejection region does not have level alpha within tolerance")
 		pw		<- chisqstretch.pow(rho,scale,df,rej[1],rej[2])
 #print( c(rho[ which.max(pw) ],pw[ which.max(pw) ], tau.low.lb, tau.low.ub,round(tau.low.lb,digits=10)==round(tau.low.ub,digits=10) ))	
@@ -328,4 +329,53 @@ chisqstretch.calibrate.kl<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x
 	n.of.y 										<- round(tmp$minimum)+1
 	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	chisqstretch.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=plot)
 	c(n.of.y=n.of.y, tau.l=tau.l, tau.u=tau.u, cl=c.l, cu=c.u, pw.cmx=pw.cmx, KL_div=KL_div)		
+}
+#------------------------------------------------------------------------------------------------------------------------
+chisqstretch.plot<- function(scale, df, c.l, c.u, tau.l, tau.u, pow_scale=1.5)
+{
+	pow_support <- c(tau.l/pow_scale, tau.u*pow_scale) 	
+	pow_norm 	<- chisqstretch.pow.norm(scale, df, c.l, c.u, trafo=1, support=pow_support)	
+	tmp			<- data.frame(rho=seq(pow_support[1], pow_support[2], length.out = 1024))	
+	tmp$power	<- chisqstretch.pow(tmp$rho, scale, df, c.l, c.u, trafo= 1, norm=pow_norm)*pow_norm	
+	
+	p	<- ggplot(tmp, aes(x=rho, y=power)) + geom_line() + labs(x=expression(rho), y='Power\n(ABC acceptance probability)') +
+			scale_y_continuous(breaks=seq(0,1,0.2), limits=c(0,1)) +
+			scale_x_continuous(limits=c(0,pow_support[2])) +
+			geom_vline(xintercept = c(tau.l, tau.u), linetype = "dotted") +
+			geom_vline(xintercept = c(c.l, c.u), linetype = "dashed") +
+			ggtitle(paste("n.of.y=", n.of.y, "\ntau.l=", round(tau.l,d=5), " tau.u=", round(tau.u,d=5), "\nc.l=", round(c.l,d=5), " c.u=", round(c.u,d=5)))
+	print(p)
+}
+#------------------------------------------------------------------------------------------------------------------------
+#' @title Calibrating \code{chisqstretch} for ABC
+#' @export
+#' @references  http://arxiv.org/abs/1305.4283
+chisqstretch.calibrate<- function(n.of.x=NA, s.of.x=NA, n.of.y=NA, what='MXPW', scale=n.of.x, mx.pw=0.9, alpha=0.01, tau.l=NA, tau.u=NA, tau.u.ub=NA, max.it=100, tol= 1e-5, pow_scale=1.5, debug=FALSE, plot=FALSE, verbose=FALSE)
+{
+	stopifnot(what%in%c('ALPHA','CR','MXPW_AT_EQU','MXPW','KL'))
+	if(what=='ALPHA')
+	{		
+	}
+	if(what=='CR')
+	{		
+		ans	<- .Call("abcScaledChiSq",	c(scale, n.of.y-1, tau.l, tau.u, alpha, 1e-10, max.it, 0.05)	)
+	}
+	if(what=='MXPW_AT_EQU')
+	{
+		tmp	<- chisqstretch.calibrate.taulow(tau.u, scale, n.of.y-1, alpha=alpha, rho.star=1, tol=tol, max.it=max.it, pow_scale=pow_scale, verbose=verbose)
+		ans	<- c(tmp[2],tmp[3],tmp[1],tau.u,tmp[4])
+		names(ans)<- c('c.l','c.u','tau.l','tau.u','eq.error')
+		if(plot)
+			chisqstretch.plot(scale, n.of.y-1, ans['c.l'], ans['c.u'], ans['tau.l'], tau.u, pow_scale=pow_scale)
+		
+	}	
+	if(what=='MXPW')
+	{
+		ans <- chisqstretch.calibrate.tauup(mx.pw, tau.u.ub, scale, n.of.y-1, alpha=alpha, rho.star=1, tol=tol, max.it=max.it, pow.scale=pow_scale, verbose=verbose)
+	}
+	if(what=='KL')
+	{
+		ans	<- chisqstretch.calibrate.kl(n.of.x, s.of.x, scale=scale, n.of.y=n.of.x, mx.pw=mx.pw, alpha=alpha, max.it=max.it, debug=debug, plot=plot)
+	}
+	ans
 }
