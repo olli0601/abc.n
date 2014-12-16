@@ -31,15 +31,15 @@ mutost.pow <- function(rho, df, s.of.T, tau.u, alpha, norm=1, support=c(-Inf,Inf
 }
 
 #------------------------------------------------------------------------------------------------------------------------
-#' Generic two one sided test (TOST).
-#' 
-#' Perform a generic two one sided test. This is an internal function.
-#' @param tost.args vector of arguments for generic TOST
-#' @param tau.l		lower tolerance of equivalence region
-#' @param tau.u		upper tolerance of equivalence region
-#' @param alpha		level of equivalence test
-#' @param tost.distr	name of distribution of tost
-#' @return vector of length 7
+# Generic two one sided test (TOST).
+# 
+# Perform a generic two one sided test. This is an internal function.
+# @param tost.args vector of arguments for generic TOST
+# @param tau.l		lower tolerance of equivalence region
+# @param tau.u		upper tolerance of equivalence region
+# @param alpha		level of equivalence test
+# @param tost.distr	name of distribution of tost
+# @return vector of length 7
 generic.tost <- function(tost.args, tau.l, tau.u, alpha, tost.distr="t")
 {
 	ans<- numeric(7)
@@ -68,17 +68,17 @@ generic.tost <- function(tost.args, tau.l, tau.u, alpha, tost.distr="t")
 	ans	
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Density of the summary likelihood for \code{mutost}
-#' 
-#' Compute the density of the (possibly truncated) summary likelihood for population means of normal summary values
-#' @inheritParams mutost.calibrate
-#' @inheritParams mutost.pow
-#' @param norm 		scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
-#' @param support 	vector of dimension 2, support of the truncated summary likelihood. 
-#' @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
-#' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived from the other.
-#' \code{support=s.of.x/sqrt(n.of.x)*qt(c(1-norm,1+norm)/2,n.of.x-1)} and \code{norm=diff(pt(support/(s.of.x/sqrt(n.of.x)),n.of.x-1))}.
-#'
+# Density of the summary likelihood for \code{mutost}
+# 
+# Compute the density of the (possibly truncated) summary likelihood for population means of normal summary values
+# @inheritParams mutost.calibrate
+# @inheritParams mutost.pow
+# @param norm 		scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
+# @param support 	vector of dimension 2, support of the truncated summary likelihood. 
+# @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
+# For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived from the other.
+# \code{support=s.of.x/sqrt(n.of.x)*qt(c(1-norm,1+norm)/2,n.of.x-1)} and \code{norm=diff(pt(support/(s.of.x/sqrt(n.of.x)),n.of.x-1))}.
+#
 mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), log=FALSE, debug=0) 
 {
 	
@@ -111,16 +111,16 @@ mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), lo
 	return(ans)
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Compute the Kullback-Leibler divergence for the \code{mutost}
-#'
-#' Compute Kullback-Leibler divergence between the summary likelihood and the power function of the test of location equivalence 
-#' @inheritParams mutost.calibrate
-#' @param calibrate.tau.u if \code{TRUE} the upper tolerance of the equivalence region (\code{tau.u}) is calibrated so that power at the point of reference is equal to \code{mx.pw}
-#' @param legend.title character; title of the plot (only when \code{plot==TRUE}).
-#' @examples
-#' 
-#' 	mutost.getkl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9, alpha=0.01, calibrate.tau.u=TRUE, tau.u=1, plot=TRUE)
-#'
+# Compute the Kullback-Leibler divergence for the \code{mutost}
+#
+# Compute Kullback-Leibler divergence between the summary likelihood and the power function of the test of location equivalence 
+# @inheritParams mutost.calibrate
+# @param calibrate.tau.u if \code{TRUE} the upper tolerance of the equivalence region (\code{tau.u}) is calibrated so that power at the point of reference is equal to \code{mx.pw}
+# @param legend.title character; title of the plot (only when \code{plot==TRUE}).
+# @examples
+# 
+# 	mutost.getkl(n.of.x=60,s.of.x=0.1,n.of.y=60,s.of.y=0.3, mx.pw=0.9, alpha=0.01, calibrate.tau.u=TRUE, tau.u=1, plot=TRUE)
+#
 mutost.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, plot = F, legend.title='') 
 {
 	
@@ -204,17 +204,18 @@ mutost.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Plot the calibrated \code{mutost}
+# Plot the calibrated \code{mutost}
 mutost.calibrate.mxpw.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 {
 	tmp			<- data.frame(rho= seq(-1.5*tau.u, 1.5*tau.u, length.out=1024))	
 	tmp$power	<- mutost.pow(tmp$rho, n.of.y-1, s.of.y/sqrt(n.of.y), tau.u, alpha )
 	
-	ggplot(tmp, aes(x=rho, y=power)) + geom_line() + labs(x=expression(rho), y='Power\n(ABC acceptance probability)') +
+	p	<- ggplot(tmp, aes(x=rho, y=power)) + geom_line() + labs(x=expression(rho), y='Power\n(ABC acceptance probability)') +
 			scale_y_continuous(breaks=seq(0,1,0.2), limits=c(0,1)) +
 			geom_vline(xintercept = c(-tau.u, tau.u), linetype = "dotted") +
 			geom_vline(xintercept = c(-c.u, c.u), linetype = "dashed") +
 			ggtitle(paste("n.of.y=", n.of.y, "\ntau.u=", tau.u, "\nc.u=", c.u))
+	print(p)
 }
 #------------------------------------------------------------------------------------------------------------------------
 #'Calibrating \code{mutost} for ABC
@@ -222,52 +223,51 @@ mutost.calibrate.mxpw.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 #' Calibrate the one-sample equivalence test for population means of normal summary values for ABC inference.
 #' Different types of calibrations are available, see Notes for details:
 #' \itemize{ 
-#'  \item{(1)}{compute the ABC false positive rate for given critical region (\code{what=ALPHA}),}
-#'  \item{(2)}{calibrate the critical region for given ABC false positive rate (\code{what=CR}),}
-#'  \item{(3)}{calibrate the critical region and the equivalence region for given ABC false positive rate and maximum power (\code{what=MXPW}),}
-#'  \item{(4)}{calibrate the critical region, the equivalence region and the number of simulated summary values for given ABC false positive rate, maximum power and sample standard deviation of the observed data (\code{what=KL}).}
+#'  \item compute the ABC false positive rate for given critical region (\code{what=ALPHA}),
+#'  \item calibrate the critical region for given ABC false positive rate (\code{what=CR}),
+#'  \item calibrate the critical region and the equivalence region for given ABC false positive rate and maximum power (\code{what=MXPW}),
+#'  \item calibrate the critical region, the equivalence region and the number of simulated summary values for given ABC false positive rate, maximum power and sample standard deviation of the observed data (\code{what=KL}).
 #' }
 #' @export 
-#' @param n.of.x 	Number of observed summary values
-#' @param s.of.x 	Standard deviation of observed summary values
+#' @param n.of.x 	Number of observed summary values (default NA)
+#' @param s.of.x 	Standard deviation of observed summary values (default NA)
 #' @param n.of.y 	Number of simulated summary values
 #' @param s.of.y 	Standard deviation of simulated summary values
-#' @param what		Character string to indicate the type of calibration to be performed (default MXPW)
-#' @param cu.u		Upper boundary point of the critical region (default NA)
+#' @param what		Character string to indicate the type of calibration to be performed (default 'MXPW')
+#' @param c.u		Upper boundary point of the critical region (default NA)
 #' @param tau.u		Upper boundary point of the equivalence region (default NA)
-#' @param tau.up.ub	Guess on the upper boundary point of the equivalence region (default NA)
+#' @param tau.u.ub	Guess on the upper boundary point of the equivalence region (default NA)
 #' @param mx.pw 	Maximum power at the point of equality (default 0.9)
 #' @param alpha 	Level of the equivalence test (default 0.01)
 #' @param max.it  	Maximum number of optimization steps at each calibration hierarchy (default 100)
 #' @param pow_scale Scale for the support of the standardized power. The power is truncated to \code{pow_scale*[-tau.u,tau.u]} and then standardized (default 1.5).
 #' @param tol		Required error tolerance in calibrating the actual maximum power to the requested maximum power (default 1e-5)
-#' @param plot  	Flag to plot calibrations
-#' @param debug		Flag to switch off C implementation
-#' @param plot_debug	Flag to plot at each calibration iteration
-#' @param verbose	Flag to run in verbose mode
+#' @param plot  	Flag to plot calibrations (default FALSE)
+#' @param debug		Flag to switch off C implementation (default TRUE)
+#' @param plot_debug	Flag to plot at each calibration iteration (default FALSE)
+#' @param verbose	Flag to run in verbose mode (default FALSE)
 #' @return	vector
 #' @note Notes on the types of available calibrations:
-#' \itemize{	
-#'  \item{(1)}{This calibration requires the inputs \code{cu.u}, \code{tau.u} with \code{cu.u<tau.u} and \code{cu.u>0}. 
-#' 				The output contains the corresponding ABC false positive rate \code{alpha}.}
-#'  \item{(2)}{This calibration requires the input \code{tau.u>0}. 
+#' \enumerate{	
+#'  \item This calibration requires the inputs \code{c.u}, \code{tau.u} with \code{c.u<tau.u} and \code{c.u>0}. 
+#' 				The output contains the corresponding ABC false positive rate \code{alpha}.
+#'  \item This calibration requires the input \code{tau.u>0}. 
 #' 				The output contains the corresponding critical region \code{[c.l, c.u]}, which corresponds to the ABC tolerance region typically denoted by \code{[-epsilon, epsilon]}. 
 #' 				The resulting critical region may be empty under this test, if stochasticity is too large. It is desirable to maximise the power at
 #' 				the point of equality \code{rho=0}, see References.
-#' 				}
-#'  \item{(3)}{This is the default calibration for a given set of simulated summary values.
+#'  \item This is the default calibration for a given set of simulated summary values.
 #' 				The output contains the corresponding critical region \code{[c.l, c.u]} (to be used in ABC, see Notes on (2)), and 
 #' 				the corresponding equivalence region \code{[tau.l, tau.u]} that gives a suitable ABC accept/reject probability if the simulated summary values are close to the observed summary values.
-#' 				As a check to the numerical calibrations, the actual power at the point of equality is returned (\code{pw.cmx}).}
-#' \item{(4)}{This calibration can be used when a set of observed summary values is available. It specifies the number of simulated summary
+#' 				As a check to the numerical calibrations, the actual power at the point of equality is returned (\code{pw.cmx}).
+#' \item This calibration can be used when a set of observed summary values is available. It specifies the number of simulated summary
 #' 				values so that the power is very close to the desired summary likelihood in terms of the KL divergence. Thus, the output  
 #' 				consists of the corresponding critical region \code{[c.l, c.u]} (to be used in ABC, see Notes on (2)), the equivalence
 #' 				region \code{[tau.l, tau.u]}, and the number of simulated summary values needed (\code{n.of.y}). As a check to the numerical calibrations, 
-#' 				the KL divergence is returned (\code{KL}). It is desirable to compare the power to the summary likelihood in terms of the KL divergence, see References.}
+#' 				the KL divergence is returned (\code{KL}). It is desirable to compare the power to the summary likelihood in terms of the KL divergence, see References.
 #' }
 #' @example example/ex.mutost.calibrate.R
 #' @references  http://arxiv.org/abs/1305.4283
-mutost.calibrate<- function(  	n.of.x, s.of.x, n.of.y, s.of.y, what='MXPW',
+mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=NA, s.of.y=NA, what='MXPW',
 								c.u=NA, tau.u=NA, tau.u.ub=NA, mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=1.5, tol=1e-5, debug=FALSE, plot=FALSE, plot_debug=FALSE, verbose=FALSE)
 {	
 	stopifnot(what%in%c('ALPHA','CR','MXPW','KL'))
@@ -288,7 +288,7 @@ mutost.calibrate<- function(  	n.of.x, s.of.x, n.of.y, s.of.y, what='MXPW',
 	}
 	if(what=='MXPW')
 	{		
-		ans			<- mutost.calibrate.mxpw(mx.pw, n.of.y-1, s.of.y/sqrt(n.of.y), tau.up.ub, alpha, rho.star=0, tol=tol, max.it=max.it, debug=debug)
+		ans			<- mutost.calibrate.mxpw(mx.pw, n.of.y-1, s.of.y/sqrt(n.of.y), tau.u.ub, alpha, rho.star=0, tol=tol, max.it=max.it, debug=debug)
 		names(ans)	<- c('tau.l','tau.u','pw.cmx','pw.err')
 		tmp			<- max(0, ans['tau.u'] + s.of.y/sqrt(n.of.y)*qt(alpha, n.of.y-1, ncp=0))
 		tmp			<- c(-tmp, tmp)
@@ -309,8 +309,8 @@ mutost.calibrate<- function(  	n.of.x, s.of.x, n.of.y, s.of.y, what='MXPW',
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Calibrate the \code{mutost} with option \code{what=KL}
-#' @inheritParams mutost.calibrate
+# Calibrate the \code{mutost} with option \code{what=KL}
+# @inheritParams mutost.calibrate
 mutost.calibrate.kl<- function(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub, 
 								 mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=1.5, debug=FALSE, plot=FALSE, plot_debug=FALSE, verbose=FALSE)
 {	
@@ -440,12 +440,12 @@ mutost.calibrate.kl<- function(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub,
 	return(ans)
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Calibrate the \code{mutost} with option \code{what=MXPW}
-#' @inheritParams mutost.calibrate
-#' @inheritParams mutost.pow
-#' @param rho.star	Point of equality
-#' @examples yn<- 60; ysigma2<- 1
-#'	mutost.calibrate.mxpw(0.9, yn-1, sqrt(ysigma2/yn), 2, 0.01 )
+# Calibrate the \code{mutost} with option \code{what=MXPW}
+# @inheritParams mutost.calibrate
+# @inheritParams mutost.pow
+# @param rho.star	Point of equality
+# @examples yn<- 60; ysigma2<- 1
+#	mutost.calibrate.mxpw(0.9, yn-1, sqrt(ysigma2/yn), 2, 0.01 )
 mutost.calibrate.mxpw<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star=0, tol= 1e-5, max.it=100, debug=0)
 {
 	stopifnot(mx.pw<1, mx.pw>0, df>1, s.of.T>0, tau.up.ub>0, alpha>0, alpha<1)

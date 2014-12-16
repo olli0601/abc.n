@@ -1,14 +1,12 @@
 
 
-#' @title Integrand of the Kullback-Leibler divergence D(P||Q) for generic distributions
-#' @export
-#' @param x value at which integrand is evaluated. Can be a vector.
-#' @param dP name of the functions that compute the density of P
-#' @param dQ name of the functions that compute the density of Q
-#' @param P_arg list of arguments for \code{dP}
-#' @param Q_arg list of arguments for \code{dQ}
-#' @return KL divergence
-#'
+# @title Integrand of the Kullback-Leibler divergence D(P||Q) for generic distributions
+# @param x value at which integrand is evaluated. Can be a vector.
+# @param dP name of the functions that compute the density of P
+# @param dQ name of the functions that compute the density of Q
+# @param P_arg list of arguments for \code{dP}
+# @param Q_arg list of arguments for \code{dQ}
+# @return KL divergence
 kl.integrand<-function(x, dP, dQ, P_arg, Q_arg)
 {
 	#this function must accept x as a vector	
@@ -29,12 +27,11 @@ kl.integrand<-function(x, dP, dQ, P_arg, Q_arg)
 	return(ans)
 }
 
-#' @title Compute the KL divergence for two dimensional densities P and Q
-#' @param df1	data.table with two columes th1 and th2, random draws from P
-#' @param df2	data.table with two columes th1 and th2, random draws from Q
-#' @param nbin	number of bins for both densities
-#' @return KL divergence
-#' @export
+# @title Compute the KL divergence for two dimensional densities P and Q
+# @param df1	data.table with two columes th1 and th2, random draws from P
+# @param df2	data.table with two columes th1 and th2, random draws from Q
+# @param nbin	number of bins for both densities
+# @return KL divergence
 kl.2D <- function(df1, df2, nbin=100)
 {
 	df1.lim		<- df1[, lapply(.SD, range)]
@@ -59,15 +56,14 @@ kl.2D <- function(df1, df2, nbin=100)
 	ans
 }
 
-#' A wrapper to minimize \code{KL_divergence} over the parameter \code{x_name} using the function \link{optimize}
-#' @export
-#' @param x_value value tested.
-#' @param x_name name of the parameter over which minimization is performed.
-#' @param is_integer if \code{TRUE}, \code{x_value} is rounded to the closest integer. See \link{round}.
-#' @param KL_divergence character, name of the function that computes the KL divergence.
-#' @param KL_args additional arguments to be passed to \code{KL_divergence}.
-#' @param verbose logical, if \code{TRUE}, print warnings.
-#' @return the minimized Kullback-Leibler divergence (scalar).
+# A wrapper to minimize \code{KL_divergence} over the parameter \code{x_name} using the function \link{optimize}
+# @param x_value value tested.
+# @param x_name name of the parameter over which minimization is performed.
+# @param is_integer if \code{TRUE}, \code{x_value} is rounded to the closest integer. See \link{round}.
+# @param KL_divergence character, name of the function that computes the KL divergence.
+# @param KL_args additional arguments to be passed to \code{KL_divergence}.
+# @param verbose logical, if \code{TRUE}, print warnings.
+# @return the minimized Kullback-Leibler divergence (scalar).
 kl.optimize<- function(x_value, x_name, is_integer=FALSE, KL_divergence, KL_args, verbose=FALSE) 
 {
 	if (verbose)		cat(paste("\nOptimizing x=",x_value))
