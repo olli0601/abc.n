@@ -1,24 +1,23 @@
 
-#' @title Power of the variance test for normal summary values
-#' @description This function computes the power function of the two-sided, one-sample scaled chi sqare test for 
-#' testing the equivalence of variances for normal summary values.
-#' @param rho 		Auxiliary error parameter (vector).
-#' @param scale		scaling parameter; typically \code{n}, the number of observed summary values
-#' @param df		degrees of freedom; typically \code{m-1} where \code{m} is the number of simulated summary values 
-#' @param c.l		lower point of the critical region of the test (equivalent to the lower standard ABC tolerance \code{epsilon^-})
-#' @param c.u 		upper point of the critical region of the test (equivalent to the upper standard ABC tolerance \code{epsilon^+})
-#' @param trafo		Parameter transformation to translate the power to \code{nu} space.
-#' @param norm 		normalization constant for the truncated power function.
-#' @param support 	vector of dimension 2. Support of the truncated power function.
-#' @param log l		ogical; if \code{TRUE}, densities d are given as log(d). 
-#' @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
-#' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived (numerically) from the other.
-#' @seealso \code{\link{chisqstretch.pow.norm}}, \code{\link{chisqstretch.calibrate}}
+#' @title \code{chi2} power function
+#' @description Computes the power of the one-sample chi sqare test to
+#' test the equivalence of population variances of normal summary values.
+#' @param rho 		Vector of error quantiles
+#' @param scale		Scaling parameter; typically set to the number of observed summary values
+#' @param df		Degrees of freedom; typically set to \code{m-1} where \code{m} is the number of simulated summary values 
+#' @param c.l		Lower boundary point of the critical region (equivalent to the lower ABC tolerance \code{epsilon^-})
+#' @param c.u 		Upper boundary point of the critical region (equivalent to the upper ABC tolerance \code{epsilon^+})
+#' @param trafo		Parameter transformation to translate the power
+#' @param norm 		Normalization constant for the truncated power function
+#' @param support 	Support of the truncated power function
+#' @param log l		If \code{TRUE}, the power function is returned on the log scale. 
+#' @note The power function can be truncated to \code{support} and then standardized with \code{norm}.
+#' If one of these is set, the other must be provided too.
+#' @seealso \code{\link{chisqstretch.pow.norm}}
 #' @example example/ex.chisqstretch.pow.R
 #' @export
-#' 	
-chisqstretch.pow <- function(rho, scale, df, c.l, c.u, norm=1, trafo=1, support=c(0,Inf), log=FALSE){
-	
+chisqstretch.pow <- function(rho, scale, df, c.l, c.u, norm=1, trafo=1, support=c(0,Inf), log=FALSE)
+{	
 	ans					<- rep(0,length(rho))
 	in_support			<- (rho >= support[1] & rho <= support[2])	
 	if(any(in_support))			
@@ -28,32 +27,29 @@ chisqstretch.pow <- function(rho, scale, df, c.l, c.u, norm=1, trafo=1, support=
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' @title Area under the power function of the variance test for normal summary values
+#' @title Area under the \code{chi2} power function
 #' @description This function computes the area under the power function \code{chisqstretch.pow.norm}.
 #' @inheritParams chisqstretch.pow
-#' @seealso \code{\link{chisqstretch.pow}}, \code{\link{chisqstretch.calibrate}}
+#' @seealso \code{\link{chisqstretch.pow}}
 chisqstretch.pow.norm<- function(scale, df, c.l, c.u, trafo= 1, support=c(0,Inf))
 {
 	ans <- integrate(chisqstretch.pow, lower=support[1], upper=support[2], scale=scale, df=df, c.l=c.l, c.u=c.u, norm=1, trafo=trafo, support=support, log=FALSE)
 	ans$value
 }	
 #------------------------------------------------------------------------------------------------------------------------
-#' @title Density of the summary likelihood of the variance for normal summary values
-#' @description		The density of the summary likelihood of the variance for normal summary values is scaled inverse chi square.
-#' @param rho 		Auxiliary error parameter
-#' @param n.of.x	Number of observed summary values
-#' @param s.of.x	Standard deviation of the summary values
-#' @param trafo		Parameter transformation to compute the summary likelihood on the \code{rho} error space. 		
-#' @param norm 		scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
-#' @param support 	vector of dimension 2, support of the truncated summary likelihood.
-#' @param log 		logical; if \code{TRUE}, densities d are given as log(d). 
-#' @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
-#' For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived from the other. 
-#' \code{support=qigamma(c(1-norm,1+norm)/2,(n.of.x-2)/2,s.of.x^2*(n.of.x-1)/2)} and \code{norm=diff(pigamma(support,(n.of.x-2)/2,s.of.x^2*(n.of.x-1)/2)}.
-#' @seealso \code{\link{chisqstretch.calibrate}}, \code{\link{chisqstretch.calibrate.tolerances.getkl}} for an example.
-#' @import pscl
-#' @export	
-#'
+# @title Density of the summary likelihood of the variance for normal summary values
+# @description		The density of the summary likelihood of the variance for normal summary values is scaled inverse chi square.
+# @param rho 		Auxiliary error parameter
+# @param n.of.x	Number of observed summary values
+# @param s.of.x	Standard deviation of the summary values
+# @param trafo		Parameter transformation to compute the summary likelihood on the \code{rho} error space. 		
+# @param norm 		scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
+# @param support 	vector of dimension 2, support of the truncated summary likelihood.
+# @param log 		logical; if \code{TRUE}, densities d are given as log(d). 
+# @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
+# For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived from the other. 
+# \code{support=qigamma(c(1-norm,1+norm)/2,(n.of.x-2)/2,s.of.x^2*(n.of.x-1)/2)} and \code{norm=diff(pigamma(support,(n.of.x-2)/2,s.of.x^2*(n.of.x-1)/2)}.
+# @seealso \code{\link{chisqstretch.calibrate}}, \code{\link{chisqstretch.getkl}} for an example.
 chisqstretch.sulkl<- function(rho, n.of.x, s.of.x, trafo=(n.of.x-1)/n.of.x*s.of.x*s.of.x, norm = 1, support= c(0,Inf), log=FALSE) 
 {
 	alpha	<- (n.of.x-2)/2	 
@@ -70,10 +66,10 @@ chisqstretch.sulkl<- function(rho, n.of.x, s.of.x, trafo=(n.of.x-1)/n.of.x*s.of.
 	return(ans)
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' @title Area under the summary likelihood of the variance for normal summary values
-#' @description This function computes the area under the summary likelihood \code{chisqstretch.sulkl}.
-#' @inheritParams chisqstretch.sulkl
-#' @seealso \code{\link{chisqstretch.calibrate}}
+# @title Area under the summary likelihood of the variance for normal summary values
+# @description This function computes the area under the summary likelihood \code{chisqstretch.sulkl}.
+# @inheritParams chisqstretch.sulkl
+# @seealso \code{\link{chisqstretch.calibrate}}
 chisqstretch.su.lkl.norm	<- function(n.of.x, s.of.x, trafo=1, support=c(0,Inf))
 {
 	ans	<- integrate(chisqstretch.sulkl, lower=support[1], upper=support[2],  n.of.x=n.of.x, s.of.x=s.of.x, norm=1, trafo=trafo , support=support, log=FALSE)	
@@ -100,10 +96,7 @@ chisqstretch.su.lkl.norm	<- function(n.of.x, s.of.x, trafo=1, support=c(0,Inf))
 #' 	\item{pw.cmx}{actual maximum power at the point of equality}
 #' @note Whatever the value of \code{calibrate.tau.u}, the lower tolerance of the equivalence region (\code{tau.l}) is always numerically calibrated so that the mode of the power function is at the point of equality rho.star.
 #' @export
-#' @import ggplot2 reshape2 pscl
-#' @example example/ex.chisqstretch.calibrate.tolerances.getkl.R
-#' 
-chisqstretch.calibrate.tolerances.getkl <- function(n.of.x, s.of.x, scale, df, tau.u, mx.pw=0.9, alpha=0.01, pow_scale=1.5, calibrate.tau.u=T, plot = F) 
+chisqstretch.getkl <- function(n.of.x, s.of.x, scale, df, tau.u, mx.pw=0.9, alpha=0.01, pow_scale=1.5, calibrate.tau.u=T, plot = F) 
 {
 	tau.l<- pw.cmx<- error<- c.l<- c.u<- NA	
 	if(calibrate.tau.u)	#calibrate tau.u constrained on yn, alpha and mx.pw 
@@ -306,22 +299,22 @@ chisqstretch.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01,
 #' @example example/ex.chisqstretch.calibrate.R
 #' @example example/ex.chisqstretch.abcreject.R
 #' @seealso \code{\link{chisqstretch.calibrate.tauup}}, \code{\link{chisqstretch.calibrate.taulow}}, \code{\link{chisqstretch.pow}}
-chisqstretch.calibrate<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=F)
+chisqstretch.calibrate.kl<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=F)
 {	
 	KL.of.yn_ub<- KL.of.yn<- error <- curr.mx.pw <- tau.low <- cl <- cu	<- NA		
 	#KL for initial n.of.y
-	KL.of.yn		<- chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]	
+	KL.of.yn		<- chisqstretch.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]	
 	#KL always decreases from n.of.x. Find upper bound yn.ub such that KL first increases again.	
 	curr.it 		<- max.it
 	yn.ub 			<- 2 * n.of.y		
-	KL.of.yn_ub		<- chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, yn.ub-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]		
+	KL.of.yn_ub		<- chisqstretch.getkl(n.of.x, s.of.x, scale, yn.ub-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]		
 	while (KL.of.yn_ub < KL.of.yn && curr.it > 0) 
 	{
 		#print(c(yn.ub, KL.of.yn_ub, KL.of.yn, curr.it))
 		curr.it 		<- curr.it - 1
 		KL.of.yn 		<- KL.of.yn_ub
 		yn.ub 			<- 2 * yn.ub
-		KL.of.yn_ub		<- chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, yn.ub-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]
+		KL.of.yn_ub		<- chisqstretch.getkl(n.of.x, s.of.x, scale, yn.ub-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]
 		if(debug)	cat(paste("\ntrial upper bound m=",yn.ub,"with KL",KL.of.yn_ub))
 	}			
 	if (curr.it == 0) 	stop("could not find upper bound for yn")					
@@ -330,9 +323,9 @@ chisqstretch.calibrate<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, m
 	if(debug)	cat(paste("\nupper and lower bounds on m:",yn.lb, yn.ub))
 	
 	KL_args					<- list(n.of.x=n.of.x, s.of.x=s.of.x, scale=scale, tau.u=3*s.of.x, mx.pw=mx.pw, alpha=alpha, calibrate.tau.u=T, plot=F)	
-	tmp 					<- optimize(kl.optimize, interval = c(yn.lb-1, yn.ub-1), x_name = "df", is_integer = T, KL_divergence = "chisqstretch.calibrate.tolerances.getkl", KL_args = KL_args, verbose = debug, tol = 1)
+	tmp 					<- optimize(kl.optimize, interval = c(yn.lb-1, yn.ub-1), x_name = "df", is_integer = T, KL_divergence = "chisqstretch.getkl", KL_args = KL_args, verbose = debug, tol = 1)
 	
 	n.of.y 										<- round(tmp$minimum)+1
-	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	chisqstretch.calibrate.tolerances.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=plot)
+	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	chisqstretch.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=plot)
 	c(n.of.y=n.of.y, tau.l=tau.l, tau.u=tau.u, cl=c.l, cu=c.u, pw.cmx=pw.cmx, KL_div=KL_div)		
 }

@@ -222,30 +222,30 @@ mutost.calibrate.mxpw.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 #'
 #' Calibrate the one-sample equivalence test for population means of normal summary values for ABC inference.
 #' Different types of calibrations are available, see Notes for details:
-#' \itemize{ 
+#' \enumerate{ 
 #'  \item compute the ABC false positive rate for given critical region (\code{what=ALPHA}),
 #'  \item calibrate the critical region for given ABC false positive rate (\code{what=CR}),
 #'  \item calibrate the critical region and the equivalence region for given ABC false positive rate and maximum power (\code{what=MXPW}),
 #'  \item calibrate the critical region, the equivalence region and the number of simulated summary values for given ABC false positive rate, maximum power and sample standard deviation of the observed data (\code{what=KL}).
 #' }
 #' @export 
-#' @param n.of.x 	Number of observed summary values (default NA)
-#' @param s.of.x 	Standard deviation of observed summary values (default NA)
+#' @param n.of.x 	Number of observed summary values 
+#' @param s.of.x 	Standard deviation of observed summary values 
 #' @param n.of.y 	Number of simulated summary values
 #' @param s.of.y 	Standard deviation of simulated summary values
-#' @param what		Character string to indicate the type of calibration to be performed (default 'MXPW')
-#' @param c.u		Upper boundary point of the critical region (default NA)
-#' @param tau.u		Upper boundary point of the equivalence region (default NA)
-#' @param tau.u.ub	Guess on the upper boundary point of the equivalence region (default NA)
-#' @param mx.pw 	Maximum power at the point of equality (default 0.9)
-#' @param alpha 	Level of the equivalence test (default 0.01)
-#' @param max.it  	Maximum number of optimization steps at each calibration hierarchy (default 100)
-#' @param pow_scale Scale for the support of the standardized power. The power is truncated to \code{pow_scale*[-tau.u,tau.u]} and then standardized (default 1.5).
-#' @param tol		Required error tolerance in calibrating the actual maximum power to the requested maximum power (default 1e-5)
-#' @param plot  	Flag to plot calibrations (default FALSE)
-#' @param debug		Flag to switch off C implementation (default TRUE)
-#' @param plot_debug	Flag to plot at each calibration iteration (default FALSE)
-#' @param verbose	Flag to run in verbose mode (default FALSE)
+#' @param what		Character string to indicate the type of calibration to be performed 
+#' @param c.u		Upper boundary point of the critical region 
+#' @param tau.u		Upper boundary point of the equivalence region 
+#' @param tau.u.ub	Guess on the upper boundary point of the equivalence region 
+#' @param mx.pw 	Maximum power at the point of equality
+#' @param alpha 	Level of the equivalence test
+#' @param max.it  	Maximum number of optimization steps at each calibration hierarchy 
+#' @param pow_scale Scale for the support of the standardized power. The power is truncated to \code{pow_scale*[-tau.u,tau.u]} and then standardized
+#' @param tol		Required error tolerance in calibrating the actual maximum power to the requested maximum power 
+#' @param plot  	Flag to plot calibrations
+#' @param debug		Flag to switch off C implementation
+#' @param plot_debug	Flag to plot at each calibration iteration
+#' @param verbose	Flag to run in verbose mode
 #' @return	vector
 #' @note Notes on the types of available calibrations:
 #' \enumerate{	
