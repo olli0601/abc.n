@@ -1,4 +1,4 @@
-xn <- 60
+xn	<- 60
 xmean <- 1
 xsigma <- 1
 

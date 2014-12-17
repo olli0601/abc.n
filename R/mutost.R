@@ -1,6 +1,5 @@
-#' \code{mutost} power function 
-#' 
-#' Compute the power of the one-sample equivalence test for population means of normal summary values
+#' @title \code{mutost} power function 
+#' @description Compute the power of the one-sample equivalence test for population means of normal summary values
 #' @export
 #' @inheritParams mutost.calibrate
 #' @param rho 		vector of quantile
@@ -218,16 +217,16 @@ mutost.calibrate.mxpw.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 	print(p)
 }
 #------------------------------------------------------------------------------------------------------------------------
-#'Calibrating \code{mutost} for ABC
-#'
-#' Calibrate the one-sample equivalence test for population means of normal summary values for ABC inference.
+#' @title Calibrating \code{mutost} for ABC
+#' @description Calibrate the one-sample equivalence test for population means of normal summary values for ABC inference.
 #' Different types of calibrations are available, see Notes for details:
 #' \enumerate{ 
-#'  \item compute the ABC false positive rate for given critical region (\code{what=ALPHA}),
-#'  \item calibrate the critical region for given ABC false positive rate (\code{what=CR}),
-#'  \item calibrate the critical region and the equivalence region for given ABC false positive rate and maximum power (\code{what=MXPW}),
-#'  \item calibrate the critical region, the equivalence region and the number of simulated summary values for given ABC false positive rate, maximum power and sample standard deviation of the observed data (\code{what=KL}).
+#'  \item (\code{what=ALPHA}) compute the ABC false positive rate for given critical region,
+#'  \item (\code{what=CR}) calibrate the critical region for given ABC false positive rate,
+#'  \item (\code{what=MXPW}) calibrate the critical region and the equivalence region for given ABC false positive rate and maximum power,
+#'  \item (\code{what=KL}) calibrate the critical region, the equivalence region and the number of simulated summary values for given ABC false positive rate, maximum power and sample standard deviation of the observed data.
 #' }
+#' Depending on the type of calibration, some of the following inputs must be specified (see Examples).
 #' @export 
 #' @param n.of.x 	Number of observed summary values 
 #' @param s.of.x 	Standard deviation of observed summary values 
@@ -247,24 +246,35 @@ mutost.calibrate.mxpw.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 #' @param plot_debug	Flag to plot at each calibration iteration
 #' @param verbose	Flag to run in verbose mode
 #' @return	vector
-#' @note Notes on the types of available calibrations:
+#' @seealso \code{\link{vartest.calibrate}}
+#' @note 
 #' \enumerate{	
-#'  \item This calibration requires the inputs \code{c.u}, \code{tau.u} with \code{c.u<tau.u} and \code{c.u>0}. 
+#'  \item (\code{what=ALPHA}) This calibration requires the inputs \code{c.u}, \code{tau.u} with \code{c.u<tau.u} and \code{c.u>0}. 
 #' 				The output contains the corresponding ABC false positive rate \code{alpha}.
-#'  \item This calibration requires the input \code{tau.u>0}. 
+#' 				This option does not specify any of the free ABC parameters, but may be useful to determine the ABC
+#' 				false positive rate for uncalibrated ABC routines.
+#'  \item (\code{what=CR}) This calibration requires the input \code{tau.u}, \code{alpha} with \code{tau.u>0} and default \code{alpha=0.01}. 
 #' 				The output contains the corresponding critical region \code{[c.l, c.u]}, which corresponds to the ABC tolerance region typically denoted by \code{[-epsilon, epsilon]}. 
-#' 				The resulting critical region may be empty under this test, if stochasticity is too large. It is desirable to maximise the power at
-#' 				the point of equality \code{rho=0}, see References.
-#'  \item This is the default calibration for a given set of simulated summary values.
+#' 				The resulting critical region may be empty under this test, if stochasticity is too large. 
+#' 				This is an intermediate calibration step and may result in unsuitable power properties (see Examples).
+#'  \item (\code{what=MXPW}) This is the default calibration for a given set of simulated summary values because it specifies all free ABC parameters.
+#' 				The inputs are \code{alpha}, \code{mx.pw}, with default values 0.01 and 0.9 respectively.
 #' 				The output contains the corresponding critical region \code{[c.l, c.u]} (to be used in ABC, see Notes on (2)), and 
 #' 				the corresponding equivalence region \code{[tau.l, tau.u]} that gives a suitable ABC accept/reject probability if the simulated summary values are close to the observed summary values.
 #' 				As a check to the numerical calibrations, the actual power at the point of equality is returned (\code{pw.cmx}).
-#' \item This calibration can be used when a set of observed summary values is available. It specifies the number of simulated summary
+#' \item (\code{what=KL}) This calibration can be used when a set of observed summary values is available. It is desirable because it specifies the number of simulated summary 
+#' 				values so that the power is very close to the desired summary likelihood in terms of the KL divergence. 
+#' 				The inputs are \code{alpha}, \code{mx.pw}, with default values 0.01 and 0.9 respectively.
 #' 				values so that the power is very close to the desired summary likelihood in terms of the KL divergence. Thus, the output  
 #' 				consists of the corresponding critical region \code{[c.l, c.u]} (to be used in ABC, see Notes on (2)), the equivalence
 #' 				region \code{[tau.l, tau.u]}, and the number of simulated summary values needed (\code{n.of.y}). As a check to the numerical calibrations, 
 #' 				the KL divergence is returned (\code{KL}). It is desirable to compare the power to the summary likelihood in terms of the KL divergence, see References.
 #' }
+#' Note that the underlying test statistic depends on the sample standard deviation of the simulated summary values, \code{s.of.y}.
+#' Consequently, the free ABC parameters must be re-calibrated when \code{s.of.y} changes. 
+#' 
+#' The lower boundary point of the critical region \code{c.l} is always fixed to \code{-c.u}, because this choice implies that
+#' the power is maximized at the point of equality \code{rho=0}. This is also commonly used in uncalibrated ABC routines.
 #' @example example/ex.mutost.calibrate.R
 #' @references  http://arxiv.org/abs/1305.4283
 mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=NA, s.of.y=NA, what='MXPW',
@@ -495,40 +505,40 @@ mutost.calibrate.mxpw<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star=0
 	c(-tau.up,tau.up,curr.mx.pw,abs(error))
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' Exact TOST for location equivalence.
-#' 
-#' Perform the exact TOST for location equivalence when the summary values are normally distributed
-#' @param sim			simulated summary values
-#' @param obs			observed summary values
-#' @param args			argument that contains the equivalence region and the level of the test (see Examples). This is the preferred method for specifying arguments and overwrites the dummy default values
-#' @param verbose		flag if detailed information on the computations should be printed to standard out
-#' @param tau.u			upper tolerance of the equivalence region
-#' @param tau.l			lower tolerance of the equivalence region
-#' @param alpha			level of the equivalence test
-#' @param mx.pw			maximum power at the point of equality
-#' @param annealing		inflation factor of tolerances of the equivalence region
-#' @param sd.tolerance	tolerance on the difference between the standart deviation of the simulated data and the one used in power calibrations. If this difference if too high, the actual maximum of the power might be considerably different from mx.pw.	
-#' @param normal.test	name of function with which normality of the summary values is tested
-#' @param plot			logical; if \code{TRUE} the summary likelihood and calibrated power are ploted.
-#' @param legend.txt 	character; title of the plot (only when \code{plot==TRUE}).
-#' @return	vector of length 16 containing
-#' \item{lkl}{likelihood of T (test statistic for equality) under the TOST}
-#' \item{error}{test statistic, here p-value of TOST}
-#' \item{pval}{rescaled p-value of TOST that is expected to follow U(0,1) under the point null hypothesis}
-#' \item{link.mc.obs}{mean(obs)}
-#' \item{link.mc.sim}{mean(sim)}
-#' \item{rho.mc}{mean(sim) - mean(obs)}
-#' \item{cil}{lower ABC tolerance, here 0}
-#' \item{cir}{upper ABC tolerance, here alpha}
-#' \item{tl}{lower tolerance of the equivalence region}
-#' \item{tr}{upper tolerance of the equivalence region}
-#' \item{al}{lower ABC tolerance, here 0}
-#' \item{ar}{upper ABC tolerance, here alpha}
-#' \item{pfam.pval}{p-value of the normal test for the simulated summary values}
-#' \item{nsim}{number of simulated summary values}
-#' \item{mx.pow}{maximum power at the point of equality}
-#' \item{rho.pow}{power at the point rho.mc}
-#' @example example/ex.mutost.R
+# Exact TOST for location equivalence.
+# 
+# Perform the exact TOST for location equivalence when the summary values are normally distributed
+# @param sim			simulated summary values
+# @param obs			observed summary values
+# @param args			argument that contains the equivalence region and the level of the test (see Examples). This is the preferred method for specifying arguments and overwrites the dummy default values
+# @param verbose		flag if detailed information on the computations should be printed to standard out
+# @param tau.u			upper tolerance of the equivalence region
+# @param tau.l			lower tolerance of the equivalence region
+# @param alpha			level of the equivalence test
+# @param mx.pw			maximum power at the point of equality
+# @param annealing		inflation factor of tolerances of the equivalence region
+# @param sd.tolerance	tolerance on the difference between the standart deviation of the simulated data and the one used in power calibrations. If this difference if too high, the actual maximum of the power might be considerably different from mx.pw.	
+# @param normal.test	name of function with which normality of the summary values is tested
+# @param plot			logical; if \code{TRUE} the summary likelihood and calibrated power are ploted.
+# @param legend.txt 	character; title of the plot (only when \code{plot==TRUE}).
+# @return	vector of length 16 containing
+# \item{lkl}{likelihood of T (test statistic for equality) under the TOST}
+# \item{error}{test statistic, here p-value of TOST}
+# \item{pval}{rescaled p-value of TOST that is expected to follow U(0,1) under the point null hypothesis}
+# \item{link.mc.obs}{mean(obs)}
+# \item{link.mc.sim}{mean(sim)}
+# \item{rho.mc}{mean(sim) - mean(obs)}
+# \item{cil}{lower ABC tolerance, here 0}
+# \item{cir}{upper ABC tolerance, here alpha}
+# \item{tl}{lower tolerance of the equivalence region}
+# \item{tr}{upper tolerance of the equivalence region}
+# \item{al}{lower ABC tolerance, here 0}
+# \item{ar}{upper ABC tolerance, here alpha}
+# \item{pfam.pval}{p-value of the normal test for the simulated summary values}
+# \item{nsim}{number of simulated summary values}
+# \item{mx.pow}{maximum power at the point of equality}
+# \item{rho.pow}{power at the point rho.mc}
+# @example example/ex.mutost.R
 mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, tau.l= -tau.u, alpha= 0, mx.pw=0.9, annealing=1, sd.tolerance=0.05, normal.test= "sf.test", plot=0, legend.txt="")
 {
 	ans <- c(0, 50, 1, NA, NA, NA, 0, 0, 0, 0, 0, 1, 1, NA, NA, NA)
