@@ -204,7 +204,7 @@ mutost.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate
 }
 #------------------------------------------------------------------------------------------------------------------------
 # Plot the calibrated \code{mutost}
-mutost.calibrate.mxpw.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
+mutost.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 {
 	tmp			<- data.frame(rho= seq(-1.5*tau.u, 1.5*tau.u, length.out=1024))	
 	tmp$power	<- mutost.pow(tmp$rho, n.of.y-1, s.of.y/sqrt(n.of.y), tau.u, alpha )
@@ -226,6 +226,7 @@ mutost.calibrate.mxpw.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 #'  \item (\code{what=MXPW}) calibrate the critical region and the equivalence region for given ABC false positive rate and maximum power,
 #'  \item (\code{what=KL}) calibrate the critical region, the equivalence region and the number of simulated summary values for given ABC false positive rate, maximum power and sample standard deviation of the observed data.
 #' }
+#' The default calibration for ABC inference is MXPW.
 #' Depending on the type of calibration, some of the following inputs must be specified (see Examples).
 #' @export 
 #' @param n.of.x 	Number of observed summary values 
@@ -246,7 +247,7 @@ mutost.calibrate.mxpw.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 #' @param plot_debug	Flag to plot at each calibration iteration
 #' @param verbose	Flag to run in verbose mode
 #' @return	vector
-#' @seealso \code{\link{vartest.calibrate}}
+#' @seealso \code{\link{vartest.calibrate}}, \code{\link{ztest.calibrate}}
 #' @note 
 #' \enumerate{	
 #'  \item (\code{what=ALPHA}) This calibration requires the inputs \code{c.u}, \code{tau.u} with \code{c.u<tau.u} and \code{c.u>0}. 
@@ -294,7 +295,7 @@ mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=NA, s.of.y=NA, what=
 		ans			<- c(-ans, ans)
 		names(ans)	<- c('c.l','c.u')
 		if(plot)
-			mutost.calibrate.mxpw.plot(n.of.y, s.of.y, ans['c.u'], tau.u, alpha)
+			mutost.plot(n.of.y, s.of.y, ans['c.u'], tau.u, alpha)
 	}
 	if(what=='MXPW')
 	{		
@@ -305,7 +306,7 @@ mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=NA, s.of.y=NA, what=
 		names(tmp)	<- c('c.l','c.u')
 		ans			<- c(tmp, ans)
 		if(plot)
-			mutost.calibrate.mxpw.plot(n.of.y, s.of.y, ans['c.u'], ans['tau.u'], alpha)
+			mutost.plot(n.of.y, s.of.y, ans['c.u'], ans['tau.u'], alpha)
 	}
 	if(what=='KL')
 	{

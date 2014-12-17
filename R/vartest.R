@@ -1,4 +1,4 @@
-#' @title \code{chi2} power function
+#' @title \code{vartest} power function
 #' @description Computes the power of the one-sample chi sqare test to
 #' test the equivalence of population variances of normal summary values.
 #' @param rho 		Vector of error quantiles
@@ -26,7 +26,7 @@ vartest.pow <- function(rho, scale, df, c.l, c.u, norm=1, trafo=1, support=c(0,I
 	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
-#' @title Area under the \code{chi2} power function
+#' @title Area under the \code{vartest} power function
 #' @export
 #' @description This function computes the area under the power function \code{vartest.pow.norm}.
 #' @inheritParams vartest.pow
@@ -312,6 +312,7 @@ vartest.plot<- function(scale, df, c.l, c.u, tau.l, tau.u, pow_scale=1.5)
 #'  \item (\code{what=MXPW}) calibrate the critical region and the equivalence region for given ABC false positive rate and maximum power,
 #'  \item (\code{what=KL}) calibrate the critical region, the equivalence region and the number of simulated summary values for given ABC false positive rate, maximum power and sample standard deviation of the observed data.
 #' }
+#' The default calibration for ABC inference is KL.
 #' Depending on the type of calibration, some of the following inputs must be specified (see Examples).
 #' @export 
 #' @param n.of.x 	Number of observed summary values 
@@ -334,7 +335,7 @@ vartest.plot<- function(scale, df, c.l, c.u, tau.l, tau.u, pow_scale=1.5)
 #' @param plot_debug	Flag to plot at each calibration iteration
 #' @param verbose	Flag to run in verbose mode
 #' @return	vector
-#' @seealso \code{\link{mutost.calibrate}}
+#' @seealso \code{\link{mutost.calibrate}}, \code{\link{ztest.calibrate}}
 #' @note 
 #' \enumerate{	
 #'  \item (\code{what=ALPHA}) This calibration requires the inputs \code{c.l}, \code{c.u}, \code{tau.l}, \code{tau.u} with \code{c.l>tau.l}, \code{c.u<tau.u}, \code{tau.u>1}, \code{tau.l<1}. 
@@ -394,7 +395,7 @@ vartest.calibrate<- function(n.of.x=NA, s.of.x=NA, n.of.y=NA, what='MXPW', scale
 	}	
 	if(what=='MXPW')
 	{
-		stopifnot(scale>0, tau.ub>1, n.of.y>2, alpha>0, alpha<1, pow_scale>1, max.it>10, tol<0.2)
+		stopifnot(scale>0, tau.u.ub>1, n.of.y>2, alpha>0, alpha<1, pow_scale>1, max.it>10, tol<0.2)
 		tmp <- vartest.calibrate.tauup(mx.pw, tau.u.ub, scale, n.of.y-1, alpha=alpha, rho.star=1, tol=tol, max.it=max.it, pow.scale=pow_scale, verbose=verbose)
 		ans	<- c(tmp[5], tmp[6], tmp[1], tmp[2], tmp[3], tmp[4])
 		names(ans)<- c('c.l','c.u','tau.l','tau.u','pw.cmx','pw.error')
