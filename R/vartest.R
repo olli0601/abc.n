@@ -9,7 +9,7 @@
 #' @param trafo		Parameter transformation to translate the power
 #' @param norm 		Normalization constant for the truncated power function
 #' @param support 	Support of the truncated power function
-#' @param log l		If \code{TRUE}, the power function is returned on the log scale. 
+#' @param log 		If \code{TRUE}, the power function is returned on the log scale. 
 #' @note The power function can be truncated to \code{support} and then standardized with \code{norm}.
 #' If one of these is set, the other must be provided too.
 #' @seealso \code{\link{vartest.pow.norm}}
@@ -28,7 +28,7 @@ vartest.pow <- function(rho, scale, df, c.l, c.u, norm=1, trafo=1, support=c(0,I
 #------------------------------------------------------------------------------------------------------------------------
 #' @title Area under the \code{vartest} power function
 #' @export
-#' @description This function computes the area under the power function \code{vartest.pow.norm}.
+#' @description This function computes the area under the power function \code{vartest.pow}.
 #' @inheritParams vartest.pow
 #' @seealso \code{\link{vartest.pow}}
 vartest.pow.norm<- function(scale, df, c.l, c.u, trafo= 1, support=c(0,Inf))

@@ -8,12 +8,19 @@
 #' @param norm 		Normalization constant for the truncated power function.
 #' @param support 	Support of the truncated power function (vector of dimension 2).
 #' @param log 		If \code{TRUE}, the power function is returned on the log scale. 
-#' @note The power function can be truncated to \code{support} and then standardized with \code{norm}.
+#' @note To compute the power, either \code{c.u} or \code{tau.u} and \code{alpha} are required. If \code{tau.u} and \code{alpha} 
+#' are given, then the value of \code{c.u} is ignored.  
+#'  
+#' The power function can be truncated to \code{support} and then standardized with \code{norm}.
 #' If one of these is set, the other must be provided too. 
 #' @example example/ex.mutost.pow.R
 #' @references  http://arxiv.org/abs/1305.4283
-mutost.pow <- function(rho, df, s.of.T, tau.u, alpha, norm=1, support=c(-Inf,Inf), log=FALSE)
+mutost.pow <- function(rho, df, s.of.T, c.u, tau.u=NA, alpha=NA, norm=1, support=c(-Inf,Inf), log=FALSE)
 {	
+	stopifnot( (!is.na(tau.u) & !is.na(alpha)) | (is.na(tau.u) & is.na(alpha)) )
+	if(!is.na(tau.u) & !is.na(alpha))
+		c.u			<- max(0, qt(alpha, df)*s.of.T+tau.u)
+	stopifnot(c.u>0)
 	ans				<- rho
 	in_support		<- (rho >= support[1] & rho <= support[2])
 	ans[!in_support]<- 0
@@ -21,14 +28,28 @@ mutost.pow <- function(rho, df, s.of.T, tau.u, alpha, norm=1, support=c(-Inf,Inf
 	if(any(in_support))
 	{
 		suppressWarnings({ #suppress numerical inaccuracy warnings
-			ans[in_support] <- .Call("abcMuTOST_pow", rho[in_support], df, tau.u, s.of.T, alpha)/norm
+			ans[in_support] <- .Call("abcMuTOST_power", rho[in_support], df, c.u, s.of.T)/norm
 		})
 	}	
 	if(log)
 		ans			<- log(ans)	
 	ans
 }
-
+#------------------------------------------------------------------------------------------------------------------------
+#' @title Area under the \code{mutost} power function
+#' @export
+#' @description This function computes the area under the power function \code{mutost.pow}.
+#' @inheritParams mutost.pow
+#' @seealso \code{\link{mutost.pow}}
+#' @references  http://arxiv.org/abs/1305.4283
+mutost.pow.norm<- function(df, s.of.T, c.u, tau.u=NA, alpha=NA, norm=1, support=c(-Inf,Inf), log=FALSE)
+{
+	stopifnot( (!is.na(tau.u) & !is.na(alpha)) | (is.na(tau.u) & is.na(alpha)) )
+	if(!is.na(tau.u) & !is.na(alpha))
+		c.u			<- max(0, qt(alpha, df)*s.of.T+tau.u)
+	stopifnot(c.u>0)	
+	.Call("abc_mutost_integrate_power", support[1], support[2], .Machine$double.eps^0.25, .Machine$double.eps^0.25, as.double(df), s.of.T, c.u, norm, log)
+}	
 #------------------------------------------------------------------------------------------------------------------------
 # Generic two one sided test (TOST).
 # 
@@ -291,7 +312,7 @@ mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=NA, s.of.y=NA, what=
 	if(what=='CR')
 	{
 		stopifnot(tau.u>0, n.of.y>1, alpha>0, alpha<1, s.of.y>0)
-		ans			<- max(0, tau.u + s.of.y/sqrt(n.of.y)*qt(alpha, n.of.y-1, ncp=0))
+		ans			<- max(0, tau.u + s.of.y/sqrt(n.of.y)*qt(alpha, n.of.y-1))
 		ans			<- c(-ans, ans)
 		names(ans)	<- c('c.l','c.u')
 		if(plot)
@@ -301,7 +322,7 @@ mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=NA, s.of.y=NA, what=
 	{		
 		ans			<- mutost.calibrate.mxpw(mx.pw, n.of.y-1, s.of.y/sqrt(n.of.y), tau.u.ub, alpha, rho.star=0, tol=tol, max.it=max.it, debug=debug)
 		names(ans)	<- c('tau.l','tau.u','pw.cmx','pw.err')
-		tmp			<- max(0, ans['tau.u'] + s.of.y/sqrt(n.of.y)*qt(alpha, n.of.y-1, ncp=0))
+		tmp			<- max(0, ans['tau.u'] + s.of.y/sqrt(n.of.y)*qt(alpha, n.of.y-1))
 		tmp			<- c(-tmp, tmp)
 		names(tmp)	<- c('c.l','c.u')
 		ans			<- c(tmp, ans)
@@ -312,7 +333,7 @@ mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=NA, s.of.y=NA, what=
 	{
 		ans			<- mutost.calibrate.kl(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub, 
 											 mx.pw=mx.pw, alpha=alpha, max.it=max.it, pow_scale=pow_scale, debug=debug, plot=plot, plot_debug=plot_debug, verbose=verbose)
-		tmp			<- max(0, ans['tau.u'] + s.of.y/sqrt(ans['n.of.y'])*qt(alpha, ans['n.of.y']-1, ncp=0))
+		tmp			<- max(0, ans['tau.u'] + s.of.y/sqrt(ans['n.of.y'])*qt(alpha, ans['n.of.y']-1))
 		tmp			<- c(-tmp, tmp)
 		names(tmp)	<- c('c.l','c.u')
 		ans			<- c(tmp, ans)							 

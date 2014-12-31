@@ -53,8 +53,8 @@ Different types of calibrations are available, see Notes for details:
  \item (\code{what=MXPW}) calibrate the critical region and the equivalence region for given ABC false positive rate and maximum power,
  \item (\code{what=KL}) calibrate the critical region, the equivalence region and the number of simulated summary values for given ABC false positive rate, maximum power and sample standard deviation of the observed data.
 }
-Depending on the type of calibration, some of the following inputs must be specified (see Examples). The recommended default
-calibration for ABC inference is KL.
+The default calibration for ABC inference is KL.
+Depending on the type of calibration, some of the following inputs must be specified (see Examples).
 }
 \note{
 \enumerate{

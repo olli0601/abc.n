@@ -3,8 +3,8 @@
 \alias{mutost.pow}
 \title{\code{mutost} power function}
 \usage{
-mutost.pow(rho, df, s.of.T, tau.u, alpha, norm = 1, support = c(-Inf, Inf),
-  log = FALSE)
+mutost.pow(rho, df, s.of.T, c.u, tau.u = NA, alpha = NA, norm = 1,
+  support = c(-Inf, Inf), log = FALSE)
 }
 \arguments{
 \item{rho}{vector of quantile}
@@ -12,6 +12,8 @@ mutost.pow(rho, df, s.of.T, tau.u, alpha, norm = 1, support = c(-Inf, Inf),
 \item{df}{Degrees of freedom}
 
 \item{s.of.T}{Standard deviation of the test statistic}
+
+\item{c.u}{Upper boundary point of the critical region}
 
 \item{tau.u}{Upper boundary point of the equivalence region}
 
@@ -27,6 +29,9 @@ mutost.pow(rho, df, s.of.T, tau.u, alpha, norm = 1, support = c(-Inf, Inf),
 Compute the power of the one-sample equivalence test for population means of normal summary values
 }
 \note{
+To compute the power, either \code{c.u} or \code{tau.u} and \code{alpha} are required. If \code{tau.u} and \code{alpha}
+are given, then the value of \code{c.u} is ignored.
+
 The power function can be truncated to \code{support} and then standardized with \code{norm}.
 If one of these is set, the other must be provided too.
 }
@@ -57,7 +62,7 @@ print(p)
 tau.u <- 1.5
 tmp <- lapply(c(seq(1,5,1),seq(20,100,20)),function(n.of.y)
 		{
-			data.table(n.of.y=as.factor(n.of.y),rho=rho,power=mutost.pow(rho, df=n.of.y-1, s.of.T, tau.u, alpha=0.01),n.of.y=n.of.y)
+			data.table(n.of.y=as.factor(n.of.y),rho=rho,power=mutost.pow(rho, df=n.of.y-1, s.of.T, tau.u=tau.u, alpha=0.01),n.of.y=n.of.y)
 		})
 tmp	<- do.call('rbind', tmp)
 p <- ggplot(tmp,aes(x=rho,y=power,colour=n.of.y,group=n.of.y)) + geom_line() + labs(y='Power\\n(ABC acceptance probability)')

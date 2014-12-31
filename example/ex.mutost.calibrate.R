@@ -68,3 +68,40 @@ sim 		<- (sim - mean(sim))/sd(sim) * ysigma + ymean
 ans 		<- mutost.calibrate(n.of.x=length(obs), s.of.x= sd(obs), n.of.y=length(sim), s.of.y=sd(sim), 
 	tau.u.ub=3, what='KL', mx.pw=0.9, alpha=0.01, plot=TRUE, debug=TRUE)
 
+\dontrun{
+abc.presim.uprior.mu<- function(abc.nit, xn, xmean, xsigma, prior.l, prior.u, ysigma, yn=NA )		
+{		
+	ans			<- vector("list",5)
+	names(ans)	<- c("x","xn","xmean","xsigma","sim")
+	obs 		<- rnorm(xn, xmean, xsigma)
+	obs 		<- (obs - mean(obs))/sd(obs) * xsigma + xmean
+	ans[["x"]]			<- obs
+	ans[["xmean"]]		<- xmean
+	ans[["xsigma"]]		<- xsigma
+	
+	ans[["sim"]]		<- sapply(1:abc.nit, function(i)
+			{					
+				ymu		<- runif(1, prior.l, prior.u)
+				y		<- rnorm(yn, ymu, sd=ysigma)
+				tmp		<- c(yn, ymu, ysigma, mean(y), sd(y) )									
+				tmp					
+			})								
+	rownames(ans[["sim"]])	<- c('m','ymu','ysigma','ysmean','yssd')
+	ans
+}
+
+
+abc.presim	<- abc.presim.uprior.mu( 	abc.nit=1e7, xn=60, xmean=1.34, xsigma=1.4, 
+		prior.l=1.34-5, prior.u=1.34+5, ysigma=1.4, yn=60 )
+abc.df		<- as.data.table(t(abc.presim$sim))								
+abc.df[, it:=seq_len(nrow(abc.df))]								
+tmp			<- abc.df[,  as.list( mutost.calibrate(	n.of.y=m, s.of.y=yssd, tau.u.ub=1, what='MXPW', mx.pw=0.9, alpha=0.01)[1:4] ), by='it']
+abc.df		<- merge(abc.df, tmp, by='it')								
+abc.df[, T:= abc.df[, ysmean-1.34]]
+abc.df[, ABC_C90:= abc.df[, c.l<=T & T<=c.u]]
+
+ggplot( subset(abc.df, ABC_C90), aes(x=ymu-abc.presim$xmean)) + geom_histogram()
+ggplot( subset(abc.df, ABC_C90), aes(x=ymu-abc.presim$xmean)) + geom_histogram(aes(y= ..density..))
+}
+
+

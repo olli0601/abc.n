@@ -39,32 +39,25 @@ typedef struct
 
 void printBArg(arg_mutost *arg);
 
+void abcMuTOST_power(const int &nrho, double * const rho, const double &df, const double &c_up, const double &sT, double *ans);
+
 void abcMuTOST_pow(const int &nrho, double * const rho, const double &df, const double &tau_up, const double &sT, const double &alpha, double *ans);
+
+double abcMuTOST_power_scalar(double x, void *arg);
 
 double abcMuTOST_pow_scalar(double x, void *arg);
 
 void abcMuTOST_sulkl(const int &nrho, double * const rho, const double &nx, const double &sx, const double &norm, const int &give_log,double *ans);
 
-//double abcMuTOST_sulkl_scalar(double x, void *arg_void);
-
-//void abc_mutost_calibrate_tauup_for_mxpw(	const double &mxpw, const double &df, const double &sT, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
-//                                         	double &maxit, double &tau_u, double &curr_mxpw, double &error);
-//void abcMuTOST_taulowup_var(	const double &slkl, const double &df, const double &sT, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
-//                                          double &maxit, double &tau_u, double &curr_pwv, double &error);
-//void abcMuTOST_nsim(	const double &nobs, const double &slkl, const double &mxpw, const double &sSim, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
-//                                  double &maxit, double &nsim, double &tau_u, double &curr_pwv, double &curr_pw, double &error);
-//void abcMuTOST_KL(const double &nx, const double &sx, const double &ny, const double &sy, const double &mx_pw, const double &alpha, const int &calibrate_tau_up, double &tau_up,const double &pow_scale, double &curr_mxpw, double &KL_div);
-//void abcMuTOST_KL(arg_mutost *arg);
-
-
-extern "C" {
-    //SEXP abcMuTOST_nsim(SEXP args);
-    //SEXP abcMuTOST_taulowup_var(SEXP args);
+extern "C"
+{
     SEXP abcMuTOST_pwvar(SEXP args);
+    SEXP abcMuTOST_power(SEXP arg_rho, SEXP arg_df, SEXP arg_c_up, SEXP arg_sT);
     SEXP abcMuTOST_pow(SEXP arg_rho, SEXP arg_df, SEXP arg_tau_up, SEXP arg_sT, SEXP arg_alpha);
     SEXP abcMuTOST_sulkl(SEXP arg_rho, SEXP arg_nx, SEXP arg_sx, SEXP arg_norm, SEXP arg_log);
 
     SEXP abc_mutost_integrate_sulkl(SEXP arg_lower, SEXP arg_upper, SEXP arg_abs_tol, SEXP arg_rel_tol, SEXP arg_nx, SEXP arg_sx, SEXP arg_norm, SEXP arg_log);
+    SEXP abc_mutost_integrate_power(SEXP arg_lower, SEXP arg_upper, SEXP arg_abs_tol, SEXP arg_rel_tol, SEXP arg_df, SEXP arg_sT, SEXP arg_c_up, SEXP arg_norm, SEXP arg_log);
     SEXP abc_mutost_integrate_pow(SEXP arg_lower, SEXP arg_upper, SEXP arg_abs_tol, SEXP arg_rel_tol, SEXP arg_df, SEXP arg_sT, SEXP arg_tau_up, SEXP arg_alpha, SEXP arg_norm, SEXP arg_log);
     SEXP abc_mutost_get_KL(SEXP arg_nx, SEXP arg_sx, SEXP arg_ny, SEXP arg_sy, SEXP arg_mx_pw, SEXP arg_alpha, SEXP arg_calibrate_tau_up, SEXP arg_tau_up, SEXP arg_pow_scale);
     SEXP abc_mutost_calibrate_tauup_for_mxpw(SEXP args);

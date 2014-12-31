@@ -28,6 +28,37 @@ void abcMuTOST_pow(const int &nrho, double * const rho, const double &df, const 
 	}
 }
 
+void abcMuTOST_power(const int &nrho, double * const rho, const double &df, const double &c_up, const double &sT, double *ans)
+{
+	int n= nrho;
+	const int LOG= 0, LOWERTAIL=1;
+	double *xans= ans, *xrho=rho;
+	const double CIS=c_up/sT;
+
+	for(; n--; xrho++, xans++)
+	{
+		*xans= pnt( CIS, df, *xrho/sT, LOWERTAIL, LOG) - pnt( -CIS, df, *xrho/sT, LOWERTAIL, LOG);
+		*xans= *xans<0 ? 0 : *xans;
+	}
+}
+
+double abcMuTOST_power_scalar(double x, void *arg)
+{
+	arg_mutost *a=(arg_mutost *) arg;
+	double ans;
+	const double CIS= a->tau_up/a->sT;	//we set a->tau_up to c_up
+
+	ans= pnt( CIS, a->df, x/a->sT, 1, 0) - pnt( -CIS, a->df, x/a->sT, 1, 0);
+
+    /* Can be 0 at some point! */
+    /* Usually this happens due to numerical inacurracy in the tail. */
+    /* To avoid infinity we assume that ans=nabcGlobals::NABC_DBL_MIN at these points. */
+
+	ans= ans<=0 ? nabcGlobals::NABC_DBL_MIN : ans/a->norm;
+
+	return a->give_log ? log(ans) : ans;
+}
+
 double abcMuTOST_pow_scalar(double x, void *arg)
 {
 	arg_mutost *a=(arg_mutost *) arg;
@@ -72,118 +103,6 @@ static inline double abcMuTOST_sulkl_scalar(double x, void *arg_void)
 	return ans;
 }
 
-/*
-void abcMuTOST_taulowup_var(	const double &slkl, const double &df, const double &sT, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
-                                          double &maxit, double &tau_u, double &curr_pwv, double &error)
-{
-	const int NRHO= 1024;
-	int n= CAST(int,maxit);
-	const double DIGITS= std::ldexp(1,33), S2LKL= slkl*slkl, MEAN=0.;
-	double tau_ubd= tau_ub/2, tau_lbd=0, *rho= NULL, *pw=NULL;
-    
-	rho= NEW_ARY(double,NRHO);
-	pw= NEW_ARY(double,NRHO);
-	for(curr_pwv=0; 	n-- && curr_pwv<S2LKL; 		)
-	{
-		tau_ubd*=2;
-		oseq_nout(-2*tau_ubd, 2*tau_ubd, NRHO, rho);
-		abcMuTOST_pow(NRHO, rho, df, tau_ubd, sT, alpha, pw);
-		if(oIsZero(NRHO,pw))//must increase tau_u to get non-zero power
-			curr_pwv= 0;
-		else
-			ovar(NRHO, rho, pw, MEAN, curr_pwv);
-		//ERROR_ON(CAST(double,n+1)==maxit && curr_pwv>S2LKL,"abcMuTOST_taulowup_var: variance of power assumed to be smaller than variance of summary likelihood ");
-        //std::cout<<"H1 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_ubd<<'\t'<<n<<std::endl;
-		//oprinta(pw, NRHO, std::cout);
-	}
-	ERROR_ON(n<0,"abcMuTOST_taulowup_var: error at 1a ");
-	for(	error=1, n= CAST(int, maxit);
-        n-- && (ABS(error)>tol) && std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS);
-        )
-	{
-		tau_u= (tau_lbd+tau_ubd)/2;
-		oseq_nout(-2*tau_u, 2*tau_u, NRHO, rho);
-		abcMuTOST_pow(NRHO, rho, df, tau_u, sT, alpha, pw);
-		if(oIsZero(NRHO,pw))//must increase tau_u to get non-zero power
-			curr_pwv= 0;
-		else
-			ovar(NRHO, rho, pw, MEAN, curr_pwv);
-		error= curr_pwv-S2LKL;
-		if(error<0)
-			tau_lbd= tau_u;
-		else
-			tau_ubd= tau_u;
-        //std::cout<<"H2 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<error<<'\t'<<maxit<<'\t'<<tau_lbd<<'\t'<<tau_ubd<<'\t'<<tol<<'\t'<< (std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS)) <<std::endl;
-	}
-    //oprinta(pw, NRHO, std::cout);
-	if(n<0)
-		oprintff("abcMuTOST_tau_taulowup_var: reached max it %i current pw variance %g requ pw variance %g",n,curr_pwv,S2LKL);
-	maxit= n+1;
-	DELETE(rho);
-	DELETE(pw);
-}
-*/
-/*
-void abcMuTOST_nsim(	const double &nobs, const double &slkl, const double &mxpw, const double &sSim, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
-                                  double &maxit, double &nsim, double &tau_u, double &curr_pwv, double &curr_pw, double &error)
-{
-	const int NRHO= 1024;
-	int n= CAST(int,maxit);
-	const double S2LKL= slkl*slkl, MEAN=0.;
-	double nsim_lb=nobs-1, nsim_ub=std::ceil(nobs/2), xtau_ub= tau_ub, *rho= NULL, *pw=NULL, *cali_tau=NULL;
-    
-	rho= NEW_ARY(double,NRHO);
-	pw= NEW_ARY(double,NRHO);
-	cali_tau= NEW_ARY(double,2);
-    //std::cout<<"\nnobs"<<nobs<<"\nslkl"<<slkl<<"\nmxpw"<<mxpw<<"\nsSim"<<sSim<<"\ntau_ub"<<tau_ub<<"\nalpha"<<alpha<<"\nrho_eq"<<rho_eq<<"\ntol"<<tol<<"\nmaxit"<<maxit<<std::endl;
-	for(	curr_pwv=2*S2LKL;
-        n-- && curr_pwv>S2LKL;
-        )
-	{
-		nsim_ub*= 2;
-		*(cali_tau+1)= maxit;
-		abc_mutost_calibrate_tauup_for_mxpw(mxpw, nsim_ub-1, sSim/std::sqrt(nsim_ub), xtau_ub, alpha, rho_eq, tol, *(cali_tau+1), tau_u, curr_pw, *cali_tau);
-		oseq_nout(-tau_u, tau_u, NRHO, rho);
-		abcMuTOST_pow(NRHO, rho, nsim_ub-1, tau_u, sSim/std::sqrt(nsim_ub), alpha, pw);
-		if(oIsZero(NRHO,pw))//must increase nsim to get non-zero power
-			curr_pwv= 2*S2LKL;
-		else
-			ovar(NRHO, rho, pw, MEAN, curr_pwv);
-        //std::cout<<"H1 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<nsim_ub<<std::endl;
-	}
-	ERROR_ON(n<0,"abcMuTOST_nsim: error at 1a ");
-	for(	error=1, nsim= nsim_ub, n= CAST(int,maxit);
-        n-- && (ABS(error)>tol) && (nsim_lb+1)!=nsim_ub;
-        )
-	{
-        nsim= std::floor( (nsim_lb+nsim_ub)/2 );
-        *(cali_tau+1)= maxit;
-        xtau_ub= tau_u;
-        abc_mutost_calibrate_tauup_for_mxpw(mxpw, nsim-1, sSim/std::sqrt(nsim), xtau_ub, alpha, rho_eq, tol, *(cali_tau+1), tau_u, curr_pw, *cali_tau);
-        oseq_nout(-tau_u, tau_u, NRHO, rho);
-        abcMuTOST_pow(NRHO, rho, nsim-1, tau_u, sSim/std::sqrt(nsim), alpha, pw);
-        if(oIsZero(NRHO,pw))//must increase nsim to get non-zero power
-            curr_pwv= 2*S2LKL;
-        else
-            ovar(NRHO, rho, pw, MEAN, curr_pwv);
-        
-        error= curr_pwv-S2LKL;
-        if(error<0)
-            nsim_ub= nsim;
-        else
-            nsim_lb= nsim;
-        std::cout<<"H2 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<nsim<<'\t'<<curr_pw<<'\t'<<nsim_lb<<'\t'<<nsim_ub<<std::endl;
-	}
-	if(n<0)
-		oprintff("abcMuTOST_nsim: reached max it %i current pw variance %g requ pw variance %g",n,curr_pwv,S2LKL);
-    
-	maxit= n+1;
-	DELETE(rho);
-	DELETE(pw);
-	DELETE(cali_tau);
-}
-*/
-
 SEXP abcMuTOST_pow(SEXP arg_rho, SEXP arg_df, SEXP arg_tau_up, SEXP arg_sT, SEXP arg_alpha)
 {
 	ERROR_ON(!Rf_isReal(arg_rho) ,"abcMuTOST_pow: error at 1a ");
@@ -197,6 +116,24 @@ SEXP abcMuTOST_pow(SEXP arg_rho, SEXP arg_df, SEXP arg_tau_up, SEXP arg_sT, SEXP
 	xans= REAL(ans);
 	//std::cout<<"abcMuTOST_pow_c\t"<<nrho<<'\t'<<*xrho<<'\t'<<df<<'\t'<<tau_up<<'\t'<<sT<<'\t'<<alpha<<std::endl;
 	abcMuTOST_pow(nrho, xrho, df, tau_up, sT, alpha, xans);
+
+	UNPROTECT(1);
+	return ans;
+}
+
+SEXP abcMuTOST_power(SEXP arg_rho, SEXP arg_df, SEXP arg_c_up, SEXP arg_sT)
+{
+	ERROR_ON(!Rf_isReal(arg_rho) ,"abcMuTOST_power: error at 1a ");
+
+	int nrho= Rf_length(arg_rho);
+	double *xrho= REAL(arg_rho), *xans=NULL;
+	double df= ::Rf_asReal(arg_df), c_up= ::Rf_asReal(arg_c_up), sT= ::Rf_asReal(arg_sT);
+	SEXP ans;
+
+	PROTECT(ans=  allocVector(REALSXP,nrho));
+	xans= REAL(ans);
+	//std::cout<<"abcMuTOST_pow_c\t"<<nrho<<'\t'<<*xrho<<'\t'<<df<<'\t'<<tau_up<<'\t'<<sT<<std::endl;
+	abcMuTOST_power(nrho, xrho, df, c_up, sT, xans);
 
 	UNPROTECT(1);
 	return ans;
@@ -226,6 +163,29 @@ SEXP abc_mutost_integrate_sulkl(SEXP arg_lower, SEXP arg_upper, SEXP arg_abs_tol
 	return ans;
 }
 
+SEXP abc_mutost_integrate_power(SEXP arg_lower, SEXP arg_upper, SEXP arg_abs_tol, SEXP arg_rel_tol, SEXP arg_df, SEXP arg_sT, SEXP arg_c_up, SEXP arg_norm, SEXP arg_log)
+{
+	double lower= asReal(arg_lower), upper= asReal(arg_upper), abs_tol=asReal(arg_abs_tol), rel_tol=asReal(arg_rel_tol) ;
+	double abserr;
+	double *xans=NULL;
+	int neval,res;
+
+	arg_mutost f_arg;
+	f_arg.df		= asReal(arg_df);
+	f_arg.sT		= asReal(arg_sT);
+	f_arg.tau_up	= asReal(arg_c_up);
+	f_arg.norm		= asReal(arg_norm);
+	f_arg.give_log	= asInteger(arg_log);
+
+	SEXP ans;
+
+	PROTECT(ans=  allocVector(REALSXP,1));
+	xans	= REAL(ans);
+	res		= nabc_integration_qng(abcMuTOST_power_scalar, &f_arg, lower, upper, abs_tol, rel_tol, xans, &abserr, &neval);
+    //std::cout<<"abc_mutost_integrate_pow\ndf\t"<<f_arg.df<<"\nsT\t"<<f_arg.sT<<"\ntau_up\t"<<f_arg.tau_up<<"\nalpha\t"<<f_arg.alpha<<"\nnorm\t"<<f_arg.norm<<"\ngive_log\t"<<f_arg.give_log<<"\nreturn\t"<<res<<"\nans\t"<<*xans<<std::endl;
+	UNPROTECT(1);
+	return ans;
+}
 
 SEXP abc_mutost_integrate_pow(SEXP arg_lower, SEXP arg_upper, SEXP arg_abs_tol, SEXP arg_rel_tol, SEXP arg_df, SEXP arg_sT, SEXP arg_tau_up, SEXP arg_alpha, SEXP arg_norm, SEXP arg_log)
 {
@@ -573,4 +533,114 @@ SEXP abcMuTOST_pwvar(SEXP args)
 }
 */
 
+/*
+void abcMuTOST_taulowup_var(	const double &slkl, const double &df, const double &sT, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
+                                          double &maxit, double &tau_u, double &curr_pwv, double &error)
+{
+	const int NRHO= 1024;
+	int n= CAST(int,maxit);
+	const double DIGITS= std::ldexp(1,33), S2LKL= slkl*slkl, MEAN=0.;
+	double tau_ubd= tau_ub/2, tau_lbd=0, *rho= NULL, *pw=NULL;
 
+	rho= NEW_ARY(double,NRHO);
+	pw= NEW_ARY(double,NRHO);
+	for(curr_pwv=0; 	n-- && curr_pwv<S2LKL; 		)
+	{
+		tau_ubd*=2;
+		oseq_nout(-2*tau_ubd, 2*tau_ubd, NRHO, rho);
+		abcMuTOST_pow(NRHO, rho, df, tau_ubd, sT, alpha, pw);
+		if(oIsZero(NRHO,pw))//must increase tau_u to get non-zero power
+			curr_pwv= 0;
+		else
+			ovar(NRHO, rho, pw, MEAN, curr_pwv);
+		//ERROR_ON(CAST(double,n+1)==maxit && curr_pwv>S2LKL,"abcMuTOST_taulowup_var: variance of power assumed to be smaller than variance of summary likelihood ");
+        //std::cout<<"H1 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_ubd<<'\t'<<n<<std::endl;
+		//oprinta(pw, NRHO, std::cout);
+	}
+	ERROR_ON(n<0,"abcMuTOST_taulowup_var: error at 1a ");
+	for(	error=1, n= CAST(int, maxit);
+        n-- && (ABS(error)>tol) && std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS);
+        )
+	{
+		tau_u= (tau_lbd+tau_ubd)/2;
+		oseq_nout(-2*tau_u, 2*tau_u, NRHO, rho);
+		abcMuTOST_pow(NRHO, rho, df, tau_u, sT, alpha, pw);
+		if(oIsZero(NRHO,pw))//must increase tau_u to get non-zero power
+			curr_pwv= 0;
+		else
+			ovar(NRHO, rho, pw, MEAN, curr_pwv);
+		error= curr_pwv-S2LKL;
+		if(error<0)
+			tau_lbd= tau_u;
+		else
+			tau_ubd= tau_u;
+        //std::cout<<"H2 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<error<<'\t'<<maxit<<'\t'<<tau_lbd<<'\t'<<tau_ubd<<'\t'<<tol<<'\t'<< (std::floor(tau_ubd*DIGITS)!=std::floor(tau_lbd*DIGITS)) <<std::endl;
+	}
+    //oprinta(pw, NRHO, std::cout);
+	if(n<0)
+		oprintff("abcMuTOST_tau_taulowup_var: reached max it %i current pw variance %g requ pw variance %g",n,curr_pwv,S2LKL);
+	maxit= n+1;
+	DELETE(rho);
+	DELETE(pw);
+}
+*/
+/*
+void abcMuTOST_nsim(	const double &nobs, const double &slkl, const double &mxpw, const double &sSim, const double &tau_ub, const double &alpha, const double &rho_eq, const double &tol,
+                                  double &maxit, double &nsim, double &tau_u, double &curr_pwv, double &curr_pw, double &error)
+{
+	const int NRHO= 1024;
+	int n= CAST(int,maxit);
+	const double S2LKL= slkl*slkl, MEAN=0.;
+	double nsim_lb=nobs-1, nsim_ub=std::ceil(nobs/2), xtau_ub= tau_ub, *rho= NULL, *pw=NULL, *cali_tau=NULL;
+
+	rho= NEW_ARY(double,NRHO);
+	pw= NEW_ARY(double,NRHO);
+	cali_tau= NEW_ARY(double,2);
+    //std::cout<<"\nnobs"<<nobs<<"\nslkl"<<slkl<<"\nmxpw"<<mxpw<<"\nsSim"<<sSim<<"\ntau_ub"<<tau_ub<<"\nalpha"<<alpha<<"\nrho_eq"<<rho_eq<<"\ntol"<<tol<<"\nmaxit"<<maxit<<std::endl;
+	for(	curr_pwv=2*S2LKL;
+        n-- && curr_pwv>S2LKL;
+        )
+	{
+		nsim_ub*= 2;
+		*(cali_tau+1)= maxit;
+		abc_mutost_calibrate_tauup_for_mxpw(mxpw, nsim_ub-1, sSim/std::sqrt(nsim_ub), xtau_ub, alpha, rho_eq, tol, *(cali_tau+1), tau_u, curr_pw, *cali_tau);
+		oseq_nout(-tau_u, tau_u, NRHO, rho);
+		abcMuTOST_pow(NRHO, rho, nsim_ub-1, tau_u, sSim/std::sqrt(nsim_ub), alpha, pw);
+		if(oIsZero(NRHO,pw))//must increase nsim to get non-zero power
+			curr_pwv= 2*S2LKL;
+		else
+			ovar(NRHO, rho, pw, MEAN, curr_pwv);
+        //std::cout<<"H1 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<nsim_ub<<std::endl;
+	}
+	ERROR_ON(n<0,"abcMuTOST_nsim: error at 1a ");
+	for(	error=1, nsim= nsim_ub, n= CAST(int,maxit);
+        n-- && (ABS(error)>tol) && (nsim_lb+1)!=nsim_ub;
+        )
+	{
+        nsim= std::floor( (nsim_lb+nsim_ub)/2 );
+        *(cali_tau+1)= maxit;
+        xtau_ub= tau_u;
+        abc_mutost_calibrate_tauup_for_mxpw(mxpw, nsim-1, sSim/std::sqrt(nsim), xtau_ub, alpha, rho_eq, tol, *(cali_tau+1), tau_u, curr_pw, *cali_tau);
+        oseq_nout(-tau_u, tau_u, NRHO, rho);
+        abcMuTOST_pow(NRHO, rho, nsim-1, tau_u, sSim/std::sqrt(nsim), alpha, pw);
+        if(oIsZero(NRHO,pw))//must increase nsim to get non-zero power
+            curr_pwv= 2*S2LKL;
+        else
+            ovar(NRHO, rho, pw, MEAN, curr_pwv);
+
+        error= curr_pwv-S2LKL;
+        if(error<0)
+            nsim_ub= nsim;
+        else
+            nsim_lb= nsim;
+        std::cout<<"H2 "<<curr_pwv<<'\t'<<S2LKL<<'\t'<<tau_u<<'\t'<<nsim<<'\t'<<curr_pw<<'\t'<<nsim_lb<<'\t'<<nsim_ub<<std::endl;
+	}
+	if(n<0)
+		oprintff("abcMuTOST_nsim: reached max it %i current pw variance %g requ pw variance %g",n,curr_pwv,S2LKL);
+
+	maxit= n+1;
+	DELETE(rho);
+	DELETE(pw);
+	DELETE(cali_tau);
+}
+*/

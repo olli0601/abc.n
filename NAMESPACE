@@ -3,6 +3,7 @@
 export(abccheck.normal)
 export(mutost.calibrate)
 export(mutost.pow)
+export(mutost.pow.norm)
 export(vartest.calibrate)
 export(vartest.pow)
 export(vartest.pow.norm)
