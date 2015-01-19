@@ -1,5 +1,10 @@
 # Calibration procedures for accurate ABC
 
+Approximate Bayesian Computations (ABC) are a Monte Carlo technique to perform approximate parameter inference when the likelihood term cannot be easily evaluated. 
+ABC proceeds by summarising the data, simulating from the model, comparing simulated summaries to observed summaries with a distance function, and accepting the simulated summaries if they do not differ from the observed summaries by more than a user-defined tolerance parameter. These steps are repeated through many Monte Carlo iterations to obtain an approximation to the true posterior density of the model parameters. The process by which precise ABC tolerances and ABC distance functions can be obtained is often referred to as ABC calibrations. These calibrations make use of decision theoretic arguments to construct the ABC accept/reject step, so that the ABC accept/reject step enjoys certain desirable properties. 
+
+The \Rcode{abc.star} \Rlang\ package implements ABC calibration routines for the most commonly occurring scenarios.
+
 The corresponding paper is now on arxiv http://arxiv.org/abs/1305.4283	
 
 ## Authors:
@@ -34,8 +39,8 @@ library(help=abc.star)
 
 # Content:
 
-* Calibration routines for dispersion equivalence of normally distributed summaries start with `chisqstretch.*`
-* Calibration routines for location equivalence of normally distributed summaries start with `nabc.mutost.onesample.*`
-* Calibration routines for asymptotic equivalence of autocorrelation start with `ma.*`
-* Various helper functions to reconstruct and display link functions and level sets
+* Calibration routines to test if the location parameter of simulated and observed summaries is similar. These start with `mutost.*`
+* Calibration routines to test if the variance parameter of simulated and observed summaries is similar. These start with `vartest.*`
+* Calibration routines to test if the rate parameter of simulated and observed summaries is similar. These start with `ratetest.*`
+* Calibration routines for the Z-test. This is an asymptotic test that can be used for several testing problems, for example testing if autocorrelations are similar. This test starts with `ztest.*`
 
