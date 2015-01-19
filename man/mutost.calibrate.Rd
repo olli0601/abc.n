@@ -48,6 +48,10 @@ vector
 }
 \description{
 Calibrate the one-sample equivalence test for population means of normal summary values for ABC inference.
+The one-sample \code{mutost} can be used within ABC to test the null hypothesis that the underlying population mean of the simulated
+summary values is not similar to the sample mean of the observed summary values. It is applicable when the simulated and
+observed summary values follow a normal distribution, or when normality cannot be rejected.
+
 Different types of calibrations are available, see Notes for details:
 \enumerate{
  \item (\code{what=ALPHA}) compute the ABC false positive rate for given critical region,
@@ -55,7 +59,10 @@ Different types of calibrations are available, see Notes for details:
  \item (\code{what=MXPW}) calibrate the critical region and the equivalence region for given ABC false positive rate and maximum power,
  \item (\code{what=KL}) calibrate the critical region, the equivalence region and the number of simulated summary values for given ABC false positive rate, maximum power and sample standard deviation of the observed data.
 }
-The default calibration for ABC inference is MXPW.
+
+In the ideal case, the calibration KL is used. However, the KL calibration requires multiple i. i. d. instances of observed summary statistics
+at each ABC iteration. If this is not available, the MXPW calibration should be used.
+
 Depending on the type of calibration, some of the following inputs must be specified (see Examples).
 }
 \note{
@@ -68,8 +75,7 @@ Depending on the type of calibration, some of the following inputs must be speci
 				The output contains the corresponding critical region \code{[c.l, c.u]}, which corresponds to the ABC tolerance region typically denoted by \code{[-epsilon, epsilon]}.
 				The resulting critical region may be empty under this test, if stochasticity is too large.
 				This is an intermediate calibration step and may result in unsuitable power properties (see Examples).
- \item (\code{what=MXPW}) This is the default calibration for a given set of simulated summary values because it specifies all free ABC parameters.
-				The inputs are \code{alpha}, \code{mx.pw}, with default values 0.01 and 0.9 respectively.
+ \item (\code{what=MXPW}) This calibration requires the inputs \code{alpha}, \code{mx.pw}, with default values 0.01 and 0.9 respectively.
 				The output contains the corresponding critical region \code{[c.l, c.u]} (to be used in ABC, see Notes on (2)), and
 				the corresponding equivalence region \code{[tau.l, tau.u]} that gives a suitable ABC accept/reject probability if the simulated summary values are close to the observed summary values.
 				As a check to the numerical calibrations, the actual power at the point of equality is returned (\code{pw.cmx}).
@@ -187,7 +193,6 @@ abc.df		<- as.data.table(t(abc.presim$sim))
 abc.df[, it:=seq_len(nrow(abc.df))]								
 tmp			<- abc.df[,  as.list( mutost.calibrate(	n.of.y=m, s.of.y=yssd, tau.u.ub=1, what='MXPW', mx.pw=0.9, alpha=0.01)[1:4] ), by='it']
 abc.df		<- merge(abc.df, tmp, by='it')								
-#save(file="/Users/Oliver/git/abc.star/data/abc.presim.mutost.Rdata", abc.df)
 abc.df[, T:= abc.df[, ysmean-1.34]]
 abc.df[, ABC_C90:= abc.df[, c.l<=T & T<=c.u]]
 

@@ -46,6 +46,8 @@ vector
 }
 \description{
 Calibrate the one-sample equivalence test for population means of normal summary values with known population variance for ABC inference.
+This is an asymptotic test that can be used for several testing problems, for example testing if autocorrelations are similar.
+
 Different types of calibrations are available, see Notes for details:
 \enumerate{
  \item (\code{what=ALPHA}) compute the ABC false positive rate for given critical region,
@@ -53,7 +55,9 @@ Different types of calibrations are available, see Notes for details:
  \item (\code{what=MXPW}) calibrate the critical region and the equivalence region for given ABC false positive rate and maximum power,
  \item (\code{what=KL}) calibrate the critical region, the equivalence region and the number of simulated summary values for given ABC false positive rate, maximum power and sample standard deviation of the observed data.
 }
-The default calibration for ABC inference is KL.
+The calibration KL should be used. Here, the KL calibration does not require multiple i. i. d. instances of observed summary statistics
+at each ABC iteration because this is an asymptotic test.
+
 Depending on the type of calibration, some of the following inputs must be specified (see Examples).
 }
 \note{
