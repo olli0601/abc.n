@@ -1,6 +1,6 @@
 Package: abc.star
 Version: 1.0-0
-Date: 2014/12/12
+Date: 2015/01/19
 Title: abc.star
 Author: {Oliver Ratmann, Sen Hu, Anton Camacho, Caroline Colijn}
 Maintainer: Oliver Ratmann <o.ratmann@imperial.ac.uk>
@@ -12,6 +12,6 @@ Depends:
     reshape2,
     ash,
     nortest
-Description: Calibrated decision tests for ABC* based on summary values
+Description: Calibration procedures for accurate ABC
 License: GPL (>=2)
 LazyLoad: yes
