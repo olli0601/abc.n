@@ -64,7 +64,7 @@ Different types of calibrations are available, see Notes for details:
  \item (\code{what=KL}) calibrate the critical region, the equivalence region and the number of simulated summary values for given ABC false positive rate, maximum power and sample standard deviation of the observed data.
 }
 
-#' In the ideal case, the calibration KL is used. However, the KL calibration requires multiple i. i. d. instances of observed summary statistics
+In the ideal case, the calibration KL is used. However, the KL calibration requires multiple i. i. d. instances of observed summary statistics
 at each ABC iteration. If this is not available, the MXPW calibration should be used.
 
 Depending on the type of calibration, some of the following inputs must be specified (see Examples).
@@ -145,6 +145,6 @@ vartest.calibrate(n.of.x=n.of.x, s.of.x=s.of.x, what='KL', mx.pw=0.9, alpha=0.01
 http://arxiv.org/abs/1305.4283
 }
 \seealso{
-\code{\link{mutost.calibrate}}, \code{\link{ztest.calibrate}}
+\code{\link{mutost.calibrate}}, \code{\link{ztest.calibrate}}, \code{\link{ratetest.calibrate}}
 }
 

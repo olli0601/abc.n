@@ -184,3 +184,102 @@ ch11.vartest<- function()
 	
 	
 }
+
+ch11.ratetestabc<- function()
+{
+	abc.presim.uprior.beta<- function(abc.nit, n.of.x, beta.x, prior.l, prior.u, n.of.y=NA ){
+		
+		ans  		<- vector("list",4)
+		names(ans)	<- c("x","n.of.x","beta.x","sim")
+		
+		# xn is the number of generated samples
+		obs 		<- rexp(n.of.x, rate=1/beta.x)
+		#obs 		<- (obs - mean(obs))/sd(obs) * xsigma + xmean  # normalization of the generated normal samples
+		
+		ans[["x"]]			<- obs
+		ans[['n.of.x']] <- n.of.x
+		ans[["beta.x"]]		<- beta.x
+		
+		# 'sim' is for simulating simulated samples for given observed x samples
+		# 'abc.nit' is number of ABC iterations
+		ans[["sim"]]		<- sapply(1:abc.nit,  function(i){
+					
+					ybeta		<- runif(1, prior.l, prior.u) # uniform prior
+					y		<- rexp(n.of.y, 1/ybeta)  # generate simulated samples based on uniform prior
+					tmp		<- c( n.of.y,  ybeta,  mean(y) )									
+					tmp					
+				}   )
+		
+		rownames(ans[["sim"]])	<- c('m', 'ybeta', 'ysmean')
+		
+		ans
+	}
+	#==========================
+	ratetest.plot<- function(n.of.y, c.l, c.u, tau.l, tau.u, pow_scale=1.5){
+		
+		pow_support <- c(tau.l/pow_scale, tau.u*pow_scale)   
+		pow_norm 	<- ratetest.pow.norm(c.l=c.l, c.u=c.u, m=n.of.y, trafo=1, support=pow_support)	
+		
+		tmp			<- data.frame(rho=seq(pow_support[1], pow_support[2], length.out = 1024))	
+		tmp$power	<- ratetest.pow(tmp$rho, c.l=c.l, c.u=c.u, m=n.of.y, norm=pow_norm, trafo= 1)*pow_norm	
+		
+		p	<- ggplot(tmp, aes(x=rho, y=power)) + geom_line() + labs(x=expression(rho), y='Power\n(ABC acceptance probability)') +
+				scale_y_continuous(breaks=seq(0,1,0.2), limits=c(0,1)) +
+				scale_x_continuous(limits=c(0,4)) +
+				geom_vline(xintercept = c(tau.l, tau.u), linetype = "dotted") +
+				geom_vline(xintercept = c(c.l, c.u), linetype = "dashed") +
+				ggtitle(paste("n.of.y=", n.of.y, "\ntau.l=", round(tau.l,d=5), " tau.u=", round(tau.u,d=5), "\nc.l=", round(c.l,d=5), " c.u=", round(c.u,d=5)))
+		print(p)
+	}
+	
+	start.time <- Sys.time()
+	abc.presim <- abc.presim.uprior.beta(abc.nit=100000, n.of.x=40, beta.x=2, prior.l=0.1, prior.u=4, n.of.y=40)
+	end.time <- Sys.time()
+	time.taken <- end.time - start.time
+	time.taken
+	
+	
+	abc.df  <- as.data.table(t(abc.presim$sim))	
+	abc.df[ , it:=seq_len(nrow(abc.df))]	
+	print(abc.df)
+	
+	start.time <- Sys.time()
+	tmp  <- abc.df[ , as.list(ratetest.calibrate(n.of.y = m, mx.pw=0.9, tau.u.ub=5, what='MXPW')[1:4]), by='it']
+	end.time <- Sys.time()
+	time.taken <- end.time - start.time
+	time.taken
+	
+	print(tmp[1:10,])
+	
+	abc.df14  	<- merge(abc.df, tmp, by='it')		
+	
+	abc.df  	<- copy(abc.df14)
+#abc.df <- abc.df14
+	print(abc.df[1:10,])
+	is.data.table(abc.df)
+	
+	abc.df <- as.data.table(abc.df)
+	
+	abc.df[,T:=abc.df[,ysmean/2]]
+	print(abc.df[1:10,])
+	
+	abc.df[, ABC_OK := abc.df[, c.l <=T & T <= c.u]]
+	print(abc.df[1:100,])
+	
+	abc.ok<- data.table(RUN='ABC_OK', n.of.y=40, tau.l=mean(abc.df$tau.l), tau.u=mean(abc.df$tau.u), c.l=mean(abc.df$c.l), c.u=mean(abc.df$c.u) )
+	print(abc.ok)
+	
+	ratetest.plot(n.of.y=40, c.l=0.7601569, c.u=1.28276, tau.l=0.5413799, tau.u=1.916706)
+	
+	sel.seq <- abc.df[which(abc.df[['ABC_OK']]=='TRUE'), ybeta]
+	
+	hist(sel.seq, freq=F, breaks=20)
+	
+	sell <- sel.seq/2
+	d <- density(sel.seq)
+	plot(d,ylim=c(0,1), main='')
+	
+	d <- density(sell)
+	plot(d, ylim=c(0,2), xlim=c(0,3), main='')
+	abline(v=1, lty='dotted')
+}

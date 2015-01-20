@@ -1,6 +1,7 @@
 #' @title \code{mutost} power function 
 #' @description Compute the power of the one-sample equivalence test for population means of normal summary values
 #' @export
+#' @import data.table pscl reshape2 ggplot2 ash nortest
 #' @inheritParams mutost.calibrate
 #' @param rho 		vector of quantile
 #' @param df		Degrees of freedom
@@ -257,6 +258,7 @@ mutost.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 #' 
 #' Depending on the type of calibration, some of the following inputs must be specified (see Examples).
 #' @export 
+#' @import data.table pscl reshape2 ggplot2 ash nortest
 #' @param n.of.x 	Number of observed summary values 
 #' @param s.of.x 	Standard deviation of observed summary values 
 #' @param n.of.y 	Number of simulated summary values
@@ -275,7 +277,7 @@ mutost.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 #' @param plot_debug	Flag to plot at each calibration iteration
 #' @param verbose	Flag to run in verbose mode
 #' @return	vector
-#' @seealso \code{\link{vartest.calibrate}}, \code{\link{ztest.calibrate}}
+#' @seealso \code{\link{vartest.calibrate}}, \code{\link{ztest.calibrate}}, \code{\link{ratetest.calibrate}}
 #' @note 
 #' \enumerate{	
 #'  \item (\code{what=ALPHA}) This calibration requires the inputs \code{c.u}, \code{tau.u} with \code{c.u<tau.u} and \code{c.u>0}. 

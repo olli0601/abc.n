@@ -206,6 +206,6 @@ ggplot( subset(abc.df, ABC_C90), aes(x=ymu-abc.presim$xmean)) + geom_histogram(a
 http://arxiv.org/abs/1305.4283
 }
 \seealso{
-\code{\link{vartest.calibrate}}, \code{\link{ztest.calibrate}}
+\code{\link{vartest.calibrate}}, \code{\link{ztest.calibrate}}, \code{\link{ratetest.calibrate}}
 }
 

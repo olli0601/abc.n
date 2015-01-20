@@ -5,7 +5,8 @@ Title: abc.star
 Author: {Oliver Ratmann, Sen Hu, Anton Camacho, Caroline Colijn}
 Maintainer: Oliver Ratmann <o.ratmann@imperial.ac.uk>
 Depends:
-    R (>= 3.1),
+    R (>= 3.1)
+Imports:
     data.table,
     pscl,
     ggplot2,

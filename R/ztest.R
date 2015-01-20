@@ -1,6 +1,7 @@
 #' @title \code{ztest} power function 
 #' @description Compute the power of the one-sample equivalence test for population means of normal summary values with known population variance.
 #' @export
+#' @import data.table pscl reshape2 ggplot2 ash nortest
 #' @inheritParams ztest.calibrate
 #' @param rho 		vector of quantile
 #' @param sigma 	Standard deviation of the test statistic.
@@ -256,6 +257,7 @@ ztest.plot<- function(n.of.y, sigma, c.u, tau.u, alpha, pow_scale=1.5)
 #' 
 #' Depending on the type of calibration, some of the following inputs must be specified (see Examples). 
 #' @export 
+#' @import data.table pscl reshape2 ggplot2 ash nortest
 #' @param n.of.x 	Number of observed summary values  
 #' @param n.of.y 	Number of simulated summary values
 #' @param n2s 		Function to calculate the standard deviation of the test statistic from n.of.y
@@ -273,7 +275,7 @@ ztest.plot<- function(n.of.y, sigma, c.u, tau.u, alpha, pow_scale=1.5)
 #' @param plot_debug	Flag to plot at each calibration iteration
 #' @param verbose	Flag to run in verbose mode
 #' @return	vector
-#' @seealso \code{\link{mutost.calibrate}}, \code{\link{vartest.calibrate}}
+#' @seealso \code{\link{mutost.calibrate}}, \code{\link{vartest.calibrate}}, \code{\link{ratetest.calibrate}}
 #' @note 
 #' \enumerate{	
 #'  \item (\code{what=ALPHA}) This calibration requires the inputs \code{c.u}, \code{tau.u} with \code{0<tau.u} and \code{c.u>0}. 

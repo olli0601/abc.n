@@ -15,6 +15,7 @@
 #' @seealso \code{\link{vartest.pow.norm}}
 #' @example example/ex.chisqstretch.pow.R
 #' @export
+#' @import data.table pscl reshape2 ggplot2 ash nortest
 vartest.pow <- function(rho, scale, df, c.l, c.u, norm=1, trafo=1, support=c(0,Inf), log=FALSE)
 {	
 	ans					<- rep(0,length(rho))
@@ -107,8 +108,8 @@ vartest.getkl <- function(n.of.x, s.of.x, scale, df, tau.u, mx.pw=0.9, alpha=0.0
 	}
 	
 	#truncate pow and compute pow_norm	
-	pow_support <- c(tau.l/pow_scale, tau.u*pow_scale) 	
-	pow_norm 	<- vartest.pow.norm(scale, df, c.l, c.u, trafo=1, support=pow_support)
+	pow_support 	<- c(tau.l/pow_scale, tau.u*pow_scale) 	
+	pow_norm 		<- vartest.pow.norm(scale, df, c.l, c.u, trafo=1, support=pow_support)
 	#compute the norm of lkl, given its support 
 	lkl_support	<- pow_support	
 	#print(c(n.of.x, s.of.x, (n.of.x-1)/n.of.x*s.of.x*s.of.x)); print(lkl_support)
@@ -219,7 +220,7 @@ vartest.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01, rho.
 		tmp							<- tmp-1
 		tau.up.ub					<- 2*tau.up.ub
 		g(tau.low, cl, cu, error)	%<-%	vartest.calibrate.taulow(tau.up.ub, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
-		rho							<- seq(tau.low*pow.scale, tau.up.ub*pow.scale, len=1024)
+		rho							<- seq(tau.low/pow.scale, tau.up.ub*pow.scale, len=1024)
 		pw							<- vartest.pow(rho, scale, df, cl, cu)
 		curr.mx.pw					<- max(pw)		
 		if(verbose)	cat(paste("\ntrial upper bound",tau.up.ub,"with power",curr.mx.pw,"at rho=",rho[ which.max(pw) ]))
@@ -234,7 +235,7 @@ vartest.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01, rho.
 		max.it						<- max.it-1
 		tau.up						<- (tau.up.lb + tau.up.ub)/2
 		g(tau.low, cl, cu, error)	%<-%	vartest.calibrate.taulow(tau.up, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
-		rho							<- seq(tau.low*pow.scale, tau.up*pow.scale, len=1024)		
+		rho							<- seq(tau.low/pow.scale, tau.up*pow.scale, len=1024)		
 		pw							<- vartest.pow(rho, scale, df, cl, cu)
 		curr.mx.pw					<- max(pw)		
 		error						<- curr.mx.pw - mx.pw
@@ -317,11 +318,12 @@ vartest.plot<- function(scale, df, c.l, c.u, tau.l, tau.u, pow_scale=1.5)
 #'  \item (\code{what=KL}) calibrate the critical region, the equivalence region and the number of simulated summary values for given ABC false positive rate, maximum power and sample standard deviation of the observed data.
 #' }
 #' 
-#' #' In the ideal case, the calibration KL is used. However, the KL calibration requires multiple i. i. d. instances of observed summary statistics
+#' In the ideal case, the calibration KL is used. However, the KL calibration requires multiple i. i. d. instances of observed summary statistics
 #' at each ABC iteration. If this is not available, the MXPW calibration should be used.
 #' 
 #' Depending on the type of calibration, some of the following inputs must be specified (see Examples).
 #' @export 
+#' @import data.table pscl reshape2 ggplot2 ash nortest
 #' @param n.of.x 	Number of observed summary values 
 #' @param s.of.x 	Standard deviation of observed summary values 
 #' @param n.of.y 	Number of simulated summary values
@@ -342,7 +344,7 @@ vartest.plot<- function(scale, df, c.l, c.u, tau.l, tau.u, pow_scale=1.5)
 #' @param plot_debug	Flag to plot at each calibration iteration
 #' @param verbose	Flag to run in verbose mode
 #' @return	vector
-#' @seealso \code{\link{mutost.calibrate}}, \code{\link{ztest.calibrate}}
+#' @seealso \code{\link{mutost.calibrate}}, \code{\link{ztest.calibrate}}, \code{\link{ratetest.calibrate}}
 #' @note 
 #' \enumerate{	
 #'  \item (\code{what=ALPHA}) This calibration requires the inputs \code{c.l}, \code{c.u}, \code{tau.l}, \code{tau.u} with \code{c.l>tau.l}, \code{c.u<tau.u}, \code{tau.u>1}, \code{tau.l<1}. 

@@ -127,6 +127,6 @@ ztest.calibrate(n.of.x=n.of.x, n2s=n2s, s2n=s2n, mx.pw=0.9, alpha=0.01, what='KL
 http://arxiv.org/abs/1305.4283
 }
 \seealso{
-\code{\link{mutost.calibrate}}, \code{\link{vartest.calibrate}}
+\code{\link{mutost.calibrate}}, \code{\link{vartest.calibrate}}, \code{\link{ratetest.calibrate}}
 }
 
