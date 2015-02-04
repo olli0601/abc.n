@@ -1,0 +1,37 @@
+# power function of the F-test, to test equality of means for multivariate
+# normal samples with unknown covariance matrix
+
+#set number of samples and variables (this is for 3 variables and
+#100 samples for the observed data)
+n <- 100
+p <- 3
+
+#set number of simulations
+m <- 100
+
+#calculate power for fixed equivalence value
+tau2 <- 1
+rho2 <- seq(0, 1, length = 100)
+ftest.pow(rho2, tau2, n = n, m = m, p = p)
+
+# power increases as size of equivalence region increases but power function
+# flattens out as equivalence region gets large
+tmp <- lapply(signif(seq(0.001, 2, length = 8), digits = 2), function(tau2)
+{
+	data.table(tau2 = as.factor(tau2), rho2 = rho2, power = ftest.pow(rho2, tau2, alpha = 0.01, n, m, p))
+})
+tmp	<- do.call('rbind', tmp)
+pp <- ggplot(tmp, aes(x = rho2, y = power, colour = tau2, group = tau2)) + geom_line() + labs(y = 'Power\n(ABC acceptance probability)')
+print(pp)
+
+# power increases as sample sizes increase
+# (here n = m)
+tau2 <- 1
+tmp <- lapply(c(5, 10, 50, 100, 250, 500), function(n)
+{
+	data.table(n = as.factor(n), rho2 = rho2, power = ftest.pow(rho2, tau2, alpha = 0.01, n, n, p))
+})
+tmp	<- do.call('rbind', tmp)
+pp <- ggplot(tmp, aes(x = rho2, y = power, colour = n, group = n)) + geom_line() + labs(y = 'Power\n(ABC acceptance probability)')
+print(pp)
+
