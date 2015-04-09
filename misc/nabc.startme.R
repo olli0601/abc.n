@@ -10,8 +10,7 @@
 # 	because the R files are re-loaded below
 #
 # usage from R:
-#> setwd("/Users/Oliver/git/abc.star")
-#> source("misc/nabc.startme.R")
+#> setwd("/Users/Oliver/git/abc.star"); source("misc/nabc.startme.R")
 # usage from bash:
 #> misc/abc-n.startme.R --help
 #
@@ -93,6 +92,7 @@ function.list<-c(list.files(path= paste(CODE.HOME,"R",sep='/'), pattern = ".R$",
 sapply(function.list,function(x) source(x,echo=FALSE,print.eval=FALSE, verbose=FALSE))
 ###############################################################################
 #	run script
+#stop()
 if(NABC.DEBUG)	options(error= package.dumpframes)	
 cat(paste("\nabc-n.startme.R: ",ifelse(NABC.DEBUG,"debug",""),"call",default.fun))
 do.call(default.fun,list()) 	

@@ -16,12 +16,12 @@
 #' If one of these is set, the other must be provided too. 
 #' @example example/ex.mutost.pow.R
 #' @references  http://arxiv.org/abs/1305.4283
-mutost.pow <- function(rho, df, s.of.T, c.u, tau.u=NA, alpha=NA, norm=1, support=c(-Inf,Inf), log=FALSE)
+mutost.pow <- function(rho, df, s.of.T, c.u=NA, tau.u=NA, alpha=NA, norm=1, support=c(-Inf,Inf), log=FALSE)
 {	
-	stopifnot( (!is.na(tau.u) & !is.na(alpha)) | (is.na(tau.u) & is.na(alpha)) )
+	stopifnot( (!is.na(tau.u) & !is.na(alpha)) | (!is.na(c.u) & is.na(tau.u) & is.na(alpha)))
 	if(!is.na(tau.u) & !is.na(alpha))
 		c.u			<- max(0, qt(alpha, df)*s.of.T+tau.u)
-	stopifnot(c.u>0)
+	stopifnot(c.u>=0)
 	ans				<- rho
 	in_support		<- (rho >= support[1] & rho <= support[2])
 	ans[!in_support]<- 0
@@ -197,8 +197,8 @@ mutost.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate
 		KL_div 			<- tmp$value
 		if (tmp$message != "OK")	
 			warning(tmp$message)
-		pw.cmx 			<- ifelse(calibrate.tau.u, pw.cmx, mutost.pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha))
-		#print(c(calibrate.tau.u, n.of.y, s.of.y, s.of.y/sqrt(n.of.y), alpha, tau.u, pw.cmx, mutost.pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u, alpha)))		
+		pw.cmx 			<- ifelse(calibrate.tau.u, pw.cmx, mutost.pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u=tau.u, alpha=alpha))
+		#print(c(calibrate.tau.u, n.of.y, s.of.y, s.of.y/sqrt(n.of.y), alpha, tau.u, pw.cmx, mutost.pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u=tau.u, alpha=alpha)))		
 	}
 
 	if (plot) 
@@ -207,7 +207,7 @@ mutost.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate
 		lkl 				<- mutost.sulkl(rho, n.of.x, s.of.x, lkl_norm, lkl_support)
 		df_lkl 				<- data.frame(x = rho, no = lkl * lkl_norm, yes = lkl)
 		df_lkl$distribution <- "summary likelihood"
-		pow					<- mutost.pow(rho, df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u, alpha, norm=pow_norm, support= pow_support, log=FALSE)
+		pow					<- mutost.pow(rho, df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u=tau.u, alpha=alpha, norm=pow_norm, support= pow_support, log=FALSE)
 		df_pow 				<- data.frame(x = rho, no = pow * pow_norm, yes = pow)
 		df_pow$distribution <- "ABC power"
 		df 					<- rbind(df_pow, df_lkl)
@@ -229,7 +229,7 @@ mutost.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate
 mutost.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 {
 	tmp			<- data.frame(rho= seq(-1.5*tau.u, 1.5*tau.u, length.out=1024))	
-	tmp$power	<- mutost.pow(tmp$rho, n.of.y-1, s.of.y/sqrt(n.of.y), tau.u, alpha )
+	tmp$power	<- mutost.pow(tmp$rho, n.of.y-1, s.of.y/sqrt(n.of.y), c.u=c.u )
 	
 	p	<- ggplot(tmp, aes(x=rho, y=power)) + geom_line() + labs(x=expression(rho), y='Power\n(ABC acceptance probability)') +
 			scale_y_continuous(breaks=seq(0,1,0.2), limits=c(0,1)) +
@@ -307,7 +307,7 @@ mutost.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 #' the power is maximized at the point of equality \code{rho=0}. This is also commonly used in uncalibrated ABC routines.
 #' @example example/ex.mutost.calibrate.R
 #' @references  http://arxiv.org/abs/1305.4283
-mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=NA, s.of.y=NA, what='MXPW',
+mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=n.of.x, s.of.y=NA, what='MXPW',
 								c.u=NA, tau.u=NA, tau.u.ub=NA, mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=1.5, tol=1e-5, debug=FALSE, plot=FALSE, plot_debug=FALSE, verbose=FALSE)
 {	
 	stopifnot(what%in%c('ALPHA','CR','MXPW','KL'))
@@ -328,6 +328,8 @@ mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=NA, s.of.y=NA, what=
 	}
 	if(what=='MXPW')
 	{		
+		if(is.na(tau.u.ub))
+			tau.u.ub<- 3*s.of.y		
 		ans			<- mutost.calibrate.mxpw(mx.pw, n.of.y-1, s.of.y/sqrt(n.of.y), tau.u.ub, alpha, rho.star=0, tol=tol, max.it=max.it, debug=debug)
 		names(ans)	<- c('tau.l','tau.u','pw.cmx','pw.err')
 		tmp			<- max(0, ans['tau.u'] + s.of.y/sqrt(n.of.y)*qt(alpha, n.of.y-1))
@@ -339,6 +341,8 @@ mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=NA, s.of.y=NA, what=
 	}
 	if(what=='KL')
 	{
+		if(is.na(tau.u.ub))
+			tau.u.ub<- 3*s.of.y
 		ans			<- mutost.calibrate.kl(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub, 
 											 mx.pw=mx.pw, alpha=alpha, max.it=max.it, pow_scale=pow_scale, debug=debug, plot=plot, plot_debug=plot_debug, verbose=verbose)
 		tmp			<- max(0, ans['tau.u'] + s.of.y/sqrt(ans['n.of.y'])*qt(alpha, ans['n.of.y']-1))
@@ -691,11 +695,11 @@ mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, tau.l=
 	ans[c("lkl","pval")]<-  tost.ans[c("lkl","ass.pval")]
 	ans[c("al","ar")]	<- 	c(0,alpha)								
 	#ans["mx.pow"]		<-	mutost.pow(0, tmp[4], tmp[5], tau.u,  alpha)
-	ans["mx.pow"]		<-	mutost.pow(0, tmp[4], tmp[5], abc.param["tau.u"],  alpha)		#debugging	
+	ans["mx.pow"]		<-	mutost.pow(0, tmp[4], tmp[5], tau.u=abc.param["tau.u"],  alpha=alpha)		#debugging	
 	ans["link.mc.sim"]	<- 	sim.mean
 	ans["link.mc.obs"]	<- 	obs.mean
 	ans["rho.mc"]		<- 	sim.mean - obs.mean
-	ans["rho.pow"]		<-	mutost.pow(ans["rho.mc"], tmp[4], tmp[5], tau.u, alpha )
+	ans["rho.pow"]		<-	mutost.pow(ans["rho.mc"], tmp[4], tmp[5], tau.u=tau.u, alpha=alpha )
 	if(verbose){	cat("\n"); print(ans)	}
 	ans
 }
