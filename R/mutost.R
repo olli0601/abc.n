@@ -29,8 +29,8 @@ mutost.pow <- function(rho, df, s.of.T, c.u=NA, tau.u=NA, alpha=NA, norm=1, supp
 	if(any(in_support))
 	{
 		suppressWarnings({ #suppress numerical inaccuracy warnings
-			ans[in_support] <- .Call("abcMuTOST_power", rho[in_support], df, c.u, s.of.T)/norm
-		})
+					ans[in_support] <- .Call("abcMuTOST_power", rho[in_support], df, c.u, s.of.T)/norm
+				})
 	}	
 	if(log)
 		ans			<- log(ans)	
@@ -67,7 +67,7 @@ generic.tost <- function(tost.args, tau.l, tau.u, alpha, tost.distr="t")
 	names(ans)<- c("error","p.error","lkl","cl","cu","ass.alpha","ass.pval")
 	if(!tost.distr%in%c("t"))	
 		stop("unexpected tost.distr")
-
+	
 	which.not.reject<- which( c(pt( tost.args[1], tost.args[4] )<1-alpha, pt( tost.args[2], tost.args[4] )>alpha))
 	if(length(which.not.reject)%in%c(0,2))		#both upper and lower test statistics indicate mean difference < -tau and mean difference > tau  	OR 		mean difference >= -tau and mean difference <= tau
 	{
@@ -77,8 +77,8 @@ generic.tost <- function(tost.args, tau.l, tau.u, alpha, tost.distr="t")
 	
 	ans["error"]	<- tost.args[3]
 	ans["p.error"]	<- ifelse(	which.not.reject==1, 		
-		1-pt( tost.args[which.not.reject], tost.args[4] ),		
-		pt( tost.args[which.not.reject], tost.args[4] )		)
+			1-pt( tost.args[which.not.reject], tost.args[4] ),		
+			pt( tost.args[which.not.reject], tost.args[4] )		)
 	ans["lkl"]		<- dt( tost.args[3], tost.args[4])		
 	ans["cl"]		<- min(tau.l/tost.args[5]+qt( 1-alpha, tost.args[4] ),0)
 	ans["cu"]		<- max(0, tau.u/tost.args[5]+qt( alpha, tost.args[4] ))
@@ -108,8 +108,8 @@ mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), lo
 	ans 			<- rho
 	in_support 		<- (rho >= support[1] & rho <= support[2])
 	ans[!in_support]<- ifelse(log,-Inf,0)
-
-
+	
+	
 	if(debug){
 		#R code
 		ssn				<- s.of.x/sqrt(n.of.x)
@@ -145,15 +145,15 @@ mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), lo
 mutost.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, plot = F, legend.title='') 
 {
 	
-
+	
 	stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0)
-
+	
 	if (!debug)		#ALL IN C 
 	{						
 		suppressWarnings({ #suppress numerical inaccuracy warnings
-			ans <- .Call("abc_mutost_get_KL", n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u, tau.u, pow_scale)
-		})
-
+					ans <- .Call("abc_mutost_get_KL", n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u, tau.u, pow_scale)
+				})
+		
 		KL_div <- ans[1]
 		tau.u <- ans[2]
 		pw.cmx <- ans[3]
@@ -164,8 +164,8 @@ mutost.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate
 			lkl_support 	<- pow_support <- c(-tau.u, tau.u) * pow_scale
 			lkl_norm 		<- diff(pt(lkl_support/ssn, n.of.x-1))
 			suppressWarnings({ #suppress numerical inaccuracy warnings
-				pow_norm 	<- .Call("abc_mutost_integrate_pow", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
-			})			
+						pow_norm 	<- .Call("abc_mutost_integrate_pow", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
+					})			
 		}
 	} 
 	else			#ALL IN R 
@@ -183,8 +183,8 @@ mutost.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate
 		pow_support <- c(-tau.u, tau.u) * pow_scale
 		#pow_norm <- integrate(mutost.pow, lower = pow_support[1], upper = pow_support[2], df=n.of.y-1, s.of.T=s.of.y/sqrt(n.of.y), tau.u= tau.u, alpha= alpha, norm=1, support= pow_support, log=FALSE)
 		suppressWarnings({ #suppress numerical inaccuracy warnings
-			pow_norm <- .Call("abc_mutost_integrate_pow", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
-		})		
+					pow_norm <- .Call("abc_mutost_integrate_pow", pow_support[1], pow_support[2],.Machine$double.eps^0.25,.Machine$double.eps^0.25,as.double(n.of.y-1),s.of.y/sqrt(n.of.y),tau.u,alpha,1,0)
+				})		
 		#compute the norm of lkl, given its support 
 		ssn 			<- s.of.x/sqrt(n.of.x)
 		df 				<- n.of.x - 1
@@ -200,7 +200,7 @@ mutost.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate
 		pw.cmx 			<- ifelse(calibrate.tau.u, pw.cmx, mutost.pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u=tau.u, alpha=alpha))
 		#print(c(calibrate.tau.u, n.of.y, s.of.y, s.of.y/sqrt(n.of.y), alpha, tau.u, pw.cmx, mutost.pow(rho = 0, n.of.y - 1, s.of.y/sqrt(n.of.y), tau.u=tau.u, alpha=alpha)))		
 	}
-
+	
 	if (plot) 
 	{
 		rho 				<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
@@ -308,7 +308,7 @@ mutost.plot<- function(n.of.y, s.of.y, c.u, tau.u, alpha)
 #' @example example/ex.mutost.calibrate.R
 #' @references  http://arxiv.org/abs/1305.4283
 mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=n.of.x, s.of.y=NA, what='MXPW',
-								c.u=NA, tau.u=NA, tau.u.ub=NA, mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=1.5, tol=1e-5, debug=FALSE, plot=FALSE, plot_debug=FALSE, verbose=FALSE)
+		c.u=NA, tau.u=NA, tau.u.ub=NA, mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=1.5, tol=1e-5, debug=FALSE, plot=FALSE, plot_debug=FALSE, verbose=FALSE)
 {	
 	stopifnot(what%in%c('ALPHA','CR','MXPW','KL'))
 	if(what=='ALPHA')
@@ -344,7 +344,7 @@ mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=n.of.x, s.of.y=NA, w
 		if(is.na(tau.u.ub))
 			tau.u.ub<- 3*s.of.y
 		ans			<- mutost.calibrate.kl(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub, 
-											 mx.pw=mx.pw, alpha=alpha, max.it=max.it, pow_scale=pow_scale, debug=debug, plot=plot, plot_debug=plot_debug, verbose=verbose)
+				mx.pw=mx.pw, alpha=alpha, max.it=max.it, pow_scale=pow_scale, debug=debug, plot=plot, plot_debug=plot_debug, verbose=verbose)
 		tmp			<- max(0, ans['tau.u'] + s.of.y/sqrt(ans['n.of.y'])*qt(alpha, ans['n.of.y']-1))
 		tmp			<- c(-tmp, tmp)
 		names(tmp)	<- c('c.l','c.u')
@@ -356,10 +356,10 @@ mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=n.of.x, s.of.y=NA, w
 # Calibrate the \code{mutost} with option \code{what=KL}
 # @inheritParams mutost.calibrate
 mutost.calibrate.kl<- function(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub, 
-								 mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=1.5, debug=FALSE, plot=FALSE, plot_debug=FALSE, verbose=FALSE)
+		mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=1.5, debug=FALSE, plot=FALSE, plot_debug=FALSE, verbose=FALSE)
 {	
 	KL_args 	<- list(n.of.x=length(obs), s.of.x= sd(obs), n.of.y=length(sim), s.of.y=sd(sim), mx.pw=mx.pw, alpha=alpha, tau.u=tau.u.ub, pow_scale=1.5, debug=debug)
-
+	
 	stopifnot(all(c("n.of.x", "s.of.x", "n.of.y", "s.of.y", "mx.pw", "alpha", "tau.u", "pow_scale") %in% names(KL_args)), max.it > 0)
 	with(KL_args, stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0))
 	#print(KL_args)
@@ -371,7 +371,7 @@ mutost.calibrate.kl<- function(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub,
 	KL_args$calibrate.tau.u <- T
 	KL_args$plot 			<- F			
 	KL.of.yn 				<- do.call(KL_divergence, KL_args)["KL_div"]
-
+	
 	
 	n.of.y 					<- KL_args$n.of.y	
 	KL_args$n.of.y 			<- n.of.y - 1
@@ -387,16 +387,16 @@ mutost.calibrate.kl<- function(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub,
 		if(!decrease_n.of.y)		#case power function not "too tight", adjust yn for fixed mx.pw
 		{
 			suppressWarnings({ #suppress numerical inaccuracy warnings
-				ans 	<- .Call("abc_mutost_calibrate_powerbroader", KL_args, as.integer(max.it))
-			})
+						ans 	<- .Call("abc_mutost_calibrate_powerbroader", KL_args, as.integer(max.it))
+					})
 		}
 		else						#case power function "too tight", force yn=xn and give up mx.pw
 		{
 			KL_args$tau.u 	<- as.double(KL_args$s.of.y / 5)
 			stopifnot(KL_args$tau.u>0)
 			suppressWarnings({ #suppress numerical inaccuracy warnings
-				ans <- .Call("abc_mutost_calibrate_powertighter", KL_args, as.integer(max.it))
-			})
+						ans <- .Call("abc_mutost_calibrate_powertighter", KL_args, as.integer(max.it))
+					})
 		}
 	} 
 	else			#all in R
@@ -410,7 +410,7 @@ mutost.calibrate.kl<- function(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub,
 			KL.of.yn_ub 	<- do.call(KL_divergence, KL_args)["KL_div"]
 			while (KL.of.yn_ub < KL.of.yn && curr.it > 0) 
 			{
-					#print(c(yn.ub, KL.of.yn_ub, KL.of.yn, curr.it))
+				#print(c(yn.ub, KL.of.yn_ub, KL.of.yn, curr.it))
 				curr.it 		<- curr.it - 1
 				KL.of.yn 		<- KL.of.yn_ub
 				yn.ub 			<- 2 * yn.ub
@@ -445,7 +445,7 @@ mutost.calibrate.kl<- function(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub,
 			KL.of.tau.u 			<- do.call(KL_divergence, KL_args)["KL_div"]
 			if (plot_debug)
 				dev.off()
-
+			
 			#to find tau.u.ub increase tau.u until the KL increases too
 			tau.u.ub 				<- 2*KL_args$tau.u
 			curr.it 				<- max.it			
@@ -496,8 +496,8 @@ mutost.calibrate.mxpw<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star=0
 	if(!debug)
 	{
 		suppressWarnings({	#suppress numerical inaccuracy warnings
-			ans<- .Call("abc_mutost_calibrate_tauup_for_mxpw",c(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star, tol, max.it))
-		})
+					ans<- .Call("abc_mutost_calibrate_tauup_for_mxpw",c(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star, tol, max.it))
+				})
 		return(ans)
 	}
 	#else do R implementation
@@ -516,7 +516,7 @@ mutost.calibrate.mxpw<- function(mx.pw, df, s.of.T, tau.up.ub, alpha, rho.star=0
 	}
 	if(tmp==0)	stop("mutost.calibrate.mxpw: could not find tau.up.ub")	
 #print(tau.up.ub); stop()
-		tau.up.lb	<- 0
+	tau.up.lb	<- 0
 	error		<- 1	
 	while(abs(error)>tol && round(tau.up.lb,d=10)!=round(tau.up.ub,d=10) && max.it>0)
 	{
@@ -577,7 +577,7 @@ mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, tau.l=
 {
 	ans <- c(0, 50, 1, NA, NA, NA, 0, 0, 0, 0, 0, 1, 1, NA, NA, NA)
 	names(ans)<- c("lkl", "error", "pval","link.mc.obs","link.mc.sim", "rho.mc", "cil", "cir","tl","tr","al","ar","pfam.pval","nsim","mx.pow","rho.pow")
-
+	
 	#compute two sample t-test on either z-scores or untransformed data points
 	if(any(is.na(sim)))		
 		stop("unexpected NA in sim")
@@ -618,14 +618,14 @@ mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, tau.l=
 		obs.sd		<- sd(obs)
 		tau.u.ub	<- 3*obs.sd
 	}
-
+	
 	if(alpha<0 || alpha>1)		
 		stop("incorrect alpha")
 	if(tau.u.ub<0 )				
 		stop("incorrect args for tau.u.ub")
 	if(annealing<1)				
 		stop("incorrect annealing parameter")
-
+	
 	args		<- args[1]
 	if(verbose)	
 		cat(paste("\ninput call:",args,"annealing=",annealing,"obs.sd=",obs.sd,"tau.u.ub=",tau.u.ub,"alpha=",alpha))
@@ -638,7 +638,7 @@ mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, tau.l=
 	obs.mean	<- mean(obs)	
 	if(verbose)		
 		cat(paste("\nn=",obs.n,"obs.mean",obs.mean,"obs.sd=",obs.sd,"sim.sd",sd(sim)))	
-
+	
 	if(obs.n<2)	
 		stop("length of observed summaries too small, or set 'obs.n' explicitly using args")		
 	#trial run on full sd(sim)
@@ -679,17 +679,17 @@ mutost.onesample<- function(sim, obs, args= NA, verbose= FALSE, tau.u= 0, tau.l=
 		cat(paste("\nsim.mean",sim.mean,"sd sim=",sim.sd,"sd sim long=",tmp,"\n Free ABC parameters calibrated to m=",sim.n,"tau.u=",abc.param["tau.u"],"annealed tau.u=",tau.u))	
 	if(plot)
 		tmp		<- mutost.getkl(obs.n, obs.sd, sim.n, sd(sim), mx.pw, alpha, calibrate.tau.u=FALSE, tau.u=abc.param["tau.u"], debug=0, plot=TRUE, legend.title=legend.txt)
-
+	
 	tmp			<- c(	sqrt(sim.n)*(sim.mean-obs.mean-tau.l) / sim.sd,			#[1]	T-	test statistic for -tau (lower test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
-		sqrt(sim.n)*(sim.mean-obs.mean-tau.u) / sim.sd,			#[2]	T+	test statistic for tau (upper test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
-		sqrt(sim.n)*(sim.mean-obs.mean) / sim.sd,				#[3]	T	test statistic for equality; estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
-		sim.n-1,												#[4] 	degrees of freedom
-		sim.sd/sqrt(sim.n),										#[5]	estimate of the std dev of the test statistic is simply the std dev in the sample whose sample size is > 1 divided by that sample size
-		sim.sd )												#[6]  	standard deviation of the sample
+			sqrt(sim.n)*(sim.mean-obs.mean-tau.u) / sim.sd,			#[2]	T+	test statistic for tau (upper test); estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
+			sqrt(sim.n)*(sim.mean-obs.mean) / sim.sd,				#[3]	T	test statistic for equality; estimate of the common std dev is simply the std dev in the sample whose sample size is > 1
+			sim.n-1,												#[4] 	degrees of freedom
+			sim.sd/sqrt(sim.n),										#[5]	estimate of the std dev of the test statistic is simply the std dev in the sample whose sample size is > 1 divided by that sample size
+			sim.sd )												#[6]  	standard deviation of the sample
 	tost.ans	<-	generic.tost(tmp, tau.l, tau.u, alpha, tost.distr="t")
 	#print("")
 	#print(tost.ans)
-
+	
 	ans[c("error","cil","cir")]	<- c(tost.ans["p.error"], 0, alpha)
 	ans[c("tl","tr","nsim")]	<- c(tau.l,tau.u,sim.n)
 	ans[c("lkl","pval")]<-  tost.ans[c("lkl","ass.pval")]
