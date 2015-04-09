@@ -18,7 +18,7 @@
 #' @references  http://arxiv.org/abs/1305.4283
 mutost.pow <- function(rho, df, s.of.T, c.u, tau.u=NA, alpha=NA, norm=1, support=c(-Inf,Inf), log=FALSE)
 {	
-	stopifnot( (!is.na(tau.u) & !is.na(alpha)) | (is.na(tau.u) & is.na(alpha)) )
+	#stopifnot( (!is.na(tau.u) & !is.na(alpha)) | (is.na(tau.u) & is.na(alpha)) )
 	if(!is.na(tau.u) & !is.na(alpha))
 		c.u			<- max(0, qt(alpha, df)*s.of.T+tau.u)
 	stopifnot(c.u>0)
