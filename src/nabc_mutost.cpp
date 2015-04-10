@@ -85,8 +85,8 @@ void abcMuTOST_sulkl(const int &nrho, double * const rho, const double &nx, cons
 
 	for(; n--; xrho++, xans++)
 	{
-		*xans= dt( *xrho/ssn, df, give_log);
-		*xans= give_log ? *xans-log(ssn*norm) : *xans/ssn/norm;
+		*xans= dnorm( *xrho, 0, ssn, give_log);
+		*xans= give_log ? *xans-log(norm) : *xans/norm;
 	}
 }
 
@@ -97,8 +97,10 @@ static inline double abcMuTOST_sulkl_scalar(double x, void *arg_void)
 
 	double ans;
 
-	ans= dt( x/arg->ssn, arg->df, arg->give_log);
-	ans= arg->give_log ? ans-log(arg->ssn*arg->norm) : ans/arg->ssn/arg->norm;
+	//ans= dt( x/arg->ssn, arg->df, arg->give_log);
+	//ans= arg->give_log ? ans-log(arg->ssn*arg->norm) : ans/arg->ssn/arg->norm;
+	ans= dnorm( x, 0, arg->ssn, arg->give_log);
+	ans= arg->give_log ? ans-log(arg->norm) : ans/arg->norm;
 	
 	return ans;
 }

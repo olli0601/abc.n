@@ -112,14 +112,12 @@ mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), lo
 	
 	if(debug){
 		#R code
-		ssn				<- s.of.x/sqrt(n.of.x)
-		df 				<- n.of.x - 1
 		if (any(in_support)) 
 		{
 			if(log)
-				ans[in_support] <- dt(rho[in_support]/ssn, df,log=TRUE)-log(ssn*norm)
+				ans[in_support] <- dnorm(rho[in_support], sd=s.of.x/sqrt(n.of.x), log=TRUE)-log(norm)
 			else
-				ans[in_support] <- dt(rho[in_support]/ssn, df)/ssn/norm		
+				ans[in_support] <- dnorm(rho[in_support], sd=s.of.x/sqrt(n.of.x))/norm		
 		}
 		
 	}else{
