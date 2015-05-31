@@ -39,19 +39,32 @@ vartest.pow.norm<- function(scale, df, c.l, c.u, trafo= 1, support=c(0,Inf))
 }	
 #------------------------------------------------------------------------------------------------------------------------
 # @title Density of the summary likelihood of the variance for normal summary values
-# @description		The density of the summary likelihood of the variance for normal summary values is scaled inverse chi square.
+# @description		The density of the summary likelihood of the variance for normal summary values on rho space is Inv-Gamma(n/2, n/2).
 # @param rho 		Auxiliary error parameter
-# @param n.of.x	Number of observed summary values
-# @param s.of.x	Standard deviation of the summary values
-# @param trafo		Parameter transformation to compute the summary likelihood on the \code{rho} error space. 		
+# @param n.of.x		Number of observed summary values
 # @param norm 		scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
 # @param support 	vector of dimension 2, support of the truncated summary likelihood.
 # @param log 		logical; if \code{TRUE}, densities d are given as log(d). 
 # @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
 # For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived from the other. 
-# \code{support=qigamma(c(1-norm,1+norm)/2,(n.of.x-2)/2,s.of.x^2*(n.of.x-1)/2)} and \code{norm=diff(pigamma(support,(n.of.x-2)/2,s.of.x^2*(n.of.x-1)/2)}.
+# \code{support=qigamma(c(1-norm,1+norm)/2,n.of.x/2,n.of.x/2)} and \code{norm=diff(pigamma(support,n.of.x/2,n.of.x/2)}.
 # @seealso \code{\link{vartest.calibrate}}, \code{\link{vartest.getkl}} for an example.
-vartest.sulkl<- function(rho, n.of.x, s.of.x, trafo=(n.of.x-1)/n.of.x*s.of.x*s.of.x, norm = 1, support= c(0,Inf), log=FALSE) 
+vartest.sulkl<- function(rho, n.of.x, norm = 1, support= c(0,Inf), log=FALSE) 
+{
+	alpha				<- (n.of.x-2)/2
+	beta				<- n.of.x/2
+	stopifnot(alpha>0, beta>0)
+	ans 				<- rho
+	in_support 			<- (rho >= support[1] & rho <= support[2])
+	ans[!in_support]	<- 0
+	#dput(alpha); dput(beta); dput(rho[in_support] * trafo)
+	if (any(in_support)) 			
+		ans[in_support]	<- densigamma(rho[in_support], alpha, beta)/norm
+	if(log)
+		ans				<- log(ans)
+	return(ans)
+}
+vartest.sulkl.old<- function(rho, n.of.x, s.of.x, trafo=(n.of.x-1)/n.of.x*s.of.x*s.of.x, norm = 1, support= c(0,Inf), log=FALSE) 
 {
 	alpha	<- (n.of.x-2)/2	 
 	beta	<- s.of.x^2*(n.of.x-1)/2
@@ -71,7 +84,12 @@ vartest.sulkl<- function(rho, n.of.x, s.of.x, trafo=(n.of.x-1)/n.of.x*s.of.x*s.o
 # @description This function computes the area under the summary likelihood \code{vartest.sulkl}.
 # @inheritParams vartest.sulkl
 # @seealso \code{\link{vartest.calibrate}}
-vartest.su.lkl.norm	<- function(n.of.x, s.of.x, trafo=1, support=c(0,Inf))
+vartest.su.lkl.norm	<- function(n.of.x, support=c(0,Inf))
+{
+	ans	<- integrate(vartest.sulkl, lower=support[1], upper=support[2],  n.of.x=n.of.x, norm=1, support=support, log=FALSE)	
+	ans$value
+}
+vartest.su.lkl.norm.old	<- function(n.of.x, s.of.x, trafo=1, support=c(0,Inf))
 {
 	ans	<- integrate(vartest.sulkl, lower=support[1], upper=support[2],  n.of.x=n.of.x, s.of.x=s.of.x, norm=1, trafo=trafo , support=support, log=FALSE)	
 	ans$value
@@ -94,7 +112,7 @@ vartest.su.lkl.norm	<- function(n.of.x, s.of.x, trafo=1, support=c(0,Inf))
 # 	\item{c.u}{upper point of the critical region, i.e. upper standard ABC tolerance}	
 # 	\item{pw.cmx}{actual maximum power at the point of equality}
 # @note Whatever the value of \code{calibrate.tau.u}, the lower tolerance of the equivalence region (\code{tau.l}) is always numerically calibrated so that the mode of the power function is at the point of equality rho.star.
-vartest.getkl <- function(n.of.x, s.of.x, scale, df, tau.u, mx.pw=0.9, alpha=0.01, pow_scale=1.5, calibrate.tau.u=T, plot = F) 
+vartest.getkl <- function(n.of.x, scale, df, tau.u, mx.pw=0.9, alpha=0.01, pow_scale=1.5, calibrate.tau.u=T, plot = F) 
 {
 	tau.l<- pw.cmx<- error<- c.l<- c.u<- NA	
 	if(calibrate.tau.u)	#calibrate tau.u constrained on yn, alpha and mx.pw 
@@ -111,11 +129,11 @@ vartest.getkl <- function(n.of.x, s.of.x, scale, df, tau.u, mx.pw=0.9, alpha=0.0
 	pow_support 	<- c(tau.l/pow_scale, tau.u*pow_scale) 	
 	pow_norm 		<- vartest.pow.norm(scale, df, c.l, c.u, trafo=1, support=pow_support)
 	#compute the norm of lkl, given its support 
-	lkl_support	<- pow_support	
-	#print(c(n.of.x, s.of.x, (n.of.x-1)/n.of.x*s.of.x*s.of.x)); print(lkl_support)
-	lkl_norm	<- vartest.su.lkl.norm(n.of.x, s.of.x, trafo=(n.of.x-1)/n.of.x*s.of.x*s.of.x, support=lkl_support)
+	lkl_support		<- pow_support	
+	#print(c(n.of.x)); print(lkl_support)
+	lkl_norm		<- vartest.su.lkl.norm(n.of.x, support=lkl_support)
 	integral_range	<- pow_support			
-	lkl_arg			<- list(n.of.x= n.of.x, s.of.x= s.of.x, trafo= (n.of.x-1)/n.of.x*s.of.x*s.of.x, norm = lkl_norm, support = lkl_support)
+	lkl_arg			<- list(n.of.x= n.of.x, norm = lkl_norm, support = lkl_support)
 	pow_arg			<- list(scale = scale, df = df, c.l=c.l, c.u=c.u, norm=pow_norm, support=pow_support, trafo= 1)	
 	tmp 			<- integrate(kl.integrand, lower = integral_range[1], upper = integral_range[2], dP=vartest.sulkl, dQ=vartest.pow, P_arg=lkl_arg, Q_arg=pow_arg)
 	KL_div			<- tmp$value
@@ -126,7 +144,7 @@ vartest.getkl <- function(n.of.x, s.of.x, scale, df, tau.u, mx.pw=0.9, alpha=0.0
 	if (plot) 
 	{
 		rho_lkl 			<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
-		lkl					<- vartest.sulkl(rho_lkl, n.of.x, s.of.x, trafo= (n.of.x-1)/n.of.x*s.of.x*s.of.x, norm=lkl_norm, support=lkl_support)
+		lkl					<- vartest.sulkl(rho_lkl, n.of.x, norm=lkl_norm, support=lkl_support)
 		df_lkl 				<- data.frame(x = rho_lkl, yes = lkl, no = lkl*lkl_norm )
 		df_lkl$distribution <- "summary likelihood"
 		rho_pow	 			<- seq(pow_support[1], pow_support[2], length.out = 1000)
@@ -135,13 +153,18 @@ vartest.getkl <- function(n.of.x, s.of.x, scale, df, tau.u, mx.pw=0.9, alpha=0.0
 		df_pow$distribution <- "ABC approximation"
 		gdf 				<- rbind(df_pow, df_lkl)
 		gdf					<- melt(gdf,id.vars=c("x","distribution"))
-		p 					<- ggplot(data = gdf, aes(x = x, y = value, colour = distribution,linetype=variable))
-		p					<- p+geom_vline(xintercept=c(tau.l,tau.u),linetype="dotted")
-		p					<- p+geom_hline(yintercept= mx.pw,linetype="dotted")
-		p					<- p+ geom_line()
-		p					<- p+scale_linetype("truncated and\nstandardized?")
-		p					<- p+xlab(expression(rho))+ylab("")
-		p 					<- p + ggtitle(paste("n.of.y=", df+1, "\ntau.l=", tau.l,"\ntau.u=", tau.u,"\nKL=", KL_div))
+		p 					<- ggplot(data = gdf, aes(x = x, y = value, colour = distribution, linetype=variable)) +
+								geom_polygon(data=subset(gdf, distribution=='summary likelihood'), fill='grey70') +
+								geom_vline(xintercept=1, colour='black',linetype="dotted") +
+								geom_vline(xintercept=c(tau.l,tau.u),linetype="dotted") + 
+								geom_hline(yintercept= mx.pw,linetype="dotted") + geom_line() +
+								scale_y_continuous(lim=c(-0.02,2.3), expand=c(0,0)) +
+								#scale_colour_brewer(palette='Set1', guide=FALSE) + 
+								scale_linetype_manual(values=c('solid','longdash'), guide=FALSE) + 
+								scale_colour_manual(values=c('black','transparent'), guide=FALSE) + 
+								labs(x= expression(rho), y="", linetype="Normalized", colour='Distribution') +
+								theme_bw() + theme(legend.position='bottom') #+ guides(colour=guide_legend(ncol=2))
+		#p 					<- p + ggtitle(paste("n.of.y=", df+1, "\ntau.l=", tau.l,"\ntau.u=", tau.u,"\nKL=", KL_div))
 		print(p)
 	}
 	pw.cmx 	<- ifelse(calibrate.tau.u, pw.cmx, vartest.pow(rho=1, scale, df, c.l, c.u))	
@@ -257,22 +280,22 @@ vartest.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01, rho.
 # upper and lower tolerance regions for every new proposed number of simulated summary values.  
 # @example example/ex.vartest.calibrate.R
 # @example example/ex.vartest.abcreject.R
-vartest.calibrate.kl<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=F)
+vartest.calibrate.kl<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, df=-1, mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=F)
 {	
 	KL.of.yn_ub<- KL.of.yn<- error <- curr.mx.pw <- tau.low <- cl <- cu	<- NA		
 	#KL for initial n.of.y
-	KL.of.yn		<- vartest.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]	
+	KL.of.yn		<- vartest.getkl(n.of.x, scale, n.of.y-df, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]	
 	#KL always decreases from n.of.x. Find upper bound yn.ub such that KL first increases again.	
 	curr.it 		<- max.it
 	yn.ub 			<- 2 * n.of.y		
-	KL.of.yn_ub		<- vartest.getkl(n.of.x, s.of.x, scale, yn.ub-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]		
+	KL.of.yn_ub		<- vartest.getkl(n.of.x, scale, yn.ub-df, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]		
 	while (KL.of.yn_ub < KL.of.yn && curr.it > 0) 
 	{
 		#print(c(yn.ub, KL.of.yn_ub, KL.of.yn, curr.it))
 		curr.it 		<- curr.it - 1
 		KL.of.yn 		<- KL.of.yn_ub
 		yn.ub 			<- 2 * yn.ub
-		KL.of.yn_ub		<- vartest.getkl(n.of.x, s.of.x, scale, yn.ub-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]
+		KL.of.yn_ub		<- vartest.getkl(n.of.x, scale, yn.ub-df, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)["KL_div"]
 		if(debug)	cat(paste("\ntrial upper bound m=",yn.ub,"with KL",KL.of.yn_ub))
 	}			
 	if (curr.it == 0) 	stop("could not find upper bound for yn")					
@@ -280,11 +303,11 @@ vartest.calibrate.kl<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, mx.
 	yn.lb	<- ifelse(curr.it==max.it, yn.ub/2, yn.ub/4)
 	if(debug)	cat(paste("\nupper and lower bounds on m:",yn.lb, yn.ub))
 	
-	KL_args					<- list(n.of.x=n.of.x, s.of.x=s.of.x, scale=scale, tau.u=3*s.of.x, mx.pw=mx.pw, alpha=alpha, calibrate.tau.u=T, plot=F)	
+	KL_args					<- list(n.of.x=n.of.x, scale=scale, tau.u=3*s.of.x, mx.pw=mx.pw, alpha=alpha, calibrate.tau.u=T, plot=F)	
 	tmp 					<- optimize(kl.optimize, interval = c(yn.lb-1, yn.ub-1), x_name = "df", is_integer = T, KL_divergence = "vartest.getkl", KL_args = KL_args, verbose = debug, tol = 1)
 	
 	n.of.y 										<- round(tmp$minimum)+1
-	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	vartest.getkl(n.of.x, s.of.x, scale, n.of.y-1, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=plot)
+	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	vartest.getkl(n.of.x, scale, n.of.y-df, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=plot)
 	c(n.of.y=n.of.y, tau.l=tau.l, tau.u=tau.u, cl=c.l, cu=c.u, pw.cmx=pw.cmx, KL_div=KL_div)		
 }
 #------------------------------------------------------------------------------------------------------------------------
@@ -325,8 +348,9 @@ vartest.plot<- function(scale, df, c.l, c.u, tau.l, tau.u, pow_scale=1.5)
 #' @export 
 #' @import data.table pscl reshape2 ggplot2 ash nortest
 #' @param n.of.x 	Number of observed summary values 
-#' @param s.of.x 	Standard deviation of observed summary values 
+#' @param s.of.x 	Standard deviation of observed summary values ( 1/(n-1)*sqrt(S^2) ), OR 1/(n-1)\sum_i (x_i-\mu)^2 if the population mean is assumed known.  
 #' @param n.of.y 	Number of simulated summary values
+#' @param df		Increment to determine the degrees of freedom of the scaled test statistic. If the population mean is not known, then the degrees of freedom are m-1 and df=-1. If the population mean is considered known, then df=0. 
 #' @param scale 	Scale parameter of the test statistic, usually \code{n.of.x}
 #' @param what		Character string to indicate the type of calibration to be performed
 #' @param c.l		Lower boundary point of the critical region 
@@ -372,46 +396,47 @@ vartest.plot<- function(scale, df, c.l, c.u, tau.l, tau.u, pow_scale=1.5)
 #' the power is maximized at the point of equality \code{rho=1}. The calibrated \code{c.l} does not equal 1/\code{c.u}. 
 #' @example example/ex.chisqstretch.calibrate.R
 #' @references  http://arxiv.org/abs/1305.4283
-vartest.calibrate<- function(n.of.x=NA, s.of.x=NA, n.of.y=NA, what='MXPW', scale=n.of.x, mx.pw=0.9, alpha=0.01, tau.l=NA, tau.u=NA, tau.u.ub=NA, c.l=NA, c.u=NA, max.it=100, tol= 1e-5, pow_scale=1.5, debug=FALSE, plot=FALSE, verbose=FALSE)
+vartest.calibrate<- function(n.of.x=NA, s.of.x=NA, n.of.y=NA, what='MXPW', scale=n.of.x, df=-1, mx.pw=0.9, alpha=0.01, tau.l=NA, tau.u=NA, tau.u.ub=NA, c.l=NA, c.u=NA, max.it=100, tol= 1e-5, pow_scale=1.5, debug=FALSE, plot=FALSE, verbose=FALSE)
 {
 	stopifnot(what%in%c('ALPHA','CR','MXPW_AT_EQU','MXPW','KL'))
 	if(what=='ALPHA')
 	{		
 		stopifnot(scale>0, c.u<tau.u, tau.u>1, tau.l<1, c.l>tau.l, n.of.y>2, alpha>0, alpha<1)
-		ans	<- pchisq(scale*c.u/tau.u, n.of.y-1)-pchisq(scale*c.l/tau.u, n.of.y-1)
+		ans	<- pchisq(scale*c.u/tau.u, n.of.y-df)-pchisq(scale*c.l/tau.u, n.of.y-df)
 		names(ans)	<- 'alpha'
 		if(plot)
-			vartest.plot(scale, n.of.y-1, c.l, c.u, tau.l, tau.u, pow_scale=pow_scale)
+			vartest.plot(scale, n.of.y-df, c.l, c.u, tau.l, tau.u, pow_scale=pow_scale)
 	}
 	if(what=='CR')
 	{	
 		stopifnot(scale>0, tau.u>1, tau.l<1, n.of.y>2, alpha>0, alpha<1, pow_scale>1)
-		tmp	<- .Call("abcScaledChiSq",	c(scale, n.of.y-1, tau.l, tau.u, alpha, 1e-10, max.it, 0.05)	)
+		tmp	<- .Call("abcScaledChiSq",	c(scale, n.of.y-df, tau.l, tau.u, alpha, 1e-10, max.it, 0.05)	)
 		ans	<- c(tmp[1], tmp[2], tau.l, tau.u, tmp[3], tmp[4], tmp[5])
 		names(ans)<- c('c.l','c.u','tau.l','tau.u','mx.cpw','alpha.err','n.it')
 		if(plot)
-			vartest.plot(scale, n.of.y-1, ans['c.l'], ans['c.u'], tau.l, tau.u, pow_scale=pow_scale)		
+			vartest.plot(scale, n.of.y-df, ans['c.l'], ans['c.u'], tau.l, tau.u, pow_scale=pow_scale)		
 	}
 	if(what=='MXPW_AT_EQU')
 	{
 		stopifnot(scale>0, tau.u>1, n.of.y>2, alpha>0, alpha<1, pow_scale>1, max.it>10, tol<0.2)
-		tmp	<- vartest.calibrate.taulow(tau.u, scale, n.of.y-1, alpha=alpha, rho.star=1, tol=tol, max.it=max.it, pow_scale=pow_scale, verbose=verbose)
+		tmp	<- vartest.calibrate.taulow(tau.u, scale, n.of.y-df, alpha=alpha, rho.star=1, tol=tol, max.it=max.it, pow_scale=pow_scale, verbose=verbose)
 		ans	<- c(tmp[2],tmp[3],tmp[1],tau.u,tmp[4])
 		names(ans)<- c('c.l','c.u','tau.l','tau.u','eq.error')
 		if(plot)
-			vartest.plot(scale, n.of.y-1, ans['c.l'], ans['c.u'], ans['tau.l'], tau.u, pow_scale=pow_scale)		
+			vartest.plot(scale, n.of.y-df, ans['c.l'], ans['c.u'], ans['tau.l'], tau.u, pow_scale=pow_scale)		
 	}	
 	if(what=='MXPW')
 	{
 		stopifnot(scale>0, tau.u.ub>1, n.of.y>2, alpha>0, alpha<1, pow_scale>1, max.it>10, tol<0.2)
-		tmp <- vartest.calibrate.tauup(mx.pw, tau.u.ub, scale, n.of.y-1, alpha=alpha, rho.star=1, tol=tol, max.it=max.it, pow.scale=pow_scale, verbose=verbose)
+		tmp <- vartest.calibrate.tauup(mx.pw, tau.u.ub, scale, n.of.y-df, alpha=alpha, rho.star=1, tol=tol, max.it=max.it, pow.scale=pow_scale, verbose=verbose)
 		ans	<- c(tmp[5], tmp[6], tmp[1], tmp[2], tmp[3], tmp[4])
 		names(ans)<- c('c.l','c.u','tau.l','tau.u','pw.cmx','pw.error')
 		if(plot)
-			vartest.plot(scale, n.of.y-1, ans['c.l'], ans['c.u'], ans['tau.l'], ans['tau.u'], pow_scale=pow_scale)
+			vartest.plot(scale, n.of.y-df, ans['c.l'], ans['c.u'], ans['tau.l'], ans['tau.u'], pow_scale=pow_scale)
 	}
 	if(what=='KL')
 	{
+		stopifnot(scale>0, n.of.x>2, alpha>0, alpha<1, pow_scale>1, max.it>10, tol<0.2, !is.na(s.of.x))
 		tmp	<- vartest.calibrate.kl(n.of.x, s.of.x, scale=scale, n.of.y=n.of.x, mx.pw=mx.pw, alpha=alpha, max.it=max.it, debug=debug, plot=plot)
 		ans	<- c(tmp[4], tmp[5], tmp[2], tmp[3], tmp[1], tmp[6], tmp[7])
 		names(ans)	<- c('c.l','c.u','tau.l','tau.u','n.of.y','pw.cmx','KL.div')

@@ -4,20 +4,23 @@
 \title{Calibrating \code{vartest} for ABC}
 \usage{
 vartest.calibrate(n.of.x = NA, s.of.x = NA, n.of.y = NA, what = "MXPW",
-  scale = n.of.x, mx.pw = 0.9, alpha = 0.01, tau.l = NA, tau.u = NA,
-  tau.u.ub = NA, c.l = NA, c.u = NA, max.it = 100, tol = 1e-05,
-  pow_scale = 1.5, debug = FALSE, plot = FALSE, verbose = FALSE)
+  scale = n.of.x, df = -1, mx.pw = 0.9, alpha = 0.01, tau.l = NA,
+  tau.u = NA, tau.u.ub = NA, c.l = NA, c.u = NA, max.it = 100,
+  tol = 1e-05, pow_scale = 1.5, debug = FALSE, plot = FALSE,
+  verbose = FALSE)
 }
 \arguments{
 \item{n.of.x}{Number of observed summary values}
 
-\item{s.of.x}{Standard deviation of observed summary values}
+\item{s.of.x}{Standard deviation of observed summary values ( 1/(n-1)*sqrt(S^2) ), OR 1/(n-1)\sum_i (x_i-\mu)^2 if the population mean is assumed known.}
 
 \item{n.of.y}{Number of simulated summary values}
 
 \item{what}{Character string to indicate the type of calibration to be performed}
 
 \item{scale}{Scale parameter of the test statistic, usually \code{n.of.x}}
+
+\item{df}{Increment to determine the degrees of freedom of the scaled test statistic. If the population mean is not known, then the degrees of freedom are m-1 and df=-1. If the population mean is considered known, then df=0.}
 
 \item{mx.pw}{Maximum power at the point of equality}
 

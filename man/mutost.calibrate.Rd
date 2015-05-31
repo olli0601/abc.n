@@ -3,7 +3,7 @@
 \alias{mutost.calibrate}
 \title{Calibrating \code{mutost} for ABC}
 \usage{
-mutost.calibrate(n.of.x = NA, s.of.x = NA, n.of.y = NA, s.of.y = NA,
+mutost.calibrate(n.of.x = NA, s.of.x = NA, n.of.y = n.of.x, s.of.y = NA,
   what = "MXPW", c.u = NA, tau.u = NA, tau.u.ub = NA, mx.pw = 0.9,
   alpha = 0.01, max.it = 100, pow_scale = 1.5, tol = 1e-05,
   debug = FALSE, plot = FALSE, plot_debug = FALSE, verbose = FALSE)
@@ -111,17 +111,15 @@ sim 		<- (sim - mean(sim))/sd(sim) * ysigma + ymean
 
 tau.u.ub 	<- 0.5
 ans 		<- mutost.calibrate(n.of.y=length(sim), s.of.y=sd(sim), 
-	tau.u.ub=tau.u.ub, what='MXPW', mw.pw=0.9, alpha=0.01, plot=TRUE)
+	tau.u.ub=tau.u.ub, what='MXPW', mx.pw=0.9, alpha=0.01, plot=TRUE)
 						
 # Example 1B: calibrate critical region and power of ABC accept/reject step
 # note: critical region depends on ysigma
 
 ysigma 		<- 1.3
-tau.u.ub 	<- 0.5
 sim 		<- rnorm(yn, ymean, ysigma)
 sim 		<- (sim - mean(sim))/sd(sim) * ysigma + ymean
-ans 		<- mutost.calibrate(n.of.y=length(sim), s.of.y=sd(sim), 
-	tau.u.ub=tau.u.ub, what='MXPW', mx.pw=0.9, alpha=0.01, plot=TRUE)
+ans 		<- mutost.calibrate(n.of.y=length(sim), s.of.y=sd(sim), what='MXPW', mx.pw=0.9, alpha=0.01, plot=TRUE)
 						
 # Example 2A: calculate ABC false positive rate for given ABC tolerance
 # this requires to specify c.u, tau.u (ad-hoc ABC parameters), n.of.y, s.of.y (summary parameters)
@@ -152,17 +150,16 @@ xmean 		<- 1
 xsigma 		<- 1
 obs 		<- rnorm(xn, xmean, xsigma)
 obs 		<- (obs - mean(obs))/sd(obs) * xsigma + xmean
-yn			<- NA	#this is now a calibration output
-ans 		<- mutost.calibrate(n.of.x=length(obs), s.of.x= sd(obs), n.of.y=length(sim), s.of.y=sd(sim), tau.u.ub=5,
+ans 		<- mutost.calibrate(n.of.x=length(obs), s.of.x= sd(obs), s.of.y=sd(sim), 
 	what='KL', mx.pw=0.9, alpha=0.01, plot=TRUE, debug=TRUE)
 
 # case sd(sim)<sd(obs): the power function is "too tight" for yn=xn.
 
-ysigma 		<- 0.7
+ysigma 		<- 0.5
 sim 		<- rnorm(yn, ymean, ysigma)
 sim 		<- (sim - mean(sim))/sd(sim) * ysigma + ymean
-ans 		<- mutost.calibrate(n.of.x=length(obs), s.of.x= sd(obs), n.of.y=length(sim), s.of.y=sd(sim), 
-	tau.u.ub=3, what='KL', mx.pw=0.9, alpha=0.01, plot=TRUE, debug=TRUE)
+ans 		<- mutost.calibrate(n.of.x=length(obs), s.of.x= sd(obs), s.of.y=sd(sim), 
+	what='KL', mx.pw=0.9, alpha=0.01, plot=TRUE, debug=TRUE)
 
 \dontrun{
 abc.presim.uprior.mu<- function(abc.nit, xn, xmean, xsigma, prior.l, prior.u, ysigma, yn=NA )		

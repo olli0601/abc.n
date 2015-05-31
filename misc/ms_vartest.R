@@ -1716,12 +1716,23 @@ project.nABC.StretchedF.pow.sym<- function(rho, df, cu, cl= 1/cu) pf( cu / rho, 
 #------------------------------------------------------------------------------------------------------------------------
 ms.figure2A<- function()		#illustrate full calibrations of scaled ChiSquare
 {
+	library(devtools)
+	code.dir	<- "/Users/Oliver/git/abc.star"
+	roxygenize(code.dir)
+	devtools::install(code.dir)
+		
 	require(abc.star)
 	
 	n.of.x	<- 60 
 	n.of.y	<- 60
 	outdir	<- '~/duke/2015_ABC_resubmission_figs'
-	cali	<- vartest.calibrate(n.of.x=n.of.x, n.of.y=n.of.y, tau.l=1/2, tau.u=2, what='CR', alpha=0.01)
+	
+	s.of.x	<- 60/(60-1)
+	cali	<- vartest.calibrate(n.of.x=n.of.x, s.of.x=s.of.x, what='KL', alpha=0.01, mx.pw=0.9, df=0)
+	outdir	<- '~/duke/2015_ABC_resubmission_figs'
+	file	<- paste(outdir, '/Fig_varcalibrated.pdf', sep='') 
+	ggsave(w=3, h=4, file=file)
+	
 }
 
 #------------------------------------------------------------------------------------------------------------------------
