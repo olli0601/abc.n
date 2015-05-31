@@ -9,10 +9,11 @@ The corresponding paper is now on arxiv http://arxiv.org/abs/1305.4283
 
 ## Authors:
 
-* Oliver Ratmann <oliver.ratmann@ic.ac.uk>
+* Oliver Ratmann <oliver.ratmann@imperial.ac.uk>
 * Anton Camacho <ntncmch@gmail.com>	
-* Sen Hu <ethansen.hu@gmail.com>
 * Caroline Colijn <c.colijn@imperial.ac.uk>
+* Sen Hu <ethansen.hu@gmail.com>
+* Trevelyan J McKinley <T.McKinley@exeter.ac.uk>
 
 ## Contributors:
 
