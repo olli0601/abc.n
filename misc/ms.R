@@ -1894,7 +1894,7 @@ ms.pipeline<- function()		#illustrate power of scaled ChiSquare
 		wrap<- paste(wrap, "#PBS -j oe", sep='\n')
 		if(!is.na(hpc.q))
 				wrap<- paste(wrap, paste("#PBS -q",hpc.q), sep='\n\n')
-		wrap<- paste(wrap, "module load intel-suite mpi R/2.15 raxml examl/2013-05-09 beast/1.8.0 beagle-lib/2014-07-30", sep='\n')
+		wrap<- paste(wrap, "module load intel-suite mpi R/3.1.2 raxml examl/2013-05-09 beast/1.8.0 beagle-lib/2014-07-30", sep='\n')
 		
 		cmd<- lapply(seq_along(cmd),function(i){	paste(wrap,cmd[[i]],sep='\n')	})
 		if(length(cmd)==1)
