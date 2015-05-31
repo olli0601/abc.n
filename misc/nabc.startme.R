@@ -24,9 +24,9 @@ if(any(args=='--args'))
 CODE.HOME	<<- "/Users/Oliver/git/abc.star"
 #CODE.HOME	<<- "/home/koelle/or7/utils/abc.star"
 #CODE.HOME	<<- "/work/or105/libs/abc.star"
-HOME		<<- "/Users/Oliver/workspace_sandbox/phylody"
+HOME		<<- "/Users/Oliver/workspace_sandbox/abc.star"
 #HOME		<<- "/home/koelle/or7/phylody"
-#HOME		<<- "/work/or105/phylody"
+#HOME		<<- "/work/or105/abc.star"
 DATA		<<- paste(HOME,"data",sep='/')
 NABC.DEBUG	<<- 0
 LIB.LOC		<<- NULL
@@ -34,18 +34,14 @@ LIB.LOC		<<- NULL
 EPS			<<- 1e-12
 ###############################################################################
 #	the default script to be called if -exe is not specified on the command line
-default.fun	<- "my.make.documentation"
-default.fun	<- "project.nABC.TOST"
-default.fun <- "project.nABC.compareSEIRS"
-default.fun	<- "project.nABC.StretchedChi2"
 #default.fun	<- "nabc.test.mutost.calibrate"
 #default.fun	<- "nabc.test.chi2stretch.calibrate"
 #default.fun	<- "nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m"
 #default.fun	<- "nabc.test.chi2stretch.montecarlo.calibrated.tau.and.increasing.m"
 #default.fun	<- "nabc.test.acf.montecarlo.calibrated.tau.and.m"
 #default.fun	<- "nabc.test.acf.montecarlo.vary.a"
-default.fun	<- 'nabc.test.acf.montecarlo.vary.a.uniftheta'
-#default.fun<- "project.nABC.movingavg"
+default.fun	<- 'ms.pipeline'
+#default.fun	<- "ms.vartest.montecarlo.precompute"
 
 ###############################################################################
 #	select script specified with -exe on the command line. If missing, start default script 'default.fun'.
@@ -65,7 +61,8 @@ if(length(args))
 					ROXYGENIZE				 = "package.roxygenize",
 					MUTOST					 = "project.nABC.TOST",
 					CHISQU					 = "project.nABC.StretchedChi2",
-					ACFTOST					 = "project.nABC.movingavg"
+					ACFTOST					 = "project.nABC.movingavg",
+					VARTESTPREC				 = "ms.vartest.montecarlo.precompute"
 			)
 	}
 	tmp<- na.omit(sapply(args,function(arg)
@@ -88,7 +85,7 @@ if(length(args))
 #	re-load all R files
 require(data.table)
 function.list<-c(list.files(path= paste(CODE.HOME,"R",sep='/'), pattern = ".R$", all.files = FALSE,
-		full.names = TRUE, recursive = FALSE),paste(CODE.HOME,"misc","nabc.prjcts.R",sep='/'))
+		full.names = TRUE, recursive = FALSE),paste(CODE.HOME,"misc","ms.R",sep='/'))
 sapply(function.list,function(x) source(x,echo=FALSE,print.eval=FALSE, verbose=FALSE))
 ###############################################################################
 #	run script

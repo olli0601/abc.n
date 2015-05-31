@@ -136,11 +136,8 @@ nabc.test.chi2stretch.calibrate<- function()
 		n.of.x		<- 150
 		s.of.x		<- sqrt(1.01)
 		tmp			<- chisqstretch.calibrate(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, mx.pw=0.9, alpha=0.01, max.it=100, debug=F, plot=T)
-	}
-	
+	}	
 	stop()
-	
-	
 }
 #------------------------------------------------------------------------------------------------------------------------
 nabc.test.chi2stretch.illustrate.chi2<- function()
@@ -338,6 +335,155 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.increasing.m<- function()		#
 		points(ans["yn",], ans["KL.div.mc",], pch=pch[2], col=cols[2], cex=cex)		
 		legend("topleft",bty='n',pch=pch,legend=c("value used for calibration","Monte Carlo estimate\nafter ABC run"),col=cols)
 		dev.off()			
+	}
+}
+#------------------------------------------------------------------------------------------------------------------------
+ms.vartest.montecarlo.ABCii.plugin.MLE<- function()		#check MLE, yn>xn
+{
+	require(pscl)
+		
+	dir.name	<- paste(DATA,"nABC.vt",sep='/')
+	resume		<- 1	
+	xn			<- yn	<- 60	
+	alpha		<- 0.01		 		
+	pw.cmx		<- KL_div	<- NA	
+	
+	ymu			<- xmu	<- 0
+	m			<- 1
+	xsigma2		<- 1
+	prior.u		<- 4
+	prior.l		<- 0.2
+	N			<- 1e6
+	
+	f.name		<- paste(dir.name,"/nABC.vartest_yneqxn_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')
+	cat(paste("\nnABC.Chisq: load ",f.name))
+	options(show.error.messages = FALSE, warn=1)		
+	readAttempt<-try(suppressWarnings(load(f.name)))						
+	options(show.error.messages = TRUE)						
+
+	x				<- ans[["x"]]
+	df				<- as.data.table(t(ans[["data"]]))
+	df[, dMLE:= densigamma(df[, MLE], xn/2-1, sum(x^2)/2 )]
+	set(df, NULL, 'aMLE', df[, dMLE/max(dMLE)])
+	df[, U:= runif(nrow(df))]	
+	acc				<- df[, which(U<=aMLE)]
+	#	get KDE from ABC output	
+	tmp				<- range(ans[["data"]]["ysigma2",acc])	
+	acc.h			<- project.nABC.movingavg.gethist(df[acc,ysigma2], ans[["xsigma2"]], breaks= seq(tmp[1],tmp[2],len=70), width= 0.5, plot=F, rtn.dens=1)
+	acc.h$dens$y[acc.h$dens$y<1e-3]		<- 0	
+	tmp									<- range(which(acc.h$dens$y!=0))
+	acc.h$dens$x						<- acc.h$dens$x[seq.int(tmp[1],tmp[2])]
+	acc.h$dens$y						<- acc.h$dens$y[seq.int(tmp[1],tmp[2])]
+	#	plot against exact posterior
+	plot(acc.h$dens$x, acc.h$dens$y, type='l')
+	lines(acc.h$dens$x, densigamma(acc.h$dens$x, xn/2-1, sum(x^2)/2), col='red')
+	abline(v=1)
+	#	compute KDE of ABC posterior on sigma2
+	acc.mc.dens							<- approxfun(x= acc.h$dens$x, y= acc.h$dens$y, method="linear", yleft=0, yright=0, rule=2 )
+	tmp									<- min(acc.h$dens$y[acc.h$dens$y!=0])
+	acc.h$dens$y[acc.h$dens$y==0]		<- tmp
+	acc.mc.dens.log						<- approxfun(x= acc.h$dens$x, y= log(acc.h$dens$y), method="linear", yleft=-Inf, yright=-Inf, rule=2 )
+	tmp									<- function(x, log=T){ if(log){ acc.mc.dens.log(x)	}else{	acc.mc.dens(x)	}	}
+	#	get exact posterior
+	lkl.norm							<- diff(pigamma(range(acc.h$dens$x), xn/2-1, sum(x^2)/2 ))
+	tmp2								<- function(x, log=T)
+											{
+												if(log)
+												{
+													ans	<- log(densigamma(x, xn/2-1, sum(x^2)/2))-log(lkl.norm)
+													ans[ which(x<prior.l | x>prior.u)]	<- -Inf
+												}													
+												if(!log)
+												{
+													ans	<- densigamma(x, xn/2-1, sum(x^2)/2)/lkl.norm
+													ans[ which(x<prior.l | x>prior.u)]	<- 0
+												}
+												ans
+											} 
+	#	compute empirical KL between summary lkl (uniform prior so this is posterior on prior support) and ABC posterior
+	suppressWarnings({ #suppress numerical inaccuracy warnings
+				KL.div.mc 				<- integrate(kl.integrand, lower=min(acc.h$dens$x), upper=max(acc.h$dens$x), dP=tmp2, dQ=tmp, P_arg=list(), Q_arg=list())						
+			})
+	#	compute ABC MAP - MAP 
+	list(MAP.diff=acc.h$hmode - sd(x)*(xn-1)/xn, KL.div.mc=KL.div.mc$value, acc.prob=length(acc)/nrow(df))
+
+
+	
+	
+	
+}
+#------------------------------------------------------------------------------------------------------------------------
+ms.vartest.montecarlo.precompute<- function()		#check MLE, yn>xn
+{
+	require(pscl)
+	package.mkdir(DATA,"nABC.vt")
+	dir.name	<- paste(DATA,"nABC.vt",sep='/')
+	resume		<- 1	
+	xn			<- yn	<- 60	
+	alpha		<- 0.01		 		
+	pw.cmx		<- KL_div	<- NA	
+	
+	ymu			<- xmu	<- 0
+	xsigma2		<- 1
+	prior.u		<- 4
+	prior.l		<- 0.2
+	N			<- 1e6
+	
+	simu.chi2stretch.fix.x.uprior.ysig2<- function(N, prior.l, prior.u, x, yn, ymu)		
+	{		
+		if(prior.u<1)	stop("project.nABC.StretchedChi2.fix.x.uprior.ysig2: error at 1c")
+		if(prior.l>1)	stop("project.nABC.StretchedChi2.fix.x.uprior.ysig2: error at 1d")
+		ans						<- vector("list",3)
+		names(ans)				<- c("x","xsigma2","data")
+		ans[["x"]]				<- x
+		ans[["xsigma2"]]		<- (length(x)-1)*var(x)/length(x)			#MLE of sig2
+		ans[["data"]]			<- sapply(1:N,function(i)
+				{					
+					ysigma2		<- runif(1,prior.l,prior.u)
+					y			<- rnorm(yn,ymu,sd=sqrt(ysigma2))
+					tmp			<- c( ysigma2, (var(y)*(yn-1))/(var(x)*(length(x)-1) ), var(y)*(yn-1)/yn, var(y)-var(x)  )														
+					tmp					
+				})								
+		rownames(ans[["data"]])	<- c("ysigma2", "T", "MLE", "sy2-sx2")
+		ans
+	}
+	
+	for(m in 58:1000)
+	{		
+		f.name	<- paste(dir.name,"/nABC.vartest_yneqxn_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')
+		cat(paste("\nnABC.Chisq: compute ",f.name))
+		options(show.error.messages = FALSE, warn=1)		
+		readAttempt<-try(suppressWarnings(load(f.name)))						
+		options(show.error.messages = TRUE)						
+		if(!resume || inherits(readAttempt, "try-error"))
+		{
+			x		<- rnorm(xn, xmu,sd=sqrt(xsigma2))
+			x 		<- (x - mean(x))/sd(x) * sqrt(xsigma2) + xmu			
+			#	not calibrated
+			yn		<- length(x)
+			ans		<- simu.chi2stretch.fix.x.uprior.ysig2(N, prior.l, prior.u, x, yn, ymu)
+			cat(paste("\nnABC.Chisq: save ",f.name))
+			save(ans,file=f.name)				
+			ans		<- NULL
+		}
+		f.name	<- paste(dir.name,"/nABC.vartest_yncali_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')
+		cat(paste("\nnABC.Chisq: compute ",f.name))
+		options(show.error.messages = FALSE, warn=1)		
+		readAttempt<-try(suppressWarnings(load(f.name)))						
+		options(show.error.messages = TRUE)						
+		if(0 && (!resume || inherits(readAttempt, "try-error")))
+		{
+			x		<- rnorm(xn, xmu,sd=sqrt(xsigma2))
+			x 		<- (x - mean(x))/sd(x) * sqrt(xsigma2) + xmu			
+			#	calibrated	
+			cali	<- vartest.calibrate(n.of.x=xn, s.of.x=sd(x), df=0, what='KL', mx.pw=0.9, alpha=0.01, plot=FALSE, verbose=FALSE)
+			yn		<- cali['n.of.y']
+			ans		<- simu.chi2stretch.fix.x.uprior.ysig2(N, prior.l, prior.u, x, yn, ymu)
+			cat(paste("\nnABC.Chisq: save ",f.name))
+			save(ans,file=f.name)				
+			ans		<- NULL
+		}
+		gc()
 	}
 }
 #------------------------------------------------------------------------------------------------------------------------
@@ -1734,7 +1880,59 @@ ms.figure2A<- function()		#illustrate full calibrations of scaled ChiSquare
 	ggsave(w=3, h=4, file=file)
 	
 }
-
+#------------------------------------------------------------------------------------------------------------------------
+ms.pipeline<- function()		#illustrate power of scaled ChiSquare
+{
+	cmd.hpcwrapper<- function(cmd, hpc.walltime=71, hpc.mem="600mb", hpc.nproc='1', hpc.q='pqeph')
+	{
+		wrap<- "#!/bin/sh"
+		#hpcsys<- HPC.CX1.IMPERIAL
+		tmp	<- paste("#PBS -l walltime=",hpc.walltime,":59:59,pcput=",hpc.walltime,":45:00",sep='')
+		wrap<- paste(wrap, tmp, sep='\n')		
+		tmp	<- paste("#PBS -l select=1:ncpus=",hpc.nproc,":mem=",hpc.mem,sep='')
+		wrap<- paste(wrap, tmp, sep='\n')
+		wrap<- paste(wrap, "#PBS -j oe", sep='\n')
+		if(!is.na(hpc.q))
+				wrap<- paste(wrap, paste("#PBS -q",hpc.q), sep='\n\n')
+		wrap<- paste(wrap, "module load intel-suite mpi R/2.15 raxml examl/2013-05-09 beast/1.8.0 beagle-lib/2014-07-30", sep='\n')
+		
+		cmd<- lapply(seq_along(cmd),function(i){	paste(wrap,cmd[[i]],sep='\n')	})
+		if(length(cmd)==1)
+			cmd<- unlist(cmd)
+		cmd	
+	}
+	cmd.hpccaller<- function(outdir, outfile, cmd)
+	{
+		if( nchar( Sys.which("qsub") ) )
+		{
+			file	<- paste(outdir,'/',outfile,'.qsub',sep='')
+			cat(paste("\nwrite HPC script to",file,"\n"))
+			cat(cmd,file=file)
+			cmd		<- paste("qsub",file)
+			cat( cmd )
+			cat( system(cmd, intern=TRUE) )
+			Sys.sleep(1)
+		}
+		else
+		{
+			file	<- paste(outdir,'/',outfile,'.sh',sep='')
+			cat(paste("\nwrite Shell script to\n",file,"\nStart this shell file manually\n"))
+			cat(cmd,file=file)
+			Sys.chmod(file, mode = "777")	
+			Sys.sleep(1)
+		}		
+	}
+	
+	if(1)
+	{
+		cmd		<- paste(HOME,'/misc/nabc.startme.R','-exe=VARTESTPREC',sep='')
+		cmd		<- cmd.hpcwrapper(cmd, hpc.walltime=71, hpc.mem="600mb", hpc.nproc='1', hpc.q='pqeph')
+		outdir	<- paste(DATA,"nABC.vt",sep='/')		
+		outfile	<- paste("vt",paste(strsplit(date(),split=' ')[[1]],collapse='_',sep=''),sep='.')
+		cmd.hpccaller(outdir, outfile, cmd)
+	}
+	
+}
 #------------------------------------------------------------------------------------------------------------------------
 ms.figure1<- function()		#illustrate power of scaled ChiSquare
 {
