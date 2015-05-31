@@ -4,7 +4,7 @@ NABC.DEFAULT.ANS<- {tmp<- c(0, 50, 1, NA, NA, NA, 0, 0, 0, 0, 0, 1, 1, 1, NA, NA
 
 .onAttach <- function(...) 
 {
-	packageStartupMessage("abc.star 1.0.1\nCalibration procedures for accurate ABC\nhttps://github.com/olli0601/abc.star\nOliver Ratmann oliver.ratmann@imperial.ac.uk\nAnton Camacho ntncmch@gmail.com\nSen Hu ethansen.hu@gmail.com\nCaroline Colijn c.colijn@imperial.ac.uk")
+	packageStartupMessage("abc.star 1.0.2\nCalibration procedures for accurate ABC\nhttps://github.com/olli0601/abc.star\nO Ratmann; A Camacho; TJ McKinley; S Hu; C Colijn")
 }
 
 #------------------------------------------------------------------------------------------------------------------------
