@@ -93,8 +93,8 @@ ftest.calibrate.tau <- function(mx.pw, ny, p, tau.ub, alpha = 0.01, tol = 1e-5, 
 			tmp <- tmp - 1
 		}
 		if(tmp == 0) stop("could not set viable upper bound for tau")	
-		
-		tau <- (tau.ub + tau.lb) / 2
+
+			tau <- (tau.ub + tau.lb) / 2
 		tmp	<- max.it
 		while(ftest.pow(0, tau, ny, p, alpha) > pw.lb & tmp > 0)
 		{
@@ -102,11 +102,11 @@ ftest.calibrate.tau <- function(mx.pw, ny, p, tau.ub, alpha = 0.01, tol = 1e-5, 
 			tmp <- tmp - 1
 		}
 		if(tmp == 0) stop("could not set viable lower bound for tau")
-		else tau.lb <- tau
+			else tau.lb <- tau
 		
 		if(ftest.pow(0, tau.lb, ny, p, alpha) > ftest.pow(0, tau.ub, ny, p, alpha)) stop("non-viable bounds generated")
-		
-		tmp	<- max.it
+
+			tmp	<- max.it
 		while(tmp > 0 & round(tau.lb, digits = 10) != round(tau.ub, digits = 10))
 		{
 			tau <- seq(tau.lb, tau.ub, len = 1024)
@@ -126,13 +126,13 @@ ftest.calibrate.tau <- function(mx.pw, ny, p, tau.ub, alpha = 0.01, tol = 1e-5, 
 				if(length(min_in_tol) > 0) tau.lb <- tau[max(min_in_tol)]
 			}
 			if(verbose)	cat(paste("\ntrial upper bound", tau.ub, "with power", ftest.pow(0, tau.ub, ny, p, alpha), " lower bound", tau.lb, "with power", ftest.pow(0, tau.lb, alpha, ny, p)))
-			tmp <- tmp - 1
+				tmp <- tmp - 1
 		}
 		if(tmp == 0)	stop("could not find tau")
-		tau <- round(tau.lb, digits = 10)
+			tau <- round(tau.lb, digits = 10)
 		curr.pw <- ftest.pow(0, tau, ny, p, alpha)
 		if(verbose)	cat(paste("\nFound tau", tau, "with power", curr.pw, "at rho=0\n"))
-		ans				<- c(ftest.criticalvalue(tau=tau, ny=ny, p=p, alpha=alpha), tau, curr.pw, abs(curr.pw - mx.pw))	
+			ans				<- c(ftest.criticalvalue(tau=tau, ny=ny, p=p, alpha=alpha), tau, curr.pw, abs(curr.pw - mx.pw))	
 		names(ans)		<- c("c", "tau", "curr.pw", "error.pw")	
 	}	
 	ans
@@ -177,15 +177,15 @@ ftest.getkl <- function(n.of.x, t2.x, n.of.y, p, tau.u, mx.pw=0.9, alpha=0.01, p
 		gdf					<- subset(gdf, !(TYPE=='summary likelihood' & variable=='power'))
 		set(gdf, NULL, 'TYPE', gdf[, factor(TYPE, levels=c('summary likelihood',"ABC approximation"), labels=c('summary likelihood',"ABC approximation"))])
 		pp	<- ggplot(gdf, aes(x=X, y=value, group=TYPE, colour=TYPE)) +
-				geom_ribbon(data=subset(gdf, TYPE=='summary likelihood'), aes(ymax=value, ymin=0), fill='grey70', guide=FALSE) +				
-				geom_vline(xintercept= tau,linetype="dotted") + 
-				geom_hline(yintercept= mx.pw,linetype="dotted") + 
-				geom_line() +
-				scale_y_continuous() +				 
-				scale_colour_manual(values=c('black','grey70')) + 
-				labs(x= expression(rho), y="", linetype="Normalized", colour='') +
-				facet_wrap(~variable, scales='free') +
-				theme_bw() + theme(legend.position='bottom') #+ guides(colour=guide_legend(ncol=2))
+		geom_ribbon(data=subset(gdf, TYPE=='summary likelihood'), aes(ymax=value, ymin=0), fill='grey70', guide=FALSE) +				
+		geom_vline(xintercept= tau,linetype="dotted") + 
+		geom_hline(yintercept= mx.pw,linetype="dotted") + 
+		geom_line() +
+		scale_y_continuous() +				 
+		scale_colour_manual(values=c('black','grey70')) + 
+		labs(x= expression(rho), y="", linetype="Normalized", colour='') +
+		facet_wrap(~variable, scales='free') +
+		theme_bw() + theme(legend.position='bottom') #+ guides(colour=guide_legend(ncol=2))
 		#p 					<- p + ggtitle(paste("n.of.y=", df+1, "\ntau.l=", tau.l,"\ntau.u=", tau.u,"\nKL=", KL_div))
 		print(pp)
 	}
@@ -211,7 +211,7 @@ ftest.calibrate.kl<- function(t2.x, n.of.x, p, n.of.y=n.of.x, mx.pw=0.9, alpha=0
 		yn.ub 			<- 2 * n.of.y		
 		KL.of.yn_ub		<- ftest.getkl(n.of.x, t2.x, yn.ub, p, 4*t2.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, plot=F)["KL_div"]
 		if(debug)
-			cat(paste('\nKL for nx',KL.of.yn,'KL for 2nx',KL.of.yn_ub))
+			cat(paste('\nKL for n.of.y',KL.of.yn,'KL for 2 x n.of.y',KL.of.yn_ub))
 		while (KL.of.yn_ub < KL.of.yn && curr.it > 0) 
 		{
 			#print(c(yn.ub, KL.of.yn_ub, KL.of.yn, curr.it))
@@ -219,14 +219,14 @@ ftest.calibrate.kl<- function(t2.x, n.of.x, p, n.of.y=n.of.x, mx.pw=0.9, alpha=0
 			KL.of.yn 		<- KL.of.yn_ub
 			yn.ub 			<- 2 * yn.ub
 			KL.of.yn_ub		<- ftest.getkl(n.of.x, t2.x, yn.ub, p, 4*t2.x,  mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, plot=F)["KL_div"]
-			if(debug)	cat(paste("\ntrial upper bound m=",yn.ub,"with KL",KL.of.yn_ub))
+			if(debug)	cat(paste("\ntrial upper bound n.of.y=",yn.ub,"with KL",KL.of.yn_ub))
 		}			
-		if (curr.it == 0) 	stop("could not find upper bound for yn")					
+	if (curr.it == 0) 	stop("could not find upper bound for n.of.y")					
 		if(debug)	
-			cat(paste("\nFound upper bound m=",yn.ub,"with KL",KL.of.yn_ub))
+			cat(paste("\nFound upper bound n.of.y=",yn.ub,"with KL",KL.of.yn_ub))
 		yn.lb			<- ifelse(curr.it==max.it, yn.ub/2, yn.ub/4)
 		if(debug)	
-			cat(paste("\nupper and lower bounds on m:",yn.lb, yn.ub))
+			cat(paste("\nupper and lower bounds on n.of.y:",yn.lb, yn.ub))
 		
 		KL_args				<- list(	n.of.x=n.of.x, t2.x=t2.x, p=p, tau.u=4*t2.x, mx.pw=mx.pw, alpha=alpha, plot=F)	
 		tmp 				<- optimize(kl.optimize, interval=c(yn.lb-1, yn.ub-1), x_name="n.of.y", is_integer=TRUE, KL_divergence="ftest.getkl", KL_args=KL_args, verbose=debug, tol=1)	
@@ -243,9 +243,9 @@ ftest.plot <- function(n.of.y, p, tau, alpha, pow_scale = 1.5)
 	tmp$power	<- ftest.pow(tmp$rho, tau, n.of.y, p, alpha)
 	
 	p	<- ggplot(tmp, aes(x = rho, y = power)) + geom_line() + labs(x = expression(rho), y = 'Power\n(ABC acceptance probability)') +
-			scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +
-			geom_vline(xintercept = tau, linetype = "dotted") +
-			ggtitle(substitute(paste("n = ", n.of.y, ", p = ", p, ", ", " tau = ", tau, sep = ""), list(n.of.y = n.of.y, p = p, tau = tau)))
+	scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +
+	geom_vline(xintercept = tau, linetype = "dotted") +
+	ggtitle(substitute(paste("n = ", n.of.y, ", p = ", p, ", ", " tau = ", tau, sep = ""), list(n.of.y = n.of.y, p = p, tau = tau)))
 	print(p)
 }
 
@@ -293,8 +293,8 @@ ftest.plot <- function(n.of.y, p, tau, alpha, pow_scale = 1.5)
 #' @example example/ex.ftest.calibrate.R
 #' @references  http://arxiv.org/abs/1305.4283
 ftest.calibrate<- function(n.of.x=NA, t2.x=NA, n.of.y = NA, p = NA, what = 'MXPW', 
-							mx.pw = 0.9, alpha = 0.01, c = NA, tau = NA, tol = 1e-5, 
-							max.it = 100, pow_scale = 1.5, use.R= FALSE, debug=FALSE, plot=FALSE, verbose=FALSE)
+	mx.pw = 0.9, alpha = 0.01, c = NA, tau = NA, tol = 1e-5, 
+	max.it = 100, pow_scale = 1.5, use.R= FALSE, debug=FALSE, plot=FALSE, verbose=FALSE)
 {
 	stopifnot(what %in% c('ALPHA', 'CR', 'MXPW', 'KL'))
 	if(what == 'ALPHA')

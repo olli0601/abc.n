@@ -15,7 +15,7 @@ kl.integrand<-function(x, dP, dQ, P_arg, Q_arg)
 		
 	if(any(tmp<-(log_Q_x == -Inf)))
 	{
-		cat("\nQ(x) is 0 at some point! Usually this happens due to numerical inacurracy in the tail of Q. For simplicity we assume that log(Q(x))=-100 at these points.")
+		message("\nQ(x) is 0 at some point! Usually this happens due to numerical inacurracy in the tail of Q. For simplicity we assume that log(Q(x))=-100 at these points.")
 		log_Q_x[tmp]<- log(.Machine$double.xmin)
 	}
 	ans		<- (log_P_x-log_Q_x)*exp(log_P_x)
