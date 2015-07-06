@@ -72,7 +72,7 @@ static inline double abcFTEST_sulkl_scalar(double x, void *arg_void)
 	arg_ftest *a=(arg_ftest *) arg_void;
 	double ans;
     //std::cout<<"abcMuTOST_sulkl_scalar input:\nssn\t"<<arg->ssn<<"\ndf\t"<<arg->df<<"\ngive_log\t"<<arg->give_log<<"\nnorm\t"<<arg->norm<<"\nx\t"<<x<<std::endl;
-	ans= dnf(	a->t2x*(a->nx-a->p)/(a->p*(a->nx-1)),	a->p,	a->nx-a->p,		a->nx*x, 	0);
+	ans= dnf(	a->t2x*(a->nx-a->p)/(a->p*(a->nx-1)),	a->p,	a->nx-a->p,		a->nx*x, 	a->give_log);
 	ans= a->give_log ? ans-log(a->norm) : ans/a->norm;
 	return ans;
 }
@@ -124,28 +124,28 @@ static inline void abcFTEST_calibrate_tau_for_mxpw(	const double &mxpw, const do
 
 	// find upper tolerance bound
 	for(; n-- && abcFTEST_pow_scalar(0., &arg)<PWU ; arg.tau++);
-	ERROR_ON(n<0,"abcFTEST_calibrate_tau_for_mxpw: could not find upper tau bound");
+		ERROR_ON(n<0,"abcFTEST_calibrate_tau_for_mxpw: could not find upper tau bound");
 	tau_u= arg.tau;
 	// find lower tolerance bound
 	for(	n= CAST(int, maxit), arg.tau=(tau_l+tau_u)/2;
-			n-- && abcFTEST_pow_scalar(0., &arg)>PWL ;
-			arg.tau=(arg.tau+tau_l)/2	);
-	ERROR_ON(n<0,"abcFTEST_calibrate_tau_for_mxpw: could not find lower tau bound");
+		n-- && abcFTEST_pow_scalar(0., &arg)>PWL ;
+		arg.tau=(arg.tau+tau_l)/2	);
+		ERROR_ON(n<0,"abcFTEST_calibrate_tau_for_mxpw: could not find lower tau bound");
 	tau_l= arg.tau;
 	ERROR_ON(tau_l>=tau_u, "abcFTEST_calibrate_tau_for_mxpw: found tau_l>=tau_u");
 	// binary search to find tau
 	for(	n= CAST(int,maxit), pw_error=1;
-			n-- && (ABS(pw_error)>tol) && std::floor(tau_u*DIGITS)!=std::floor(tau_l*DIGITS);
-			)
-		{
-			arg.tau		= (tau_l+tau_u)/2;
-			curr_mxpw	= abcFTEST_pow_scalar(0., &arg);
-			pw_error	= curr_mxpw-mxpw;
-			if(pw_error<0)
-				tau_l= arg.tau;
-			else
-				tau_u= arg.tau;
-		}
+		n-- && (ABS(pw_error)>tol) && std::floor(tau_u*DIGITS)!=std::floor(tau_l*DIGITS);
+		)
+	{
+		arg.tau		= (tau_l+tau_u)/2;
+		curr_mxpw	= abcFTEST_pow_scalar(0., &arg);
+		pw_error	= curr_mxpw-mxpw;
+		if(pw_error<0)
+			tau_l= arg.tau;
+		else
+			tau_u= arg.tau;
+	}
 	ERROR_ON(n<0,"abcFTEST_calibrate_tau_for_mxpw: could not find tau in binary search");
 	maxit	= n+1;
 	tau		= arg.tau;
@@ -237,16 +237,26 @@ static inline void abcFTEST_get_KL(const double &nx, const double &t2x, const do
     KL_arg.q			= &abcFTEST_pow_scalar;
     KL_arg.p_arg		= &sulkl_arg;
     KL_arg.q_arg		= &pow_arg;
-    if(1)
-    {
-    	printf("pow arguments\n");
-    	nabcFTEST_printArg(&pow_arg);
-    	printf("\nsulkl arguments\n");
-    	nabcFTEST_printArg(&sulkl_arg);
-    	printf("Start KL integration\n");
-    }
+    // if(0)
+    // {
+    // 	printf("pow arguments\n");
+    // 	nabcFTEST_printArg(&pow_arg);
+    // 	printf("\nsulkl arguments\n");
+    // 	nabcFTEST_printArg(&sulkl_arg);
+    // 	printf("Start KL integration with arguments\n");
+    // 	std::cout<<"lower\t"<<lower<<'\t'<<upper<<'\t'<<abs_tol<<'\t'<<rel_tol<<std::endl;
+    // 	double ans;
+    // 	ans = 0.0;
+    // 	for (int i = 0; i < 100; ++i)
+    // 	{
+    // 		ans += abcKL_integrand(lower + (i+1)*(upper-lower)/100, &KL_arg);
+    // 	}
+
+    // 	std::cout<< abcKL_integrand(lower, &KL_arg)<< "\t" <<"ans\t"<<ans<<"\t"<<ans*(upper-lower)/100<<std::endl;
+
+    // }
     nabc_integration_qng(abcKL_integrand, &KL_arg, lower, upper, abs_tol, rel_tol, &KL_div, &abserr, &neval);
-    //std::cout<<"abc_mutost_calibrate_tauup_for_mxpw at c2:\t"<<KL_div<<'\t'<<abserr<<'\t'<<neval<<std::endl;
+    // std::cout<<"abcFTEST_get_KL at c2:\t"<<KL_div<<'\t'<<abserr<<'\t'<<neval<<std::endl;
 }
 
 static void abcFTEST_get_KL(void *arg_void)
@@ -263,7 +273,7 @@ static double abcFTEST_Brentfun_optimize_yn_for_KL(double x, void* KL_arg)
 	arg_ftest *arg	= (arg_ftest *) KL_arg;
 	arg->ny 		= round(x);
 	abcFTEST_get_KL(arg->nx, arg->t2x, arg->ny, arg->p, arg->tau, arg->mx_pw, arg->alpha, arg->pow_scale, arg->curr_mxpw, arg->pw_error, arg->KL_div);
-    return arg->KL_div;
+	return arg->KL_div;
 }
 
 /*
@@ -331,52 +341,54 @@ SEXP abc_mutost_calibrate_powertighter(SEXP list_KL_args, SEXP arg_max_it)
 static inline void abcFTEST_calibrate_yn_for_KL(void (*KL_divergence)(void*), double (*KL_optimize)(double, void*), void *KL_arg_void, const int &max_it)
 {
 
-    double test_KL_div, current_KL_div, ny_lb, ny_ub;
-    int curr_it;
-    arg_ftest *KL_arg= (arg_ftest *)  KL_arg_void;
+	double test_KL_div, current_KL_div, ny_lb, ny_ub;
+	int curr_it;
+	arg_ftest *KL_arg= (arg_ftest *)  KL_arg_void;
 
     // test KL
-    KL_arg->ny++;
-    KL_divergence( KL_arg );
-    test_KL_div= KL_arg->KL_div;
-std::cout<<"test KL at ny+1:"<<test_KL_div<<"\tKL_arg->ny:"<<KL_arg->ny<<"\tKL_arg->tau:"<<KL_arg->tau<<std::endl;
+	KL_arg->ny++;
+	KL_divergence( KL_arg );
+	test_KL_div= KL_arg->KL_div;
+	// std::cout<<"test KL at ny+1:"<<test_KL_div<<"\tKL_arg->ny:"<<KL_arg->ny<<"\tKL_arg->tau:"<<KL_arg->tau<<std::endl;
 
     // current KL
-    KL_arg->ny--;
-    KL_divergence( KL_arg );
-    current_KL_div = KL_arg->KL_div;
+	KL_arg->ny--;
+	KL_divergence( KL_arg );
+	current_KL_div = KL_arg->KL_div;
     //current_KL_div = KL_divergence_switch_arg(KL_arg->ny+1,&KL_switch_arg);
-std::cout<<"current KL:"<<current_KL_div<<"\tKL_arg->ny:"<<KL_arg->ny<<"\tKL_arg->tau:"<<KL_arg->tau<<std::endl;
+	// std::cout<<"current KL:"<<current_KL_div<<"\tKL_arg->ny:"<<KL_arg->ny<<"\tKL_arg->tau:"<<KL_arg->tau<<std::endl;
+
 	// if KL is increasing for ny+1, then find optimum value between [1,ny]
 	// else determine upper bound and then find optimum value between [ny, ny_ub]
 	if (test_KL_div > current_KL_div)
-    {
-        ny_lb = 1;
-        ny_ub = KL_arg->ny;
-    }
-    else
-    {
-        curr_it 	= max_it;
-        KL_arg->ny*= 2;
-        KL_divergence( KL_arg );
-        test_KL_div	= KL_arg->KL_div;
-        while ((test_KL_div < current_KL_div) && curr_it--)
-        {
-            current_KL_div 	= test_KL_div;
-            KL_arg->ny*= 2;
-            KL_divergence( KL_arg );
-            test_KL_div		= KL_arg->KL_div;
-std::cout<<"upper trial KL:"<<test_KL_div<<'\t'<<current_KL_div<<"\tKL_arg->ny:"<<KL_arg->ny<<"\tKL_arg->tau:"<<KL_arg->tau<<std::endl;
+	{
+		ny_lb = 1;
+		ny_ub = KL_arg->ny;
+	}
+	else
+	{
+		curr_it 	= max_it;
+		KL_arg->ny*= 2;
+		KL_divergence( KL_arg );
+		test_KL_div	= KL_arg->KL_div;
+		while ((test_KL_div < current_KL_div) && curr_it--)
+		{
+			current_KL_div 	= test_KL_div;
+			KL_arg->ny*= 2;
+			KL_divergence( KL_arg );
+			test_KL_div		= KL_arg->KL_div;
+			// std::cout<<"upper trial KL:"<<test_KL_div<<'\t'<<current_KL_div<<"\tKL_arg->ny:"<<KL_arg->ny<<"\tKL_arg->tau:"<<KL_arg->tau<<std::endl;
+			
 			ERROR_ON(KL_arg->ny>1e7 ,"could not find upper bound for n.of.y with ny<1e7.");
             //test_KL_div 	= KL_divergence_switch_arg(2*KL_arg->ny,&KL_switch_arg);
-        }
-        ERROR_ON(!curr_it ,"could not find upper bound for n.of.y within the maximum number of iterations.");
+		}
+		ERROR_ON(!curr_it ,"could not find upper bound for n.of.y within the maximum number of iterations.");
 
         //if curr_it==max_it then the lb is obtained by dividing ub by 2, by 4 otherwise
-        ny_lb = (curr_it == max_it) ? KL_arg->ny/2 : KL_arg->ny/4;
-        ny_ub = KL_arg->ny;
-    }
-std::cout<<"ny lower upper:"<<ny_lb<<'\t'<<ny_ub<<std::endl;
+		ny_lb = (curr_it == max_it) ? KL_arg->ny/2 : KL_arg->ny/4;
+		ny_ub = KL_arg->ny;
+	}
+	// std::cout<<"ny lower upper:"<<ny_lb<<'\t'<<ny_ub<<std::endl;
     //minimize KL between ny_lb and KL_arg->ny
     KL_arg->ny = Brent_fmin(ny_lb, ny_ub, KL_optimize, KL_arg, nabcGlobals::NABC_DBL_TOL, 1);//
     //compute final KL_div
