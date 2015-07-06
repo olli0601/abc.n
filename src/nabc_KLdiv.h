@@ -13,8 +13,8 @@
 #include "nabc_error_handling.h"
 #include "nabc_optimize.h"
 #include "nabc_integrate.h"
-#include "nabc_mutost.h"
-#include "nabc_chisqstretch.h"
+//#include "nabc_mutost.h"
+//#include "nabc_chisqstretch.h"
 
 
 double abcKL_integrand(double x,void *arg_void);

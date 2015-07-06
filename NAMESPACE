@@ -3,6 +3,7 @@
 export(abccheck.normal)
 export(ftest.calibrate)
 export(ftest.pow)
+export(ftest.pow.norm)
 export(mutost.calibrate)
 export(mutost.pow)
 export(mutost.pow.norm)

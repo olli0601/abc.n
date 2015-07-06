@@ -1863,11 +1863,14 @@ project.nABC.StretchedF.pow.sym<- function(rho, df, cu, cl= 1/cu) pf( cu / rho, 
 ms.figure2A<- function()		#illustrate full calibrations of scaled ChiSquare
 {
 	library(devtools)
+	require(roxygen2)
 	code.dir	<- "/Users/Oliver/git/abc.star"
 	roxygenize(code.dir)
 	devtools::install(code.dir)
 		
 	require(abc.star)
+	
+	ftest.calibrate(n.of.x=n.of.x, t2.x=t2.x, p=p, what='KL', mx.pw=0.9, alpha=0.01, use.R= FALSE, plot=FALSE, verbose=FALSE)
 	
 	n.of.x	<- 60 
 	n.of.y	<- 60
@@ -1925,7 +1928,7 @@ ms.pipeline<- function()		#illustrate power of scaled ChiSquare
 	
 	if(1)
 	{
-		cmd		<- paste(HOME,'/misc/nabc.startme.R','-exe=VARTESTPREC',sep='')
+		cmd		<- paste(CODE.HOME,'/misc/nabc.startme.R',' -exe=VARTESTPREC',sep='')
 		cmd		<- cmd.hpcwrapper(cmd, hpc.walltime=71, hpc.mem="600mb", hpc.nproc='1', hpc.q='pqeph')
 		outdir	<- paste(DATA,"nABC.vt",sep='/')		
 		outfile	<- paste("vt",paste(strsplit(date(),split=' ')[[1]],collapse='_',sep=''),sep='.')
