@@ -80,7 +80,7 @@ double abcMuTOST_pow_scalar(double x, void *arg)
 void abcMuTOST_sulkl(const int &nrho, double * const rho, const double &nx, const double &sx, const double &norm, const int &give_log,double *ans)
 {
 	int n= nrho;
-	const double ssn= sx/sqrt(nx),df=nx-1;
+	const double ssn= sx/sqrt(nx);
 	double *xans= ans, *xrho=rho;
 
 	for(; n--; xrho++, xans++)
@@ -363,7 +363,7 @@ static void abc_mutost_get_KL(const double &nx, const double &sx, const double &
     //    printBArg(&sulkl_arg);
     //    printf("Start KL integration\n");
     nabc_integration_qng(abcKL_integrand, &KL_arg, lower, upper, abs_tol, rel_tol, &KL_div, &abserr, &neval);
-    //std::cout<<"abc_mutost_calibrate_tauup_for_mxpw at c2:\t"<<KL_div<<'\t'<<abserr<<'\t'<<neval<<std::endl;
+    // std::cout<<"abc_mutost_get_KL at c2:\t"<<KL_div<<'\t'<<abserr<<'\t'<<neval<<std::endl;
 }
 
 static void abc_mutost_get_KL(void *arg_void)
