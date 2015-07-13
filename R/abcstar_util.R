@@ -86,6 +86,29 @@ package.roxygenize<- function()
 {
 	roxygenize(CODE.HOME)
 }
+#------------------------------------------------------------------------------------------------------------------------
+histo2<- function(x, theta, nbreaks= 20, breaks= NULL, width= 0.5, plot=0, rtn.dens=0,...)
+{
+	#compute break points sth theta is in the middle
+	if(is.null(breaks))
+	{
+		breaks<- c(range(x), max(abs( theta - x ))*1.1 / nbreaks)								
+		breaks<- c(rev(seq(from= theta-breaks[3]/2, to=breaks[1]-breaks[3], by=-breaks[3] )), seq(from= theta+breaks[3]/2, to=breaks[2]+breaks[3], by=breaks[3] ) )		
+	}
+	ans.h<- hist(x, breaks=breaks, plot= 0)
+	ans.h[["mean"]]<- mean(x)		
+	ans.h[["hmode"]]<- mean(ans.h[["breaks"]][seq(which.max(ans.h[["counts"]]),length.out=2)])	
+	tmp<- density(x, kernel="biweight",from=breaks[1],to=breaks[length(breaks)],width = max(EPS,width*diff(summary(x)[c(2,5)])))
+	ans.h[["dmode"]]<- tmp[["x"]][which.max( tmp[["y"]])]
+	if(rtn.dens)
+		ans.h[["dens"]]<- tmp
+	if(plot)
+	{
+		plot(ans.h, freq=0,...)
+		lines(tmp)
+	}
+	ans.h
+}
 ###############################################################################
 my.fade.col<-function(col,alpha=0.5)
 {
