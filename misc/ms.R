@@ -415,8 +415,7 @@ ms.vartest.montecarlo.ABCii.plugin.MLE<- function()		#check MLE, yn>xn
 			})))
 	fname		<- paste(dir.name,"/",gsub('m[0-9]+\\.R','accurate\\.R',f.names[1]), sep='')
 	cat(paste('\nsave file to', fname))
-	save(dfa, fname)
-	
+	save(dfa, file=fname)
 }
 #------------------------------------------------------------------------------------------------------------------------
 ms.vartest.montecarlo.precompute<- function()		#check MLE, yn>xn
