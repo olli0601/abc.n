@@ -366,12 +366,13 @@ ms.vartest.montecarlo.ABCii.plugin.MLE<- function()		#check MLE, yn>xn
 				
 				x				<- ans[["x"]]
 				df				<- as.data.table(t(ans[["data"]]))
-				df[, dMLE:= densigamma(df[, MLE], xn/2-1, sum(x^2)/2 )]
+				df[, dMLE:= dgamma(ans[["xsigma2"]], shape=xn/2, scale=2*df[, MLE]/yn )]				
+				#df[, dMLE:= densigamma(df[, MLE], xn/2-1, sum(x^2)/2 )]
 				set(df, NULL, 'aMLE', df[, dMLE/max(dMLE)])
 				df[, U:= runif(nrow(df))]	
 				acc				<- df[, which(U<=aMLE)]
 				#	get KDE from ABC output			
-				acc.h			<- project.nABC.movingavg.gethist(df[acc,ysigma2], ans[["xsigma2"]], nbreaks=70, width= 0.5, plot=F, rtn.dens=1)
+				acc.h			<- project.nABC.movingavg.gethist(df[acc,ysigma2], ans[["xsigma2"]], nbreaks=70, width= 0.5, plot=T, rtn.dens=1)
 				acc.h$dens$y[acc.h$dens$y<1e-3]		<- 0	
 				tmp									<- which(acc.h$dens$y!=0)
 				acc.h$dens$x						<- acc.h$dens$x[tmp]
