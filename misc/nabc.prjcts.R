@@ -434,8 +434,8 @@ project.nABC.movingavg.gethist<- function(x, theta, nbreaks= 20, breaks= NULL, w
 	#compute break points sth theta is in the middle
 	if(is.null(breaks))
 	{
-		breaks<- max(abs( theta - x ))*1.1 / nbreaks								
-		breaks<- c( rev(seq(from= theta-breaks/2, by=-breaks, length.out= nbreaks )), seq(from= theta+breaks/2, by=breaks, length.out= nbreaks ) )		
+		breaks<- c(range(x), max(abs( theta - x ))*1.1 / nbreaks)								
+		breaks<- c(rev(seq(from= theta-breaks[3]/2, to=breaks[1]-breaks[3], by=-breaks[3] )), seq(from= theta+breaks[3]/2, to=breaks[2]+breaks[3], by=breaks[3] ) )		
 	}
 	ans.h<- hist(x, breaks=breaks, plot= 0)
 	ans.h[["mean"]]<- mean(x)		

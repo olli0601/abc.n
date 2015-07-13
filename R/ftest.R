@@ -201,6 +201,8 @@ ftest.calibrate.kl<- function(t2.x, n.of.x, p, n.of.y=n.of.x, mx.pw=0.9, alpha=0
 	{
 		KL.args		<- list(n.of.x=n.of.x, t2.x=t2.x, p=p, n.of.y=n.of.y, mx.pw=mx.pw, alpha=alpha)
 		ans			<- .Call("abcFTEST_calibrate_KL", KL.args, as.integer(max.it))
+		if(plot)
+			invisible(ftest.getkl(n.of.x, t2.x, ans['n.of.y'], p, 4*t2.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, plot=plot))
 	}
 	if(use.R)
 	{
@@ -221,7 +223,8 @@ ftest.calibrate.kl<- function(t2.x, n.of.x, p, n.of.y=n.of.x, mx.pw=0.9, alpha=0
 			KL.of.yn_ub		<- ftest.getkl(n.of.x, t2.x, yn.ub, p, 4*t2.x,  mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, plot=F)["KL_div"]
 			if(debug)	cat(paste("\ntrial upper bound n.of.y=",yn.ub,"with KL",KL.of.yn_ub))
 		}			
-	if (curr.it == 0) 	stop("could not find upper bound for n.of.y")					
+		if (curr.it == 0) 	
+			stop("could not find upper bound for n.of.y")					
 		if(debug)	
 			cat(paste("\nFound upper bound n.of.y=",yn.ub,"with KL",KL.of.yn_ub))
 		yn.lb			<- ifelse(curr.it==max.it, yn.ub/2, yn.ub/4)

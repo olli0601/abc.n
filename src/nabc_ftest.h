@@ -33,7 +33,7 @@ typedef struct
     double KL_div;
 } arg_ftest;
 
-void nabcFTEST_printArg(arg_ftest *arg);
+void abcFTEST_printArg(arg_ftest *arg);
 
 extern "C"
 {

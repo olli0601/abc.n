@@ -10,7 +10,7 @@
 #include "nabc_integrate.h"
 #include "nabc_KLdiv.h"
 
-void nabcFTEST_printArg(arg_ftest *arg)
+void abcFTEST_printArg(arg_ftest *arg)
 {
 	printf("nx=%f\tt2x=%f\tp=%f\nny=%f\ttau=%f\n norm=%f\tgive_log=%d\tmx_pw=%f\talpha=%f\n",arg->nx,arg->t2x,arg->p,arg->ny,arg->tau,arg->norm,arg->give_log,arg->mx_pw,arg->alpha);
 }

@@ -62,7 +62,8 @@ if(length(args))
 					MUTOST					 = "project.nABC.TOST",
 					CHISQU					 = "project.nABC.StretchedChi2",
 					ACFTOST					 = "project.nABC.movingavg",
-					VARTESTPREC				 = "ms.vartest.montecarlo.precompute"
+					VARTESTPREC				 = "ms.vartest.montecarlo.precompute",
+					VARTESTEVAL				 = "ms.vartest.montecarlo.ABCii.plugin.MLE"
 			)
 	}
 	tmp<- na.omit(sapply(args,function(arg)

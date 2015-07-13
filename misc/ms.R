@@ -355,61 +355,66 @@ ms.vartest.montecarlo.ABCii.plugin.MLE<- function()		#check MLE, yn>xn
 	prior.l		<- 0.2
 	N			<- 1e6
 	
-	f.name		<- paste(dir.name,"/nABC.vartest_yneqxn_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')
-	cat(paste("\nnABC.Chisq: load ",f.name))
-	options(show.error.messages = FALSE, warn=1)		
-	readAttempt<-try(suppressWarnings(load(f.name)))						
-	options(show.error.messages = TRUE)						
-
-	x				<- ans[["x"]]
-	df				<- as.data.table(t(ans[["data"]]))
-	df[, dMLE:= densigamma(df[, MLE], xn/2-1, sum(x^2)/2 )]
-	set(df, NULL, 'aMLE', df[, dMLE/max(dMLE)])
-	df[, U:= runif(nrow(df))]	
-	acc				<- df[, which(U<=aMLE)]
-	#	get KDE from ABC output	
-	tmp				<- range(ans[["data"]]["ysigma2",acc])	
-	acc.h			<- project.nABC.movingavg.gethist(df[acc,ysigma2], ans[["xsigma2"]], breaks= seq(tmp[1],tmp[2],len=70), width= 0.5, plot=F, rtn.dens=1)
-	acc.h$dens$y[acc.h$dens$y<1e-3]		<- 0	
-	tmp									<- range(which(acc.h$dens$y!=0))
-	acc.h$dens$x						<- acc.h$dens$x[seq.int(tmp[1],tmp[2])]
-	acc.h$dens$y						<- acc.h$dens$y[seq.int(tmp[1],tmp[2])]
-	#	plot against exact posterior
-	plot(acc.h$dens$x, acc.h$dens$y, type='l')
-	lines(acc.h$dens$x, densigamma(acc.h$dens$x, xn/2-1, sum(x^2)/2), col='red')
-	abline(v=1)
-	#	compute KDE of ABC posterior on sigma2
-	acc.mc.dens							<- approxfun(x= acc.h$dens$x, y= acc.h$dens$y, method="linear", yleft=0, yright=0, rule=2 )
-	tmp									<- min(acc.h$dens$y[acc.h$dens$y!=0])
-	acc.h$dens$y[acc.h$dens$y==0]		<- tmp
-	acc.mc.dens.log						<- approxfun(x= acc.h$dens$x, y= log(acc.h$dens$y), method="linear", yleft=-Inf, yright=-Inf, rule=2 )
-	tmp									<- function(x, log=T){ if(log){ acc.mc.dens.log(x)	}else{	acc.mc.dens(x)	}	}
-	#	get exact posterior
-	lkl.norm							<- diff(pigamma(range(acc.h$dens$x), xn/2-1, sum(x^2)/2 ))
-	tmp2								<- function(x, log=T)
-											{
-												if(log)
-												{
-													ans	<- log(densigamma(x, xn/2-1, sum(x^2)/2))-log(lkl.norm)
-													ans[ which(x<prior.l | x>prior.u)]	<- -Inf
-												}													
-												if(!log)
-												{
-													ans	<- densigamma(x, xn/2-1, sum(x^2)/2)/lkl.norm
-													ans[ which(x<prior.l | x>prior.u)]	<- 0
-												}
-												ans
-											} 
-	#	compute empirical KL between summary lkl (uniform prior so this is posterior on prior support) and ABC posterior
-	suppressWarnings({ #suppress numerical inaccuracy warnings
-				KL.div.mc 				<- integrate(kl.integrand, lower=min(acc.h$dens$x), upper=max(acc.h$dens$x), dP=tmp2, dQ=tmp, P_arg=list(), Q_arg=list())						
-			})
-	#	compute ABC MAP - MAP 
-	list(MAP.diff=acc.h$hmode - sd(x)*(xn-1)/xn, KL.div.mc=KL.div.mc$value, acc.prob=length(acc)/nrow(df))
-
-
-	
-	
+	f.names		<- list.files(dir.name, pattern='m[0-9]+\\.R$')
+	dfa			<- as.data.table(t(sapply(f.names, function(f.name)
+			{
+				fname		<- paste(dir.name,"/",f.name, sep='')
+				cat(paste("\nnABC.Chisq: load ",fname))
+				options(show.error.messages = FALSE, warn=1)		
+				readAttempt<-try(suppressWarnings(load(fname)))						
+				options(show.error.messages = TRUE)						
+				
+				x				<- ans[["x"]]
+				df				<- as.data.table(t(ans[["data"]]))
+				df[, dMLE:= densigamma(df[, MLE], xn/2-1, sum(x^2)/2 )]
+				set(df, NULL, 'aMLE', df[, dMLE/max(dMLE)])
+				df[, U:= runif(nrow(df))]	
+				acc				<- df[, which(U<=aMLE)]
+				#	get KDE from ABC output			
+				acc.h			<- project.nABC.movingavg.gethist(df[acc,ysigma2], ans[["xsigma2"]], nbreaks=70, width= 0.5, plot=F, rtn.dens=1)
+				acc.h$dens$y[acc.h$dens$y<1e-3]		<- 0	
+				tmp									<- which(acc.h$dens$y!=0)
+				acc.h$dens$x						<- acc.h$dens$x[tmp]
+				acc.h$dens$y						<- acc.h$dens$y[tmp]
+				#	plot against exact posterior
+				if(0)
+				{
+					plot(acc.h$dens$x, acc.h$dens$y, type='l', ylim=c(0,2.5))
+					lines(acc.h$dens$x, densigamma(acc.h$dens$x, (xn-2)/2, sum(x^2)/2), col='red')							
+					abline(v=var(x)*(xn-1)/xn)			
+				}
+				#	compute KDE of ABC posterior on sigma2
+				acc.mc.dens							<- approxfun(x= acc.h$dens$x, y= acc.h$dens$y, method="linear", yleft=0, yright=0, rule=2 )
+				tmp									<- min(acc.h$dens$y[acc.h$dens$y!=0])
+				acc.h$dens$y[acc.h$dens$y==0]		<- tmp
+				acc.mc.dens.log						<- approxfun(x= acc.h$dens$x, y= log(acc.h$dens$y), method="linear", yleft=-Inf, yright=-Inf, rule=2 )
+				tmp									<- function(x, log=T){ if(log){ acc.mc.dens.log(x)	}else{	acc.mc.dens(x)	}	}
+				#	get exact posterior
+				lkl.norm							<- diff(pigamma(range(acc.h$dens$x), xn/2-1, sum(x^2)/2 ))
+				tmp2								<- function(x, log=T)
+				{
+					if(log)
+					{
+						ans	<- log(densigamma(x, xn/2-1, sum(x^2)/2))-log(lkl.norm)
+						ans[ which(x<prior.l | x>prior.u)]	<- -Inf
+					}													
+					if(!log)
+					{
+						ans	<- densigamma(x, xn/2-1, sum(x^2)/2)/lkl.norm
+						ans[ which(x<prior.l | x>prior.u)]	<- 0
+					}
+					ans
+				} 
+				#	compute empirical KL between summary lkl (uniform prior so this is posterior on prior support) and ABC posterior
+				suppressWarnings({ #suppress numerical inaccuracy warnings
+							KL.div.mc 				<- integrate(kl.integrand, lower=min(acc.h$dens$x), upper=max(acc.h$dens$x), dP=tmp2, dQ=tmp, P_arg=list(), Q_arg=list())						
+						})
+				#	compute ABC MAP - MAP 
+				c('MAP.diff'=acc.h$hmode - var(x)*(xn-1)/xn, 'KL.div.mc'=KL.div.mc$value, 'acc.prob'=length(acc)/nrow(df))				
+			})))
+	fname		<- paste(dir.name,"/",gsub('m[0-9]+\\.R','accurate\\.R',f.names[1]), sep='')
+	cat(paste('\nsave file to', fname))
+	save(dfa, fname)
 	
 }
 #------------------------------------------------------------------------------------------------------------------------
@@ -1926,9 +1931,17 @@ ms.pipeline<- function()		#illustrate power of scaled ChiSquare
 		}		
 	}
 	
-	if(1)
+	if(0)
 	{
 		cmd		<- paste(CODE.HOME,'/misc/nabc.startme.R',' -exe=VARTESTPREC',sep='')
+		cmd		<- cmd.hpcwrapper(cmd, hpc.walltime=71, hpc.mem="600mb", hpc.nproc='1', hpc.q='pqeph')
+		outdir	<- paste(DATA,"nABC.vt",sep='/')		
+		outfile	<- paste("vt",paste(strsplit(date(),split=' ')[[1]],collapse='_',sep=''),sep='.')
+		cmd.hpccaller(outdir, outfile, cmd)
+	}
+	if(1)
+	{
+		cmd		<- paste(CODE.HOME,'/misc/nabc.startme.R',' -exe=VARTESTEVAL',sep='')
 		cmd		<- cmd.hpcwrapper(cmd, hpc.walltime=71, hpc.mem="600mb", hpc.nproc='1', hpc.q='pqeph')
 		outdir	<- paste(DATA,"nABC.vt",sep='/')		
 		outfile	<- paste("vt",paste(strsplit(date(),split=' ')[[1]],collapse='_',sep=''),sep='.')
