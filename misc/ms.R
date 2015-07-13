@@ -372,7 +372,7 @@ ms.vartest.montecarlo.ABCii.plugin.MLE<- function()		#check MLE, yn>xn
 				df[, U:= runif(nrow(df))]	
 				acc				<- df[, which(U<=aMLE)]
 				#	get KDE from ABC output			
-				acc.h			<- project.nABC.movingavg.gethist(df[acc,ysigma2], ans[["xsigma2"]], nbreaks=70, width= 0.5, plot=T, rtn.dens=1)
+				acc.h			<- project.nABC.movingavg.gethist(df[acc,ysigma2], ans[["xsigma2"]], nbreaks=70, width= 0.5, plot=F, rtn.dens=1)
 				acc.h$dens$y[acc.h$dens$y<1e-3]		<- 0	
 				tmp									<- which(acc.h$dens$y!=0)
 				acc.h$dens$x						<- acc.h$dens$x[tmp]
