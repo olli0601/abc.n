@@ -59,7 +59,7 @@ SEXP abcScaledChiSq(SEXP args)
 
 	//convert SEXP into C
 	ERROR_ON(length(args)!=8,"abcScaledChiSqu: error at 1b ");
-	ERROR_ON((scale= REAL(args)[0])<3,"abcScaledChiSqu: error at 1c ");
+	ERROR_ON((scale= REAL(args)[0])<1,"abcScaledChiSqu: error at 1c ");
 	ERROR_ON((df= REAL(args)[1])<2,"abcScaledChiSqu: error at 1d ");
 	tl= REAL(args)[2];
 	tu= REAL(args)[3];
