@@ -416,6 +416,12 @@ ms.vartest.montecarlo.ABCii.plugin.MLE<- function()		#check MLE, yn>xn
 	fname		<- paste(dir.name,"/",gsub('m[0-9]+\\.R','accurate\\.R',f.names[1]), sep='')
 	cat(paste('\nsave file to', fname))
 	save(dfa, file=fname)
+	
+	fname		<- list.files(dir.name, pattern='accurate\\.R$')
+	load(paste(dir.name, fname, sep='/'))
+	dfa[, mean(MAP.diff)]
+	dfa[, mean(KL.div.mc)]
+	dfa[, mean(acc.prob)]
 }
 #------------------------------------------------------------------------------------------------------------------------
 ms.vartest.montecarlo.precompute<- function()		#check MLE, yn>xn

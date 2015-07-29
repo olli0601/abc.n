@@ -269,7 +269,7 @@ ftest.plot <- function(n.of.y, p, tau, alpha, pow_scale = 1.5)
 #' @param n 		Number of replicate simulations
 #' @param p 		Number of variables
 #' @param what		Character string to indicate the type of calibration to be performed 
-#' @param c		Upper boundary point of the critical region 
+#' @param c			Upper boundary point of the critical region 
 #' @param tau		Upper boundary point of the equivalence region  
 #' @param mx.pw 	Maximum power at the point of equality
 #' @param alpha 	Level of the equivalence test
