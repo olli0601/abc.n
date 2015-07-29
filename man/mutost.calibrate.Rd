@@ -162,6 +162,8 @@ sim 		<- (sim - mean(sim))/sd(sim) * ysigma + ymean
 ans 		<- mutost.calibrate(n.of.x=length(obs), s.of.x= sd(obs), s.of.y=sd(sim), 
 	what='KL', mx.pw=0.9, alpha=0.01, plot=TRUE, debug=TRUE)
 
+system.time({ for(i in 1:1e3) mutost.calibrate(n.of.x=length(obs), s.of.x= sd(obs), s.of.y=sd(sim), what='KL', mx.pw=0.9, alpha=0.01) 	})
+
 \dontrun{
 abc.presim.uprior.mu<- function(abc.nit, xn, xmean, xsigma, prior.l, prior.u, ysigma, yn=NA )		
 {		

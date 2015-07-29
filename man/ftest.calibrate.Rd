@@ -96,10 +96,11 @@ ftest.calibrate(n.of.y=n.of.y, p=p, what = 'MXPW', mx.pw = 0.9, alpha = 0.01, us
 
 # Example 4: calibrate critical region, power of ABC accept/reject step, and #simulated data points
 # this requires to specify alpha, mx.pw (calibration parameters), and n.of.x, t2.of.x (summary parameters)
-# note: these is the default calibration
-##	ftest.calibrate(n.of.x=n.of.x, t2.x=t2.x, p=p, what='KL', mx.pw=0.9, alpha=0.01, use.R= TRUE, plot=TRUE, verbose=FALSE)
-ftest.calibrate(n.of.x=n.of.x, t2.x=t2.x, p=p, what='KL', mx.pw=0.9, alpha=0.01, use.R= TRUE, debug=TRUE, plot=TRUE, verbose=FALSE)
-ftest.calibrate(n.of.x=n.of.x, t2.x=t2.x, p=p, what='KL', mx.pw=0.9, alpha=0.01, use.R= FALSE, plot=FALSE, verbose=FALSE)
+# note: this is the default calibration
+ftest.calibrate(n.of.x=n.of.x, t2.x=t2.x, p=p, what='KL', mx.pw=0.9, alpha=0.01, use.R= TRUE, plot=TRUE)
+ftest.calibrate(n.of.x=n.of.x, t2.x=t2.x, p=p, what='KL', mx.pw=0.9, alpha=0.01, use.R= FALSE, plot=TRUE)
+
+system.time({ for(i in 1:1e4) ftest.calibrate(n.of.x=n.of.x, t2.x=t2.x, p=p, what='KL', mx.pw=0.9, alpha=0.01, use.R= FALSE) })
 }
 \references{
 http://arxiv.org/abs/1305.4283
