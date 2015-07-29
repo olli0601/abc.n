@@ -1,5 +1,5 @@
 #' @title \code{vartest} power function
-#' @description Computes the power of the one-sample chi sqare test to
+#' @description Computes the power of the one-sample chi square test to
 #' test the equivalence of population variances of normal summary values.
 #' @param rho 		Vector of error quantiles
 #' @param scale		Scaling parameter; typically set to the number of observed summary values
@@ -330,7 +330,7 @@ vartest.plot<- function(scale, df, c.l, c.u, tau.l, tau.u, pow_scale=1.5)
 #' @title Calibrating \code{vartest} for ABC
 #' @description Calibrate the one-sample equivalence test for population variances of normal summary values for ABC inference.
 #' The one-sample \code{vartest} can be used to test the null hypothesis that the underlying population variance of the simulated summary values 
-#' is not similar to the variance of the observed summary values. It is applicable when the simulated and observed summary values follow a normal 
+#' is similar to the variance of the observed summary values. It is applicable when the simulated and observed summary values follow a normal 
 #' distribution, or when normality cannot be rejected.
 #' 
 #' Different types of calibrations are available, see Notes for details:

@@ -57,7 +57,7 @@ vector
 \description{
 Calibrate the one-sample equivalence test for population variances of normal summary values for ABC inference.
 The one-sample \code{vartest} can be used to test the null hypothesis that the underlying population variance of the simulated summary values
-is not similar to the variance of the observed summary values. It is applicable when the simulated and observed summary values follow a normal
+is similar to the variance of the observed summary values. It is applicable when the simulated and observed summary values follow a normal
 distribution, or when normality cannot be rejected.
 
 Different types of calibrations are available, see Notes for details:

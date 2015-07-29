@@ -27,7 +27,7 @@ vartest.pow(rho, scale, df, c.l, c.u, norm = 1, trafo = 1, support = c(0,
 \item{log}{If \code{TRUE}, the power function is returned on the log scale.}
 }
 \description{
-Computes the power of the one-sample chi sqare test to
+Computes the power of the one-sample chi square test to
 test the equivalence of population variances of normal summary values.
 }
 \note{
