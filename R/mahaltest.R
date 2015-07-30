@@ -1,16 +1,16 @@
-mahaltest.plot <- function(scale, df, c.l, c.u, tau.l, tau.u, pow_scale = 1.5)
+mahaltest.plot <- function(p, df, c.l, c.u, tau.l, tau.u, pow_scale = 1.5)
 {
 	pow_support <- c(tau.l / pow_scale, tau.u * pow_scale) 	
-	pow_norm 	<- vartest.pow.norm(scale, df, c.l, c.u, trafo = 1, support = pow_support)	
+	pow_norm 	<- vartest.pow.norm(1, df, c.l, c.u, trafo = 1, support = pow_support)	
 	tmp			<- data.frame(rho=seq(pow_support[1], pow_support[2], length.out = 1024))	
-	tmp$power	<- vartest.pow(tmp$rho, scale, df, c.l, c.u, trafo = 1, norm = pow_norm) * pow_norm	
+	tmp$power	<- vartest.pow(tmp$rho, 1, df, c.l, c.u, trafo = 1, norm = pow_norm) * pow_norm	
 	
 	p	<- ggplot(tmp, aes(x = rho, y = power)) + geom_line() + labs(x = expression(rho), y = 'Power\n(ABC acceptance probability)') +
 			scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +
 			scale_x_continuous(limits = c(0, pow_support[2])) +
 			geom_vline(xintercept = c(tau.l, tau.u), linetype = "dotted") +
 			geom_vline(xintercept = c(c.l, c.u), linetype = "dashed") +
-			ggtitle(paste0("scale=", scale, ", df=", df, "\ntau.l=", round(tau.l, d = 5), " tau.u=", round(tau.u, d = 5), "\nc.l=", round(c.l, d = 5), " c.u=", round(c.u, d = 5)))
+			ggtitle(paste0("p=", p, ", n.of.y=", df + p, "\ntau.l=", round(tau.l, d = 5), " tau.u=", round(tau.u, d = 5), "\nc.l=", round(c.l, d = 5), " c.u=", round(c.u, d = 5)))
 	print(p)
 }
 #------------------------------------------------------------------------------------------------------------------------
@@ -103,12 +103,22 @@ mahaltest.calibrate <- function(n.of.x = NA, p = NA, n.of.y = NA, what = 'MXPW',
 	}
 	if(what == 'MXPW')
 	{
-		stopifnot((n.of.y - p) > 0, tau.u.ub > (p - 2), p > 2, alpha > 0, alpha < 1, pow_scale > 1, max.it > 10, tol < 0.2)
-		tmp <- vartest.calibrate.tauup(mx.pw, tau.u.ub, 1, n.of.y - p, alpha = alpha, rho.star = p - 2, tol = tol, max.it = max.it, pow.scale = pow_scale, verbose = verbose)
-		ans	<- c(tmp[5], tmp[6], tmp[1], tmp[2], tmp[3], tmp[4])
-		names(ans) <- c('c.l', 'c.u', 'tau.l', 'tau.u', 'pw.cmx', 'pw.error')
-		if(plot)
-			mahaltest.plot(1, n.of.y - p, ans['c.l'], ans['c.u'], ans['tau.l'], ans['tau.u'], pow_scale = pow_scale)
+		stopifnot(n.of.y %% 1 == 0, p %% 1 == 0, (n.of.y - p) > 0, tau.u.ub > (p - 2), p > 1, alpha > 0, alpha < 0.5, pow_scale > 1, max.it > 10, tol < 0.2, mx.pw > 0, mx.pw < 1)
+		if(p > 2)
+		{
+		    tmp <- vartest.calibrate.tauup(mx.pw, tau.u.ub, 1, n.of.y - p, alpha = alpha, rho.star = p - 2, tol = tol, max.it = max.it, pow.scale = pow_scale, verbose = verbose)
+    		ans	<- c(tmp[5], tmp[6], tmp[1], tmp[2], tmp[3], tmp[4])
+    		names(ans) <- c('c.l', 'c.u', 'tau.l', 'tau.u', 'pw.cmx', 'pw.error')
+		    if(plot) mahaltest.plot(p, n.of.y - p, ans['c.l'], ans['c.u'], ans['tau.l'], ans['tau.u'], pow_scale = pow_scale)
+        }
+		else 
+		{
+		    tmp			<- ftest.calibrate.tau(mx.pw, ny = n.of.y, p = p, tau.ub = tau.u.ub, alpha = alpha, tol = tol, max.it = max.it, use.R = F, verbose = verbose)
+    		ans			<- c(tmp['c'], tmp['tau'], tmp['curr.pw'], tmp['error.pw'])
+    		names(ans)	<- c('c','tau', 'pw.cmx', 'pw.error')
+		    if(plot)
+			    ftest.plot(n.of.y=n.of.y, p = p, tau = ans['tau'], alpha = alpha, pow_scale = pow_scale)
+		}
 	}
 	if(what == 'KL')
 	{
