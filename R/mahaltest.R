@@ -123,10 +123,7 @@ mahaltest.calibrate <- function(n.of.x = NA, p = NA, n.of.y = NA, what = 'MXPW',
 	if(what == 'KL')
 	{
 		stopifnot(p > 1, alpha > 0, alpha < 1, pow_scale > 1, max.it > 10, tol < 0.2)
-		tmp	<- mahaltest.calibrate.kl(p, n.of.y = n.of.y, mx.pw = mx.pw, alpha = alpha, max.it = max.it, debug = debug, plot = plot, pow_scale = pow_scale, tol = tol)
-		ans <- tmp
-#		ans	<- c(tmp[4], tmp[5], tmp[2], tmp[3], tmp[1], tmp[6], tmp[7])
-#		names(ans)	<- c('c.l','c.u','tau.l','tau.u','n.of.y','pw.cmx','KL.div')
+		ans	<- mahaltest.calibrate.kl(p, n.of.y = n.of.y, mx.pw = mx.pw, alpha = alpha, max.it = max.it, debug = debug, plot = plot, pow_scale = pow_scale, tol = tol)
 	}
 	ans
 }
@@ -174,12 +171,12 @@ mahaltest.calibrate.kl <- function(p, n.of.y = p + 2, mx.pw = 0.9, alpha = 0.01,
 	if(p == 2)
 	{
 	    g(KL_div, tau, c1, pw.cmx, err.pw)	%<-%	mahaltest.getkl(p, n.of.y, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = plot, max.it = max.it, tol = tol)
-	    ans <- c(n.of.y = n.of.y, tau = tau, c = c1, pw.cmx = pw.cmx, KL_div = KL_div)
+	    ans <- c(c = c1, tau = tau, n.of.y = n.of.y, pw.cmx = pw.cmx, KL_div = KL_div)
 	}
 	else
 	{
 	    g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	mahaltest.getkl(p, n.of.y, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = plot, max.it = max.it, tol = tol)
-	    ans <- c(n.of.y = n.of.y, tau.l = tau.l, tau.u = tau.u, cl = c.l, cu = c.u, pw.cmx = pw.cmx, KL_div = KL_div)
+	    ans <- c(cl = c.l, cu = c.u, tau.l = tau.l, tau.u = tau.u, n.of.y = n.of.y, pw.cmx = pw.cmx, KL_div = KL_div)
 	}
 	ans
 }
