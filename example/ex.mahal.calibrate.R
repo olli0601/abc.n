@@ -36,7 +36,7 @@ n.of.y <- NA	#this is now a calibration output
 mahaltest.calibrate(p = 3, what = 'KL', mx.pw = 0.9, alpha = 0.01, plot = TRUE, verbose = FALSE)
 
 # Example 5: same as Example 4 except that this time we calibrate according to
-# an F-statistic
+# an F-statistic (since p = 2)
 
 n.of.y <- NA	#this is now a calibration output
 mahaltest.calibrate(p = 2, what = 'KL', mx.pw = 0.9, alpha = 0.01, plot = TRUE, verbose = FALSE)
