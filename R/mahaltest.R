@@ -68,6 +68,7 @@ mahaltest.plot <- function(scale, df, c.l, c.u, tau.l, tau.u, pow_scale = 1.5)
 #' \item (\code{what=KL}) This calibration can be used when a set of observed summary values is available. It is desirable because it specifies the number of simulated summary 
 #' 				values so that the power is very close to the desired summary likelihood in terms of the KL divergence. 
 #' 				The inputs are \code{alpha}, \code{mx.pw}, with default values 0.01 and 0.9 respectively.
+#'              Sometimes the default initial value for \code{n.of.y} returns an error. In this case the argument \code{n.of.y} can be used to set an initial value (start as close to \code{p + 2} as possible).
 #' 				The output consists of the corresponding critical region \code{[c.l, c.u]} (to be used in ABC, see Notes on (2)), the equivalence
 #' 				region \code{[tau.l, tau.u]}, and the number of simulated summary values needed (\code{n.of.y}). As a check to the numerical calibrations, 
 #' 				the KL divergence is returned (\code{KL}). It is desirable to compare the power to the summary likelihood in terms of the KL divergence, see References.
