@@ -123,7 +123,7 @@ mahaltest.calibrate <- function(n.of.x = NA, p = NA, n.of.y = NA, what = 'MXPW',
 	if(what == 'KL')
 	{
 		stopifnot(p > 1, alpha > 0, alpha < 1, pow_scale > 1, max.it > 10, tol < 0.2)
-		ans	<- mahaltest.calibrate.kl(p, n.of.y = n.of.y, mx.pw = mx.pw, alpha = alpha, max.it = max.it, debug = debug, plot = plot, pow_scale = pow_scale, tol = tol)
+		ans	<- mahaltest.calibrate.kl(n.of.x, p, n.of.y = n.of.y, mx.pw = mx.pw, alpha = alpha, max.it = max.it, debug = debug, plot = plot, pow_scale = pow_scale, tol = tol)
 	}
 	ans
 }
@@ -133,29 +133,44 @@ mahaltest.calibrate <- function(n.of.x = NA, p = NA, n.of.y = NA, what = 'MXPW',
 # with the mode of the summary likelihood and so that its KL divergence to the summary likelihood is 
 # minimized. The function minimizes the KL divergences and includes recursive calls to re-calibrate the
 # upper and lower tolerance regions for every new proposed number of simulated summary values.
-mahaltest.calibrate.kl <- function(p, n.of.y = p + 2, mx.pw = 0.9, alpha = 0.01, max.it = 100, pow_scale = 1.5, debug = F, plot = F, tol = 1e-5)
+mahaltest.calibrate.kl <- function(n.of.x, p, n.of.y = p + 2, mx.pw = 0.9, alpha = 0.01, max.it = 100, pow_scale = 1.5, debug = F, plot = F, tol = 1e-5)
 {	
+    if(!is.na(n.of.x) & n.of.x <= p) {
+#        print("Since n < p, must calibrate according to chi-squared summary likelihood")
+#        n.of.x <- NA
+        stop("n must be greater than p")
+    } else {
+        if(is.na(n.of.x)) print("Calibrating according to chi-squared summary likelihood")
+        else print("Calibrating according to an F-distributed summary likelihood")
+    }
+    if(p == 2) print("Calibrating according to an F-test statistic")
+    else print("Calibrating according to a chi-squared statistic")
+    
 	KL.of.yn_ub <- KL.of.yn <- error <- curr.mx.pw <- tau.low <- cl <- cu <- NA	
-	if(is.na(n.of.y)) n.of.y <- p + 2	
+	if(is.na(n.of.y)) n.of.y <- p + 2 #ifelse(is.na(n.of.x), p + 2, n.of.x)
+#	if(n.of.y < n.of.x) stop("n.of.y < n.of.x")
+	#set rho.star based on degrees-of-freedom and form of summary likelihood
+	if(p > 2) {
+	    rho.star <- ifelse(is.na(n.of.x), p - 2, (p - 2) * (n.of.x - p) / (p * (n.of.x - p +2)))
+	} else rho.star <- 0
 	#KL for initial n.of.y
-	tau.u <- ifelse(p == 2, 1, 3 * (p - 2))
-	#set rho.star based on degrees-of-freedom
-	rho.star <- ifelse(p > 2, p - 2, 0)
-	KL.of.yn		<- mahaltest.getkl(p, n.of.y, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
-	KL.of.yn_ub		<- mahaltest.getkl(p, n.of.y + 1, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
+	tau.u <- 6 * (rho.star + 3)
+	
+	KL.of.yn		<- mahaltest.getkl(n.of.x, p, n.of.y, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
+	KL.of.yn_ub		<- mahaltest.getkl(n.of.x, p, n.of.y + 1, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
 	print("Do we need this additional check for decreasing KL?")	
 	if(KL.of.yn_ub < KL.of.yn)
 	{
 	    #KL always decreases from n.of.x. Find upper bound yn.ub such that KL first increases again.
 	    curr.it 		<- max.it
 	    yn.ub 			<- 2 * n.of.y		
-	    KL.of.yn_ub		<- mahaltest.getkl(p, yn.ub, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]		
+	    KL.of.yn_ub		<- mahaltest.getkl(n.of.x, p, yn.ub, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]		
 	    while (KL.of.yn_ub < KL.of.yn && curr.it > 0) 
 	    {
 		    curr.it 		<- curr.it - 1
 		    KL.of.yn 		<- KL.of.yn_ub
 		    yn.ub 			<- 2 * yn.ub
-		    KL.of.yn_ub		<- mahaltest.getkl(p, yn.ub, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
+		    KL.of.yn_ub		<- mahaltest.getkl(n.of.x, p, yn.ub, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
 		    if(debug)	cat(paste("\ntrial upper bound m=", yn.ub, "with KL", KL.of.yn_ub))
 	    }			
 	    if (curr.it == 0) 	stop("could not find upper bound for yn")					
@@ -163,19 +178,19 @@ mahaltest.calibrate.kl <- function(p, n.of.y = p + 2, mx.pw = 0.9, alpha = 0.01,
 	    yn.lb	<- ifelse(curr.it == max.it, yn.ub / 2, yn.ub / 4)
 	    if(debug)	cat(paste("\nupper and lower bounds on m:", yn.lb, yn.ub))
 	
-	    KL_args					<- list(p = p, rho.star = rho.star, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)	
+	    KL_args					<- list(n.of.x = n.of.x, p = p, rho.star = rho.star, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)	
 	    tmp 					<- optimize(kl.optimize, interval = c(yn.lb - 1, yn.ub - 1), x_name = "n.of.y", is_integer = T, KL_divergence = "mahaltest.getkl", KL_args = KL_args, verbose = debug, tol = 1)
 	
 	    n.of.y 										<- round(tmp$minimum) + 1
 	} else print("KL doesn't decrease")
 	if(p == 2)
 	{
-	    g(KL_div, tau, c1, pw.cmx, err.pw)	%<-%	mahaltest.getkl(p, n.of.y, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = plot, max.it = max.it, tol = tol)
+	    g(KL_div, tau, c1, pw.cmx, err.pw)	%<-%	mahaltest.getkl(n.of.x, p, n.of.y, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = plot, max.it = max.it, tol = tol)
 	    ans <- c(c = c1, tau = tau, n.of.y = n.of.y, pw.cmx = pw.cmx, KL_div = KL_div)
 	}
 	else
 	{
-	    g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	mahaltest.getkl(p, n.of.y, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = plot, max.it = max.it, tol = tol)
+	    g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	mahaltest.getkl(n.of.x, p, n.of.y, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = plot, max.it = max.it, tol = tol)
 	    ans <- c(cl = c.l, cu = c.u, tau.l = tau.l, tau.u = tau.u, n.of.y = n.of.y, pw.cmx = pw.cmx, KL_div = KL_div)
 	}
 	ans
@@ -184,6 +199,7 @@ mahaltest.calibrate.kl <- function(p, n.of.y = p + 2, mx.pw = 0.9, alpha = 0.01,
 # @title KL divergence between the summary likelihood and the power function of \code{mahaltest}
 # @description Compute the Kullback-Leibler divergence between the summary likelihood and the power function of the \code{mahaltest} equivalence test.
 # The KL divergence is required to calibrate the number of simulated data points of the test.
+# @param n.of.x         The number of observations.
 # @param p              The dimensionality of the underlying MVN distribution.
 # @param n.of.y         The number of simulations.
 # @param rho.star       The location of the mode of the underlying summary likelihood.
@@ -201,15 +217,17 @@ mahaltest.calibrate.kl <- function(p, n.of.y = p + 2, mx.pw = 0.9, alpha = 0.01,
 # 	\item{c.u}{upper point of the critical region, i.e. upper standard ABC tolerance}	
 # 	\item{pw.cmx}{actual maximum power at the point of equality}
 # @note Whatever the value of \code{calibrate.tau.u}, the lower tolerance of the equivalence region (\code{tau.l}) is always numerically calibrated so that the mode of the power function is at the point of equality rho.star.
-mahaltest.getkl <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, calibrate.tau.u = T, plot = F, max.it = 100, tol = 1e-5) 
+mahaltest.getkl <- function(n.of.x, p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, calibrate.tau.u = T, plot = F, max.it = 100, tol = 1e-5) 
 {
-    if(rho.star == 0) ans <- mahaltest.getkl.F(n.of.y = n.of.y, p = p, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, plot = plot)
-    else ans <- mahaltest.getkl.chi(p = p, n.of.y = n.of.y, rho.star = rho.star, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = calibrate.tau.u, plot = plot, max.it = max.it, tol = tol)
+    #if rho.star = 0 then use F-statistic, else use chi-squared statistic
+    #if n.of.x = NA then use chi-squared summary likelihood, else use F-dist summary likelihood
+    if(rho.star == 0) ans <- mahaltest.getkl.F(n.of.x = n.of.x, n.of.y = n.of.y, p = p, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, plot = plot)
+    else ans <- mahaltest.getkl.chi(n.of.x = n.of.x, p = p, n.of.y = n.of.y, rho.star = rho.star, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = calibrate.tau.u, plot = plot, max.it = max.it, tol = tol)
     ans
 } 
 	
-#calibrate according to KL divergence using chi-squared summary likelihood	
-mahaltest.getkl.chi <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, calibrate.tau.u = T, plot = F, max.it = 100, tol = 1e-5) 
+#calibrate according to KL divergence using a chi-squared test statistic
+mahaltest.getkl.chi <- function(n.of.x, p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, calibrate.tau.u = T, plot = F, max.it = 100, tol = 1e-5) 
 {
 	tau.l <- pw.cmx <- error <- c.l <- c.u <- NA
 	#set parameters for calibration
@@ -219,6 +237,7 @@ mahaltest.getkl.chi <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha =
 	if(calibrate.tau.u)	#calibrate tau.u constrained on yn, alpha and mx.pw 
 	{			
 		g(tau.l, tau.u, pw.cmx,	error, c.l, c.u)	%<-%	vartest.calibrate.tauup( mx.pw, tau.u, scale, df, alpha, rho.star = rho.star, max.it = max.it, tol = tol )						#tau.u is taken as upper bound on calibrated tau.u
+#		print(c(tau.l, tau.u, pw.cmx, mx.pw))
 		if (abs(pw.cmx - mx.pw) > 0.09) 	stop("tau.up not accurate")			
 	}
 	else
@@ -231,9 +250,9 @@ mahaltest.getkl.chi <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha =
 	pow_norm 		<- vartest.pow.norm(scale, df, c.l, c.u, trafo = 1, support = pow_support)
 	#compute the norm of lkl, given its support 
 	lkl_support		<- pow_support
-	lkl_norm		<- mahaltest.su.lkl.norm(p, support = lkl_support)
+	lkl_norm		<- mahaltest.sulkl.norm(n.of.x, p, support = lkl_support)
 	integral_range	<- pow_support			
-	lkl_arg			<- list(p = p, norm = lkl_norm, support = lkl_support)
+	lkl_arg			<- list(n.of.x = n.of.x, p = p, norm = lkl_norm, support = lkl_support)
 	pow_arg			<- list(scale = scale, df = df, c.l = c.l, c.u = c.u, norm = pow_norm, support = pow_support, trafo = 1)	
 	tmp 			<- integrate(kl.integrand, lower = integral_range[1], upper = integral_range[2], dP = mahaltest.sulkl, dQ = vartest.pow, P_arg = lkl_arg, Q_arg = pow_arg)
 	KL_div			<- tmp$value
@@ -244,7 +263,7 @@ mahaltest.getkl.chi <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha =
 	if (plot) 
 	{
 		rho_lkl 			<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
-		lkl					<- mahaltest.sulkl(rho_lkl, p, norm = lkl_norm, support = lkl_support)
+		lkl					<- mahaltest.sulkl(rho_lkl, n.of.x, p, norm = lkl_norm, support = lkl_support)
 		rho_lkl             <- c(min(rho_lkl), rho_lkl, max(rho_lkl))
 		lkl                 <- c(0, lkl, 0)
 		lkl_norm            <- c(0, lkl_norm, 0)
@@ -277,8 +296,8 @@ mahaltest.getkl.chi <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha =
 	c(KL_div = KL_div, tau.l = tau.l, tau.u = tau.u, c.l = c.l, c.u = c.u, pw.cmx = pw.cmx)	
 }
 
-#calibrate according to KL divergence using F distributed summary likelihood	
-mahaltest.getkl.F <- function(n.of.y, p, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, plot = F) 
+#calibrate according to KL divergence using an F-test statistic	
+mahaltest.getkl.F <- function(n.of.x, n.of.y, p, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, plot = F) 
 {	
 	#	calibrate tau	
 	tmp				<- ftest.calibrate.tau( mx.pw, n.of.y, p, tau.u, alpha )						#tau.u is taken as upper bound on calibrated tau.u
@@ -292,9 +311,9 @@ mahaltest.getkl.F <- function(n.of.y, p, tau.u, mx.pw = 0.9, alpha = 0.01, pow_s
 	pow_norm 		<- ftest.pow.norm(tau, n.of.y, p, support = pow_support)
 	#	truncate lkl and compute the normalizing constant lkl_norm 
 	lkl_support		<- pow_support
-	lkl_norm		<- mahaltest.su.lkl.norm(p, support = lkl_support)
+	lkl_norm		<- mahaltest.sulkl.norm(n.of.x, p, support = lkl_support)
 	integral_range	<- pow_support			
-	lkl_arg			<- list(p = p, norm = lkl_norm, support = lkl_support)
+	lkl_arg			<- list(n.of.x = n.of.x, p = p, norm = lkl_norm, support = lkl_support)
 	pow_arg			<- list(tau = tau, n.of.y = n.of.y, p = p, alpha = alpha, norm = pow_norm, support=pow_support)	
 	tmp 			<- integrate(kl.integrand, lower = integral_range[1], upper = integral_range[2], dP = mahaltest.sulkl, dQ = ftest.pow, P_arg = lkl_arg, Q_arg = pow_arg)
 	KL_div			<- tmp$value
@@ -305,7 +324,7 @@ mahaltest.getkl.F <- function(n.of.y, p, tau.u, mx.pw = 0.9, alpha = 0.01, pow_s
 	if (plot) 
 	{
 		rho_lkl 			<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
-		lkl					<- mahaltest.sulkl(rho_lkl, p, norm = lkl_norm, support = lkl_support)
+		lkl					<- mahaltest.sulkl(rho_lkl, n.of.x, p, norm = lkl_norm, support = lkl_support)
 		rho_lkl             <- c(min(rho_lkl), rho_lkl, max(rho_lkl))
 		lkl                 <- c(0, lkl, 0)
 		lkl_norm            <- c(0, lkl_norm, 0)
@@ -338,6 +357,7 @@ mahaltest.getkl.F <- function(n.of.y, p, tau.u, mx.pw = 0.9, alpha = 0.01, pow_s
 # @title Density of the summary likelihood of the Mahalanobis distance for multivariate normal summary values
 # @description		The density of the scaled Mahalanobis distance is chi-squared on p degrees-of-freedom.
 # @param rho 		Auxiliary error parameter
+# @param n.of.x     Number of observations (if missing then use chi-squared summary likelihood, else use an F-distributed summary likelihood
 # @param p  		Dimensionality of the underlying MVN distribution
 # @param norm 		scalar, 0<\code{norm}<=1, normalization constant for the truncated summary likelihood.
 # @param support 	vector of dimension 2, support of the truncated summary likelihood.
@@ -345,13 +365,17 @@ mahaltest.getkl.F <- function(n.of.y, p, tau.u, mx.pw = 0.9, alpha = 0.01, pow_s
 # @note The summary likelihood can be truncated to \code{support} and then standardized with \code{norm}.
 # For computational efficiency, both \code{norm} and \code{support} must be provided although each one can be derived from the other. 
 # @seealso \code{\link{mahaltest.calibrate}}, \code{\link{mahaltest.getkl}} for an example.
-mahaltest.sulkl <- function(rho, p, norm = 1, support= c(0, Inf), log = FALSE) 
+mahaltest.sulkl <- function(rho, n.of.x, p, norm = 1, support= c(0, Inf), log = FALSE) 
 {
 	ans 				<- rho
 	in_support 			<- (rho >= support[1] & rho <= support[2])
 	ans[!in_support]	<- 0
-	if (any(in_support)) 			
-		ans[in_support]	<- dchisq(rho[in_support], df = p) / norm
+    if (any(in_support)) 
+	{			
+	    if(is.na(n.of.x)) ans[in_support]	<- dchisq(rho[in_support], df = p) / norm
+		else ans[in_support]	<- df(rho[in_support], p, n.of.x - p) / norm
+    }	    
+		    
 	if(log)
 		ans				<- log(ans)
 	return(ans)
@@ -361,8 +385,8 @@ mahaltest.sulkl <- function(rho, p, norm = 1, support= c(0, Inf), log = FALSE)
 # @description This function computes the area under the summary likelihood \code{mahaltest.sulkl}.
 # @inheritParams mahaltest.sulkl
 # @seealso \code{\link{mahaltest.calibrate}}
-mahaltest.su.lkl.norm	<- function(p, support = c(0, Inf))
+mahaltest.sulkl.norm	<- function(n.of.x, p, support = c(0, Inf))
 {
-	ans	<- integrate(mahaltest.sulkl, lower = support[1], upper = support[2], p = p, norm = 1, support = support, log = FALSE)	
+    ans	<- integrate(mahaltest.sulkl, lower = support[1], upper = support[2], n.of.x = n.of.x, p = p, norm = 1, support = support, log = FALSE)	
 	ans$value
 }
