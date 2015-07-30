@@ -223,7 +223,7 @@ vartest.calibrate.taulow<- function(tau.up, scale, df, alpha=0.01, rho.star=1, t
 #------------------------------------------------------------------------------------------------------------------------
 # @title Calibrate the upper tolerance interval of the equivalence region for \code{vartest}
 # @description This function calibrates the upper tolerance interval of the equivalence region for the \code{vartest} equivalence test
-# so that the mode of the power function is at \code{rho.star=1} and so that the power function at \code{rho.star} euqals \code{mx.pw}. 
+# so that the mode of the power function is at \code{rho.star=1} and so that the power function at \code{rho.star} equals \code{mx.pw}. 
 # This involves recursive recursive calls to re-calibrate the lower tolerance region.
 # @return	vector of length 6
 # 	\item{tau.low}{lower tolerance of the equivalence region}		
