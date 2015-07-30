@@ -111,8 +111,8 @@ mahaltest.calibrate <- function(n.of.x = NA, p = NA, n.of.y = NA, what = 'MXPW',
 	}
 	if(what == 'KL')
 	{
-		stopifnot(n.of.x > 0, p > 2, alpha > 0, alpha < 1, pow_scale > 1, max.it > 10, tol < 0.2)
-		tmp	<- mahaltest.calibrate.kl(n.of.x, p, mx.pw = mx.pw, alpha = alpha, max.it = max.it, debug = debug, plot = plot)
+		stopifnot(p > 2, alpha > 0, alpha < 1, pow_scale > 1, max.it > 10, tol < 0.2)
+		tmp	<- mahaltest.calibrate.kl(p, n.of.y = n.of.y, mx.pw = mx.pw, alpha = alpha, max.it = max.it, debug = debug, plot = plot, pow_scale = pow_scale, tol = tol)
 		ans	<- c(tmp[4], tmp[5], tmp[2], tmp[3], tmp[1], tmp[6], tmp[7])
 		names(ans)	<- c('c.l','c.u','tau.l','tau.u','n.of.y','pw.cmx','KL.div')
 	}
@@ -124,35 +124,40 @@ mahaltest.calibrate <- function(n.of.x = NA, p = NA, n.of.y = NA, what = 'MXPW',
 # with the mode of the summary likelihood and so that its KL divergence to the summary likelihood is 
 # minimized. The function minimizes the KL divergences and includes recursive calls to re-calibrate the
 # upper and lower tolerance regions for every new proposed number of simulated summary values.
-mahaltest.calibrate.kl <- function(n.of.x, p, n.of.y = n.of.x + p, mx.pw = 0.9, alpha = 0.01, max.it = 100, pow_scale = 1.5, debug = F, plot = F)
+mahaltest.calibrate.kl <- function(p, n.of.y = p + 2, mx.pw = 0.9, alpha = 0.01, max.it = 100, pow_scale = 1.5, debug = F, plot = F, tol = 1e-5)
 {	
-	KL.of.yn_ub <- KL.of.yn <- error <- curr.mx.pw <- tau.low <- cl <- cu <- NA		
+	KL.of.yn_ub <- KL.of.yn <- error <- curr.mx.pw <- tau.low <- cl <- cu <- NA	
+	if(is.na(n.of.y)) n.of.y <- p + 2	
 	#KL for initial n.of.y
 	tau.u <- 3 * (p - 2)
-	KL.of.yn		<- mahaltest.getkl(p, n.of.y, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F)["KL_div"]	
-	#KL always decreases from n.of.x. Find upper bound yn.ub such that KL first increases again.
-	print("Need to check KL decreases...")	
-	curr.it 		<- max.it
-	yn.ub 			<- 2 * n.of.y		
-	KL.of.yn_ub		<- mahaltest.getkl(p, yn.ub, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F)["KL_div"]		
-	while (KL.of.yn_ub < KL.of.yn && curr.it > 0) 
+	KL.of.yn		<- mahaltest.getkl(p, n.of.y, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
+	KL.of.yn_ub		<- mahaltest.getkl(p, n.of.y + 1, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
+	print("Do we need this additional check for decreasing KL?")	
+	if(KL.of.yn_ub < KL.of.yn)
 	{
-		curr.it 		<- curr.it - 1
-		KL.of.yn 		<- KL.of.yn_ub
-		yn.ub 			<- 2 * yn.ub
-		KL.of.yn_ub		<- mahaltest.getkl(p, yn.ub, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F)["KL_div"]
-		if(debug)	cat(paste("\ntrial upper bound m=", yn.ub, "with KL", KL.of.yn_ub))
-	}			
-	if (curr.it == 0) 	stop("could not find upper bound for yn")					
-	if(debug)	cat(paste("\nFound upper bound m=", yn.ub, "with KL", KL.of.yn_ub))
-	yn.lb	<- ifelse(curr.it == max.it, yn.ub / 2, yn.ub / 4)
-	if(debug)	cat(paste("\nupper and lower bounds on m:", yn.lb, yn.ub))
+	    #KL always decreases from n.of.x. Find upper bound yn.ub such that KL first increases again.
+	    curr.it 		<- max.it
+	    yn.ub 			<- 2 * n.of.y		
+	    KL.of.yn_ub		<- mahaltest.getkl(p, yn.ub, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]		
+	    while (KL.of.yn_ub < KL.of.yn && curr.it > 0) 
+	    {
+		    curr.it 		<- curr.it - 1
+		    KL.of.yn 		<- KL.of.yn_ub
+		    yn.ub 			<- 2 * yn.ub
+		    KL.of.yn_ub		<- mahaltest.getkl(p, yn.ub, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
+		    if(debug)	cat(paste("\ntrial upper bound m=", yn.ub, "with KL", KL.of.yn_ub))
+	    }			
+	    if (curr.it == 0) 	stop("could not find upper bound for yn")					
+	    if(debug)	cat(paste("\nFound upper bound m=", yn.ub, "with KL", KL.of.yn_ub))
+	    yn.lb	<- ifelse(curr.it == max.it, yn.ub / 2, yn.ub / 4)
+	    if(debug)	cat(paste("\nupper and lower bounds on m:", yn.lb, yn.ub))
 	
-	KL_args					<- list(p = p, rho.star = p - 2, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, plot = F)	
-	tmp 					<- optimize(kl.optimize, interval = c(yn.lb - 1, yn.ub - 1), x_name = "n.of.y", is_integer = T, KL_divergence = "mahaltest.getkl", KL_args = KL_args, verbose = debug, tol = 1)
+	    KL_args					<- list(p = p, rho.star = p - 2, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)	
+	    tmp 					<- optimize(kl.optimize, interval = c(yn.lb - 1, yn.ub - 1), x_name = "n.of.y", is_integer = T, KL_divergence = "mahaltest.getkl", KL_args = KL_args, verbose = debug, tol = 1)
 	
-	n.of.y 										<- round(tmp$minimum) + 1
-	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	mahaltest.getkl(p, n.of.y, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = plot)
+	    n.of.y 										<- round(tmp$minimum) + 1
+	} else print("KL doesn't decrease")
+	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	mahaltest.getkl(p, n.of.y, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = plot, max.it = max.it, tol = tol)
 	c(n.of.y = n.of.y, tau.l = tau.l, tau.u = tau.u, cl = c.l, cu = c.u, pw.cmx = pw.cmx, KL_div = KL_div)		
 }
 #------------------------------------------------------------------------------------------------------------------------
@@ -176,7 +181,7 @@ mahaltest.calibrate.kl <- function(n.of.x, p, n.of.y = n.of.x + p, mx.pw = 0.9, 
 # 	\item{c.u}{upper point of the critical region, i.e. upper standard ABC tolerance}	
 # 	\item{pw.cmx}{actual maximum power at the point of equality}
 # @note Whatever the value of \code{calibrate.tau.u}, the lower tolerance of the equivalence region (\code{tau.l}) is always numerically calibrated so that the mode of the power function is at the point of equality rho.star.
-mahaltest.getkl <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, calibrate.tau.u = T, plot = F) 
+mahaltest.getkl <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, calibrate.tau.u = T, plot = F, max.it = 100, tol = 1e-5) 
 {
 	tau.l <- pw.cmx <- error <- c.l <- c.u <- NA
 	#set parameters for calibration
@@ -185,12 +190,12 @@ mahaltest.getkl <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha = 0.0
 	stopifnot(df > 0)
 	if(calibrate.tau.u)	#calibrate tau.u constrained on yn, alpha and mx.pw 
 	{			
-		g(tau.l, tau.u, pw.cmx,	error, c.l, c.u)	%<-%	vartest.calibrate.tauup( mx.pw, tau.u, scale, df, alpha, rho.star = rho.star )						#tau.u is taken as upper bound on calibrated tau.u
+		g(tau.l, tau.u, pw.cmx,	error, c.l, c.u)	%<-%	vartest.calibrate.tauup( mx.pw, tau.u, scale, df, alpha, rho.star = rho.star, max.it = max.it, tol = tol )						#tau.u is taken as upper bound on calibrated tau.u
 		if (abs(pw.cmx - mx.pw) > 0.09) 	stop("tau.up not accurate")			
 	}
 	else
 	{
-		g(tau.l, c.l, c.u, error)	%<-%	vartest.calibrate.taulow(tau.u, scale, df, alpha, rho.star = rho.star )	#tau.u is taken as final tau.u
+		g(tau.l, c.l, c.u, error)	%<-%	vartest.calibrate.taulow(tau.u, scale, df, alpha, rho.star = rho.star, max.it = max.it, tol = tol )	#tau.u is taken as final tau.u
 	}
 	
 	#truncate pow and compute pow_norm	
@@ -228,7 +233,7 @@ mahaltest.getkl <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha = 0.0
 		gdf					<- melt(gdf, id.vars = c("x", "distribution"))
 		p 					<- ggplot(data = gdf, aes(x = x, y = value, colour = distribution, linetype = variable)) +
 								geom_polygon(data = subset(gdf, distribution == 'summary likelihood'), fill = 'grey70') +
-								geom_vline(xintercept = 1, colour = 'black', linetype = "dotted") +
+								geom_vline(xintercept = rho.star, colour = 'black', linetype = "dotted") +
 								geom_vline(xintercept = c(tau.l, tau.u), linetype = "dotted") + 
 								geom_hline(yintercept = mx.pw, linetype = "dotted") + geom_line() +
 								scale_y_continuous(lim = c(-0.02, 2.3), expand = c(0, 0)) +
