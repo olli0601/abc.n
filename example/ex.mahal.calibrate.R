@@ -33,4 +33,4 @@ mahaltest.calibrate(n.of.x = n.of.x, p = p, n.of.y = n.of.y, tau.u.ub = (p - 2) 
 # need to have a set of observed summary values
 
 n.of.y <- NA	#this is now a calibration output
-mahaltest.calibrate(n.of.x = n.of.x, p = 3, what = 'KL', mx.pw = 0.9, alpha = 0.01, plot = TRUE, verbose = FALSE)
+mahaltest.calibrate(p = 3, what = 'KL', mx.pw = 0.9, alpha = 0.01, plot = TRUE, verbose = FALSE)
