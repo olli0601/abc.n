@@ -299,26 +299,29 @@ mahaltest.getkl.F <- function(n.of.y, p, tau.u, mx.pw = 0.9, alpha = 0.01, pow_s
 	{
 		rho_lkl 			<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
 		lkl					<- mahaltest.sulkl(rho_lkl, p, norm = lkl_norm, support = lkl_support)
-		df_lkl 				<- data.table(X = rho_lkl, density = lkl, power = lkl * lkl_norm, TYPE = "summary likelihood" )
+		rho_lkl             <- c(min(rho_lkl), rho_lkl, max(rho_lkl))
+		lkl                 <- c(0, lkl, 0)
+		lkl_norm            <- c(0, lkl_norm, 0)
+		df_lkl 				<- data.frame(x = rho_lkl, yes = lkl, no = lkl * lkl_norm)
+		df_lkl$distribution <- "summary likelihood"
 		rho_pow	 			<- seq(pow_support[1], pow_support[2], length.out = 1000)
-		pow					<- ftest.pow(rho_pow, tau, n.of.y, p, alpha = alpha, support = pow_support, norm = pow_norm)		
-		df_pow 				<- data.table(X = rho_pow, density = pow, power = pow * pow_norm, TYPE = "ABC approximation")
+		pow					<- ftest.pow(rho_pow, tau, n.of.y, p, alpha = alpha, support = pow_support, norm = pow_norm)
+		df_pow 				<- data.frame(x = rho_pow, yes = pow, no = pow * pow_norm)
+		df_pow$distribution <- "ABC approximation"
 		gdf 				<- rbind(df_pow, df_lkl)
-		gdf					<- melt(gdf, id.vars = c("X", "TYPE"))
-		gdf					<- subset(gdf, !(TYPE == 'summary likelihood' & variable == 'power'))
-		set(gdf, NULL, 'TYPE', gdf[, factor(TYPE, levels = c('summary likelihood', "ABC approximation"), labels = c('summary likelihood', "ABC approximation"))])
-		pp	<- ggplot(gdf, aes(x = X, y = value, group = TYPE, colour = TYPE)) +
-		geom_ribbon(data = subset(gdf, TYPE == 'summary likelihood'), aes(ymax = value, ymin = 0), fill = 'grey70', guide = FALSE) +				
-		geom_vline(xintercept = tau, linetype = "dotted") + 
-		geom_hline(yintercept = mx.pw, linetype = "dotted") + 
-		geom_line() +
-		scale_y_continuous() +				 
-		scale_colour_manual(values = c('black', 'grey70')) + 
-		labs(x = expression(rho), y = "", linetype = "Normalized", colour = '') +
-		facet_wrap(~variable, scales = 'free') +
-		theme_bw() + theme(legend.position = 'bottom') #+ guides(colour=guide_legend(ncol=2))
+		gdf					<- melt(gdf, id.vars = c("x", "distribution"))
+		p 					<- ggplot(data = gdf, aes(x = x, y = value, colour = distribution, linetype = variable)) +
+								geom_polygon(data = subset(gdf, distribution == 'summary likelihood'), fill = 'grey70') +
+								geom_vline(xintercept = tau, linetype = "dotted") + 
+								geom_hline(yintercept = mx.pw, linetype = "dotted") + geom_line() +
+								scale_y_continuous(lim = c(-0.02, 2.3), expand = c(0, 0)) +
+								#scale_colour_brewer(palette='Set1', guide=FALSE) + 
+								scale_linetype_manual(values = c('solid', 'longdash'), guide = FALSE) + 
+								scale_colour_manual(values = c('black', 'transparent'), guide = FALSE) + 
+								labs(x = expression(rho), y = "", linetype = "Normalized", colour='Distribution') +
+								theme_bw() + theme(legend.position = 'bottom') #+ guides(colour=guide_legend(ncol=2))
 		#p 					<- p + ggtitle(paste("n.of.y=", df+1, "\ntau.l=", tau.l,"\ntau.u=", tau.u,"\nKL=", KL_div))
-		print(pp)
+		print(p)
 	}
 	tmp			<- c(KL_div, tau, crit, curr.pw,abs(curr.pw - mx.pw))
 	names(tmp)	<- c('KL_div', 'tau', 'c', 'pw.cmx', 'err.pw')
