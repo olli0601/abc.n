@@ -112,10 +112,11 @@ mahaltest.calibrate <- function(n.of.x = NA, p = NA, n.of.y = NA, what = 'MXPW',
 	}
 	if(what == 'KL')
 	{
-		stopifnot(p > 2, alpha > 0, alpha < 1, pow_scale > 1, max.it > 10, tol < 0.2)
+		stopifnot(p > 1, alpha > 0, alpha < 1, pow_scale > 1, max.it > 10, tol < 0.2)
 		tmp	<- mahaltest.calibrate.kl(p, n.of.y = n.of.y, mx.pw = mx.pw, alpha = alpha, max.it = max.it, debug = debug, plot = plot, pow_scale = pow_scale, tol = tol)
-		ans	<- c(tmp[4], tmp[5], tmp[2], tmp[3], tmp[1], tmp[6], tmp[7])
-		names(ans)	<- c('c.l','c.u','tau.l','tau.u','n.of.y','pw.cmx','KL.div')
+		ans <- tmp
+#		ans	<- c(tmp[4], tmp[5], tmp[2], tmp[3], tmp[1], tmp[6], tmp[7])
+#		names(ans)	<- c('c.l','c.u','tau.l','tau.u','n.of.y','pw.cmx','KL.div')
 	}
 	ans
 }
@@ -130,22 +131,24 @@ mahaltest.calibrate.kl <- function(p, n.of.y = p + 2, mx.pw = 0.9, alpha = 0.01,
 	KL.of.yn_ub <- KL.of.yn <- error <- curr.mx.pw <- tau.low <- cl <- cu <- NA	
 	if(is.na(n.of.y)) n.of.y <- p + 2	
 	#KL for initial n.of.y
-	tau.u <- 3 * (p - 2)
-	KL.of.yn		<- mahaltest.getkl(p, n.of.y, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
-	KL.of.yn_ub		<- mahaltest.getkl(p, n.of.y + 1, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
+	tau.u <- ifelse(p == 2, 1, 3 * (p - 2))
+	#set rho.star based on degrees-of-freedom
+	rho.star <- ifelse(p > 2, p - 2, 0)
+	KL.of.yn		<- mahaltest.getkl(p, n.of.y, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
+	KL.of.yn_ub		<- mahaltest.getkl(p, n.of.y + 1, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
 	print("Do we need this additional check for decreasing KL?")	
 	if(KL.of.yn_ub < KL.of.yn)
 	{
 	    #KL always decreases from n.of.x. Find upper bound yn.ub such that KL first increases again.
 	    curr.it 		<- max.it
 	    yn.ub 			<- 2 * n.of.y		
-	    KL.of.yn_ub		<- mahaltest.getkl(p, yn.ub, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]		
+	    KL.of.yn_ub		<- mahaltest.getkl(p, yn.ub, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]		
 	    while (KL.of.yn_ub < KL.of.yn && curr.it > 0) 
 	    {
 		    curr.it 		<- curr.it - 1
 		    KL.of.yn 		<- KL.of.yn_ub
 		    yn.ub 			<- 2 * yn.ub
-		    KL.of.yn_ub		<- mahaltest.getkl(p, yn.ub, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
+		    KL.of.yn_ub		<- mahaltest.getkl(p, yn.ub, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
 		    if(debug)	cat(paste("\ntrial upper bound m=", yn.ub, "with KL", KL.of.yn_ub))
 	    }			
 	    if (curr.it == 0) 	stop("could not find upper bound for yn")					
@@ -153,13 +156,22 @@ mahaltest.calibrate.kl <- function(p, n.of.y = p + 2, mx.pw = 0.9, alpha = 0.01,
 	    yn.lb	<- ifelse(curr.it == max.it, yn.ub / 2, yn.ub / 4)
 	    if(debug)	cat(paste("\nupper and lower bounds on m:", yn.lb, yn.ub))
 	
-	    KL_args					<- list(p = p, rho.star = p - 2, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)	
+	    KL_args					<- list(p = p, rho.star = rho.star, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)	
 	    tmp 					<- optimize(kl.optimize, interval = c(yn.lb - 1, yn.ub - 1), x_name = "n.of.y", is_integer = T, KL_divergence = "mahaltest.getkl", KL_args = KL_args, verbose = debug, tol = 1)
 	
 	    n.of.y 										<- round(tmp$minimum) + 1
 	} else print("KL doesn't decrease")
-	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	mahaltest.getkl(p, n.of.y, p - 2, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = plot, max.it = max.it, tol = tol)
-	c(n.of.y = n.of.y, tau.l = tau.l, tau.u = tau.u, cl = c.l, cu = c.u, pw.cmx = pw.cmx, KL_div = KL_div)		
+	if(p == 2)
+	{
+	    g(KL_div, tau, c1, pw.cmx, err.pw)	%<-%	mahaltest.getkl(p, n.of.y, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = plot, max.it = max.it, tol = tol)
+	    ans <- c(n.of.y = n.of.y, tau = tau, c = c1, pw.cmx = pw.cmx, KL_div = KL_div)
+	}
+	else
+	{
+	    g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	mahaltest.getkl(p, n.of.y, rho.star, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = plot, max.it = max.it, tol = tol)
+	    ans <- c(n.of.y = n.of.y, tau.l = tau.l, tau.u = tau.u, cl = c.l, cu = c.u, pw.cmx = pw.cmx, KL_div = KL_div)
+	}
+	ans
 }
 #------------------------------------------------------------------------------------------------------------------------
 # @title KL divergence between the summary likelihood and the power function of \code{mahaltest}
@@ -183,6 +195,14 @@ mahaltest.calibrate.kl <- function(p, n.of.y = p + 2, mx.pw = 0.9, alpha = 0.01,
 # 	\item{pw.cmx}{actual maximum power at the point of equality}
 # @note Whatever the value of \code{calibrate.tau.u}, the lower tolerance of the equivalence region (\code{tau.l}) is always numerically calibrated so that the mode of the power function is at the point of equality rho.star.
 mahaltest.getkl <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, calibrate.tau.u = T, plot = F, max.it = 100, tol = 1e-5) 
+{
+    if(rho.star == 0) ans <- mahaltest.getkl.F(n.of.y = n.of.y, p = p, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, plot = plot)
+    else ans <- mahaltest.getkl.chi(p = p, n.of.y = n.of.y, rho.star = rho.star, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = calibrate.tau.u, plot = plot, max.it = max.it, tol = tol)
+    ans
+} 
+	
+#calibrate according to KL divergence using chi-squared summary likelihood	
+mahaltest.getkl.chi <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, calibrate.tau.u = T, plot = F, max.it = 100, tol = 1e-5) 
 {
 	tau.l <- pw.cmx <- error <- c.l <- c.u <- NA
 	#set parameters for calibration
@@ -248,6 +268,61 @@ mahaltest.getkl <- function(p, n.of.y, rho.star, tau.u, mx.pw = 0.9, alpha = 0.0
 	}
 	pw.cmx 	<- ifelse(calibrate.tau.u, pw.cmx, vartest.pow(rho = rho.star, scale, df, c.l, c.u))	
 	c(KL_div = KL_div, tau.l = tau.l, tau.u = tau.u, c.l = c.l, c.u = c.u, pw.cmx = pw.cmx)	
+}
+
+#calibrate according to KL divergence using F distributed summary likelihood	
+mahaltest.getkl.F <- function(n.of.y, p, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, plot = F) 
+{	
+	#	calibrate tau	
+	tmp				<- ftest.calibrate.tau( mx.pw, n.of.y, p, tau.u, alpha )						#tau.u is taken as upper bound on calibrated tau.u
+	crit			<- tmp['c']
+	tau				<- tmp['tau']
+	curr.pw			<- tmp['curr.pw']	
+	if (abs(curr.pw - mx.pw) > 0.09) 	
+		stop("tau.up not accurate")			
+	#	truncate pow and compute the normalizing constant pow_norm	
+	pow_support 	<- c(0, tau * pow_scale) 	
+	pow_norm 		<- ftest.pow.norm(tau, n.of.y, p, support = pow_support)
+	#	truncate lkl and compute the normalizing constant lkl_norm 
+	lkl_support		<- pow_support
+	lkl_norm		<- mahaltest.su.lkl.norm(p, support = lkl_support)
+	integral_range	<- pow_support			
+	lkl_arg			<- list(p = p, norm = lkl_norm, support = lkl_support)
+	pow_arg			<- list(tau = tau, n.of.y = n.of.y, p = p, alpha = alpha, norm = pow_norm, support=pow_support)	
+	tmp 			<- integrate(kl.integrand, lower = integral_range[1], upper = integral_range[2], dP = mahaltest.sulkl, dQ = ftest.pow, P_arg = lkl_arg, Q_arg = pow_arg)
+	KL_div			<- tmp$value
+	if (tmp$message != "OK") 
+	{
+		warning(tmp$message)
+	}
+	if (plot) 
+	{
+		rho_lkl 			<- seq(lkl_support[1], lkl_support[2], length.out = 1000)
+		lkl					<- mahaltest.sulkl(rho_lkl, p, norm = lkl_norm, support = lkl_support)
+		df_lkl 				<- data.table(X = rho_lkl, density = lkl, power = lkl * lkl_norm, TYPE = "summary likelihood" )
+		rho_pow	 			<- seq(pow_support[1], pow_support[2], length.out = 1000)
+		pow					<- ftest.pow(rho_pow, tau, n.of.y, p, alpha = alpha, support = pow_support, norm = pow_norm)		
+		df_pow 				<- data.table(X = rho_pow, density = pow, power = pow * pow_norm, TYPE = "ABC approximation")
+		gdf 				<- rbind(df_pow, df_lkl)
+		gdf					<- melt(gdf, id.vars = c("X", "TYPE"))
+		gdf					<- subset(gdf, !(TYPE == 'summary likelihood' & variable == 'power'))
+		set(gdf, NULL, 'TYPE', gdf[, factor(TYPE, levels = c('summary likelihood', "ABC approximation"), labels = c('summary likelihood', "ABC approximation"))])
+		pp	<- ggplot(gdf, aes(x = X, y = value, group = TYPE, colour = TYPE)) +
+		geom_ribbon(data = subset(gdf, TYPE == 'summary likelihood'), aes(ymax = value, ymin = 0), fill = 'grey70', guide = FALSE) +				
+		geom_vline(xintercept = tau, linetype = "dotted") + 
+		geom_hline(yintercept = mx.pw, linetype = "dotted") + 
+		geom_line() +
+		scale_y_continuous() +				 
+		scale_colour_manual(values = c('black', 'grey70')) + 
+		labs(x = expression(rho), y = "", linetype = "Normalized", colour = '') +
+		facet_wrap(~variable, scales = 'free') +
+		theme_bw() + theme(legend.position = 'bottom') #+ guides(colour=guide_legend(ncol=2))
+		#p 					<- p + ggtitle(paste("n.of.y=", df+1, "\ntau.l=", tau.l,"\ntau.u=", tau.u,"\nKL=", KL_div))
+		print(pp)
+	}
+	tmp			<- c(KL_div, tau, crit, curr.pw,abs(curr.pw - mx.pw))
+	names(tmp)	<- c('KL_div', 'tau', 'c', 'pw.cmx', 'err.pw')
+	tmp
 }
 #------------------------------------------------------------------------------------------------------------------------
 # @title Density of the summary likelihood of the Mahalanobis distance for multivariate normal summary values
