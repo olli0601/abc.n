@@ -183,7 +183,8 @@ vartest.getkl <- function(n.of.x, scale, df, tau.u, mx.pw=0.9, alpha=0.01, pow_s
 # @example example/ex.vartest.calibrate.taulow.R 
 vartest.calibrate.taulow<- function(tau.up, scale, df, alpha=0.01, rho.star=1, tol= 1e-5, max.it=100, pow_scale=1.5, verbose=0) 
 {	
-	rho			<- seq(1/(tau.up*pow_scale), tau.up*pow_scale, len=1024)
+#	rho			<- seq(1/(tau.up*pow_scale), tau.up*pow_scale, len = 2048)
+	rho			<- seq(0, tau.up*pow_scale, len = 2048)
 	tau.low.lb	<- 2/tau.up				
 	tmp			<- max.it
 	c.rho.max	<- Inf
@@ -243,7 +244,7 @@ vartest.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01, rho.
 		tmp							<- tmp-1
 		tau.up.ub					<- 2*tau.up.ub
 		g(tau.low, cl, cu, error)	%<-%	vartest.calibrate.taulow(tau.up.ub, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
-		rho							<- seq(tau.low/pow.scale, tau.up.ub*pow.scale, len=1024)
+		rho							<- seq(tau.low/pow.scale, tau.up.ub*pow.scale, len = 2048)
 		pw							<- vartest.pow(rho, scale, df, cl, cu)
 		curr.mx.pw					<- max(pw)		
 		if(verbose)	cat(paste("\ntrial upper bound",tau.up.ub,"with power",curr.mx.pw,"at rho=",rho[ which.max(pw) ]))
@@ -258,7 +259,7 @@ vartest.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01, rho.
 		max.it						<- max.it-1
 		tau.up						<- (tau.up.lb + tau.up.ub)/2
 		g(tau.low, cl, cu, error)	%<-%	vartest.calibrate.taulow(tau.up, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
-		rho							<- seq(tau.low/pow.scale, tau.up*pow.scale, len=1024)		
+		rho							<- seq(tau.low/pow.scale, tau.up*pow.scale, len = 2048)		
 		pw							<- vartest.pow(rho, scale, df, cl, cu)
 		curr.mx.pw					<- max(pw)		
 		error						<- curr.mx.pw - mx.pw
