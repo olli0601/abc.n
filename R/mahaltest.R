@@ -103,6 +103,7 @@ mahaltest.calibrate <- function(n.of.x = NA, p = NA, n.of.y = NA, what = 'MXPW',
 	}
 	if(what == 'MXPW')
 	{
+    	print("NEED TO AMEND THIS FOR F-LIKELIHOOD")
 		stopifnot(n.of.y %% 1 == 0, p %% 1 == 0, (n.of.y - p) > 0, tau.u.ub > (p - 2), p > 1, alpha > 0, alpha < 0.5, pow_scale > 1, max.it > 10, tol < 0.2, mx.pw > 0, mx.pw < 1)
 		if(p > 2)
 		{
@@ -122,7 +123,7 @@ mahaltest.calibrate <- function(n.of.x = NA, p = NA, n.of.y = NA, what = 'MXPW',
 	}
 	if(what == 'KL')
 	{
-		stopifnot(p > 1, alpha > 0, alpha < 1, pow_scale > 1, max.it > 10, tol < 0.2)
+		stopifnot(n.of.x > 0, p > 1, alpha > 0, alpha < 1, pow_scale > 1, max.it > 10, tol < 0.2)
 		ans	<- mahaltest.calibrate.kl(n.of.x, p, n.of.y = n.of.y, mx.pw = mx.pw, alpha = alpha, max.it = max.it, debug = debug, plot = plot, pow_scale = pow_scale, tol = tol)
 	}
 	ans
@@ -151,7 +152,7 @@ mahaltest.calibrate.kl <- function(n.of.x, p, n.of.y = p + 2, mx.pw = 0.9, alpha
 #	if(n.of.y < n.of.x) stop("n.of.y < n.of.x")
 	#set rho.star based on degrees-of-freedom and form of summary likelihood
 	if(p > 2) {
-	    rho.star <- ifelse(is.na(n.of.x), p - 2, (p - 2) * (n.of.x - p) / (p * (n.of.x - p +2)))
+	    rho.star <- ifelse(is.na(n.of.x), p - 2, (p - 2) * (n.of.x - p) / (p * (n.of.x - p + 2)))
 	} else rho.star <- 0
 	#KL for initial n.of.y
 	tau.u <- 6 * (rho.star + 3)
