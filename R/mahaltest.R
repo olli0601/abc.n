@@ -123,7 +123,7 @@ mahaltest.calibrate <- function(n.of.x = NA, p = NA, n.of.y = NA, what = 'MXPW',
 	}
 	if(what == 'KL')
 	{
-		stopifnot(n.of.x > 0, p > 1, alpha > 0, alpha < 1, pow_scale > 1, max.it > 10, tol < 0.2)
+		stopifnot(p > 1, alpha > 0, alpha < 1, pow_scale > 1, max.it > 10, tol < 0.2)
 		ans	<- mahaltest.calibrate.kl(n.of.x, p, n.of.y = n.of.y, mx.pw = mx.pw, alpha = alpha, max.it = max.it, debug = debug, plot = plot, pow_scale = pow_scale, tol = tol)
 	}
 	ans
