@@ -149,7 +149,7 @@ mahaltest.calibrate.kl <- function(n.of.x, p, n.of.y = p + 2, sum.like = "chisq"
     else print("Calibrating according to an F-test statistic")
     
 	KL.of.yn_ub <- KL.of.yn <- error <- curr.mx.pw <- tau.low <- cl <- cu <- NA	
-	if(is.na(n.of.y)) n.of.y <- p + 1 #ifelse(is.na(n.of.x), p + 2, n.of.x)
+	if(is.na(n.of.y)) n.of.y <- p + 3 #ifelse(is.na(n.of.x), p + 2, n.of.x)
 	#set rho.star based on degrees-of-freedom and form of summary likelihood
 	if(p > 2) {
 	    rho.star <- ifelse(sum.like == "chisq", p - 2, (p - 2) * (n.of.x - p) / (p * (n.of.x - p + 2)))
@@ -218,17 +218,17 @@ mahaltest.calibrate.kl <- function(n.of.x, p, n.of.y = p + 2, sum.like = "chisq"
 # 	\item{c.u}{upper point of the critical region, i.e. upper standard ABC tolerance}	
 # 	\item{pw.cmx}{actual maximum power at the point of equality}
 # @note Whatever the value of \code{calibrate.tau.u}, the lower tolerance of the equivalence region (\code{tau.l}) is always numerically calibrated so that the mode of the power function is at the point of equality rho.star.
-mahaltest.getkl <- function(n.of.x, p, n.of.y, rho.star, sum.like, test.stat, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, calibrate.tau.u = T, plot = F, max.it = 100, tol = 1e-5) 
-{
-    #if rho.star = 0 then use F-statistic, else use chi-squared statistic
-    #if n.of.x = NA then use chi-squared summary likelihood, else use F-dist summary likelihood
-    if(test.stat == "F") ans <- mahaltest.getkl.F(n.of.x = n.of.x, p = p, n.of.y = n.of.y, rho.star = rho.star, tau.u = tau.u, sum.like = sum.like, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, plot = plot)
-    else ans <- mahaltest.getkl.chi(n.of.x = n.of.x, p = p, n.of.y = n.of.y, rho.star = rho.star, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = calibrate.tau.u, plot = plot, max.it = max.it, tol = tol)
-    ans
-} 
+#mahaltest.getkl <- function(n.of.x, p, n.of.y, rho.star, sum.like, test.stat, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, calibrate.tau.u = T, plot = F, max.it = 100, tol = 1e-5) 
+#{
+#    #if rho.star = 0 then use F-statistic, else use chi-squared statistic
+#    #if n.of.x = NA then use chi-squared summary likelihood, else use F-dist summary likelihood
+#    if(test.stat == "F") ans <- mahaltest.getkl.F(n.of.x = n.of.x, p = p, n.of.y = n.of.y, rho.star = rho.star, tau.u = tau.u, sum.like = sum.like, test.stat = test.stat, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, plot = plot)
+#    else ans <- mahaltest.getkl.chi(n.of.x = n.of.x, p = p, n.of.y = n.of.y, rho.star = rho.star, tau.u = tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = calibrate.tau.u, plot = plot, max.it = max.it, tol = tol)
+#    ans
+#} 
 	
 #calibrate according to KL divergence using a chi-squared test statistic
-mahaltest.getkl.F <- function(n.of.x, p, n.of.y, rho.star, tau.u, sum.like, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, calibrate.tau.u = T, plot = F, max.it = 100, tol = 1e-5) 
+mahaltest.getkl <- function(n.of.x, p, n.of.y, rho.star, sum.like, test.stat, tau.u, mx.pw = 0.9, alpha = 0.01, pow_scale = 1.5, calibrate.tau.u = T, plot = F, max.it = 100, tol = 1e-5) 
 {
 	tau.l <- pw.cmx <- error <- c.l <- c.u <- NA
 	#set parameters for calibration
@@ -236,22 +236,22 @@ mahaltest.getkl.F <- function(n.of.x, p, n.of.y, rho.star, tau.u, sum.like, mx.p
 	stopifnot(df > 0)
 	if(calibrate.tau.u)	#calibrate tau.u constrained on yn, alpha and mx.pw 
 	{			
-		g(tau.l, tau.u, pw.cmx,	error, c.l, c.u) %<-% mahalvartest.calibrate.tauup(mx.pw, n.of.y, p, alpha, rho.star)			
+		g(tau.l, tau.u, pw.cmx,	error, c.l, c.u) %<-% mahalvartest.calibrate.tauup(mx.pw, n.of.y, p, test.stat, alpha, rho.star)			
 	}
 	else
 	{
-		g(tau.l, c.l, c.u, error)	%<-%	mahalvartest.calibrate.taulow(tau.u, n.of.y, p, alpha, rho.star)
+		g(tau.l, c.l, c.u, error)	%<-%	mahalvartest.calibrate.taulow(tau.u, n.of.y, p, test.stat, alpha, rho.star)
 	}
 	
 	#truncate pow and compute pow_norm	
 	pow_support 	<- c(tau.l / pow_scale, tau.u * pow_scale) 	
-	pow_norm 		<- mahalvartest.pow.norm(n.of.y, p, c.l, c.u, support = pow_support)
+	pow_norm 		<- mahalvartest.pow.norm(n.of.y, p, c.l, c.u, test.stat = test.stat, support = pow_support)
 	#compute the norm of lkl, given its support 
 	lkl_support		<- pow_support
 	lkl_norm		<- mahaltest.sulkl.norm(n.of.x, p, sum.like, support = lkl_support)
 	integral_range	<- pow_support			
 	lkl_arg			<- list(n.of.x = n.of.x, p = p, sum.like = sum.like, norm = lkl_norm, support = lkl_support)
-	pow_arg			<- list(m = n.of.y, p = p, c.l = c.l, c.u = c.u, norm = pow_norm, support = pow_support)	
+	pow_arg			<- list(m = n.of.y, p = p, c.l = c.l, c.u = c.u, test.stat = test.stat, norm = pow_norm, support = pow_support)	
 	tmp 			<- integrate(kl.integrand, lower = integral_range[1], upper = integral_range[2], dP = mahaltest.sulkl, dQ = mahalvartest.pow, P_arg = lkl_arg, Q_arg = pow_arg)
 	KL_div			<- tmp$value
 	if (tmp$message != "OK") 
@@ -268,7 +268,7 @@ mahaltest.getkl.F <- function(n.of.x, p, n.of.y, rho.star, tau.u, sum.like, mx.p
 		df_lkl 				<- data.frame(x = rho_lkl, yes = lkl, no = lkl * lkl_norm)
 		df_lkl$distribution <- "summary likelihood"
 		rho_pow	 			<- seq(pow_support[1], pow_support[2], length.out = 1000)
-		pow					<- mahalvartest.pow(rho_pow, n.of.y, p, c.l, c.u, norm = pow_norm)
+		pow					<- mahalvartest.pow(rho_pow, n.of.y, p, c.l, c.u, test.stat = test.stat, norm = pow_norm)
 		df_pow 				<- data.frame(x = rho_pow, yes = pow, no = pow * pow_norm)
 		df_pow$distribution <- "ABC approximation"
 		gdf 				<- rbind(df_pow, df_lkl)
@@ -287,7 +287,7 @@ mahaltest.getkl.F <- function(n.of.x, p, n.of.y, rho.star, tau.u, sum.like, mx.p
 		#p 					<- p + ggtitle(paste("n.of.y=", df+1, "\ntau.l=", tau.l,"\ntau.u=", tau.u,"\nKL=", KL_div))
 		print(p)
 	}
-	pw.cmx 	<- ifelse(calibrate.tau.u, pw.cmx, mahalvartest.pow(rho = rho.star, n.of.y, p, c.l, c.u))	
+	pw.cmx 	<- ifelse(calibrate.tau.u, pw.cmx, mahalvartest.pow(rho = rho.star, n.of.y, p, c.l, c.u, test.stat = test.stat))	
 	c(KL_div = KL_div, tau.l = tau.l, tau.u = tau.u, c.l = c.l, c.u = c.u, pw.cmx = pw.cmx)	
 }
 
@@ -400,45 +400,59 @@ nonCentFRoot <- function(par, df, tau.low, tau.up, alpha, rho.star)
     if(!is.finite(ans)) ans <- NA
     return(ans)
 }
+#root function for optimisation
+chiRoot <- function(par, df, n.of.y, tau.low, tau.up, alpha)
+{
+    if(!all(par > 0)) return(NA)
+    if(par[2] <= par[1]) return(NA)
+    c.l <- par[1]
+    c.u <- par[2]
+    ans <- abs(pchisq(c.u, df, n.of.y * tau.up) - pchisq(c.l, df, n.of.y * tau.up) - alpha)
+    ans <- ans + abs(pchisq(c.u, df, n.of.y * tau.low) - pchisq(c.l, df, n.of.y * tau.low) - alpha)
+    if(!is.finite(ans)) ans <- NA
+    return(ans)
+}
 #power function for chisq test
-mahalvartest.pow <- function(rho, m, p, c.l, c.u, norm = 1, support = c(0, Inf), log = FALSE)
+mahalvartest.pow <- function(rho, m, p, c.l, c.u, test.stat, norm = 1, support = c(0, Inf), log = FALSE)
 {
 	ans					<- rep(0,length(rho))
 	in_support			<- (rho >= support[1] & rho <= support[2])	
 	if(any(in_support))			
-		ans[in_support] <- (pf((m - p) * c.u / (p * (m - 1)), p, m - p, m * rho[in_support]) - pf((m - p) * c.l / (p * (m - 1)), p, m - p, m * rho[in_support])) / norm
+		if(test.stat == "F") ans[in_support] <- (pf((m - p) * c.u / (p * (m - 1)), p, m - p, m * rho[in_support]) - pf((m - p) * c.l / (p * (m - 1)), p, m - p, m * rho[in_support])) / norm
+		else ans[in_support] <- (pchisq(c.u, p, m * rho[in_support]) - pchisq(c.l, p, m * rho[in_support])) / norm
 	if(log)
 		ans <- log(ans)
 	ans
 }
 #normalised power function
-mahalvartest.pow.norm <- function(m, p, c.l, c.u, support = c(0, Inf))
+mahalvartest.pow.norm <- function(m, p, c.l, c.u, test.stat, support = c(0, Inf))
 {
-	ans <- integrate(mahalvartest.pow, lower = support[1], upper = support[2], m = m, p = p, c.l = c.l, c.u = c.u, norm = 1, support = support, log = FALSE)
+	ans <- integrate(mahalvartest.pow, lower = support[1], upper = support[2], m = m, p = p, c.l = c.l, c.u = c.u, test.stat = test.stat, norm = 1, support = support, log = FALSE)
 	ans$value
 }
 
 #function to calibrate tau.low
-mahalcali.tau.low <- function(tau.low, tau.up, m, p, alpha, rho.star, tol = 1e-3)
+mahalcali.tau.low <- function(tau.low, tau.up, m, p, test.stat, alpha, rho.star, tol = 1e-3)
 {
     if(tau.low < 0 | tau.low > tau.up | tau.low > rho.star) return(NA)
     #return optimal calibration region
-    rej	<- optim(c(qf(alpha / 10, p, m - p, lower.tail = T), qf(1 - alpha / 10, p, m - p, lower.tail = T)), nonCentFRoot, df = c(m, p), tau.low = tau.low, tau.up = tau.up, alpha = alpha, rho.star = rho.star, control = list(maxit = 50000))
+    if(test.stat == "F") rej <- optim(c(qf(alpha / 10, p, m - p, lower.tail = T), qf(1 - alpha / 10, p, m - p, lower.tail = T)), nonCentFRoot, df = c(m, p), tau.low = tau.low, tau.up = tau.up, alpha = alpha, rho.star = rho.star, control = list(maxit = 50000))
+    else rej <- optim(c(qchisq(alpha / 10, p, lower.tail = T), qchisq(1 - alpha / 10, p,lower.tail = T)), chiRoot, df = p, n.of.y = m, tau.low = tau.low, tau.up = tau.up, alpha = alpha, control = list(maxit = 50000))
 #    print(rej)
     if(rej$convergence != 0) stop("compute mahalcali.tau.low: max.it exceeded")
 #    if(rej$value > tol) stop("compute mahalcali.tau.low: tol exceeded")
     #calculate maximum power in equivalence region
-    pw <- optimise(mahalvartest.pow, c(tau.low, tau.up), m = m, p = p, c.l = rej$par[1], c.u = rej$par[2], maximum = T)
+    pw <- optimise(mahalvartest.pow, c(tau.low, tau.up), m = m, p = p, c.l = rej$par[1], c.u = rej$par[2], test.stat = test.stat, maximum = T)
 	return(abs(pw$maximum - rho.star))
 }
 
 #function to calibrate tau.up
-mahalcali.tau.up <- function(tau.up, m, p, alpha, rho.star, mx.pw)
+mahalcali.tau.up <- function(tau.up, m, p, test.stat, alpha, rho.star, mx.pw)
 {
     if(tau.up < rho.star) return(NA)
-	g(tau.low, cl, cu, error) %<-% mahalvartest.calibrate.taulow(tau.up, m, p, alpha, rho.star = rho.star)
+	g(tau.low, cl, cu, error) %<-% mahalvartest.calibrate.taulow(tau.up, m, p, test.stat, alpha, rho.star = rho.star)
 	rho <- c(tau.low, tau.up)
-	pw <- optimise(mahalvartest.pow, rho, m = m, p = p, c.l = cl, c.u = cu, maximum = T)
+	pw <- optimise(mahalvartest.pow, rho, m = m, p = p, c.l = cl, c.u = cu, test.stat = test.stat, maximum = T)
 	curr.mx.pw <- pw$objective
 #	print(paste("tauup = ", tau.up))
 #	print(abs(curr.mx.pw - mx.pw))
@@ -446,26 +460,28 @@ mahalcali.tau.up <- function(tau.up, m, p, alpha, rho.star, mx.pw)
 }
 
 # Calibrate the lower tolerance interval of the equivalence region for \code{mahalvartest}
-mahalvartest.calibrate.taulow <- function(tau.up, m, p, alpha = 0.01, rho.star = 1, tol = 1e-1) 
+mahalvartest.calibrate.taulow <- function(tau.up, m, p, test.stat, alpha = 0.01, rho.star = 1, tol = 1e-1) 
 {
 #    browser()
     #calibrate lower tolerance interval such that maximum power is as close to rho.star as possible
-	rej	<- optimise(mahalcali.tau.low, c(0, rho.star), tau.up = tau.up, m = m, p = p, alpha = alpha, rho.star = rho.star, maximum = F)
+	rej	<- optimise(mahalcali.tau.low, c(0, rho.star), tau.up = tau.up, m = m, p = p, test.stat = test.stat, alpha = alpha, rho.star = rho.star, maximum = F)
     tau.low <- rej$minimum
 #    print(rej)
 #    if(rej$objective > tol) stop("Couldn't calibrate lower bound to within required tolerance")
     #extract optimal calibration region for the given equivalence region
-    rej	<- optim(c(qf(alpha / 10, p, m - p, lower.tail = T), qf(1 - alpha / 10, p, m - p, lower.tail = T)), nonCentFRoot, df = c(m, p), tau.low = tau.low, tau.up = tau.up, alpha = alpha, rho.star = rho.star, control = list(maxit = 10000))
+    if(test.stat == "F") rej <- optim(c(qf(alpha / 10, p, m - p, lower.tail = T), qf(1 - alpha / 10, p, m - p, lower.tail = T)), nonCentFRoot, df = c(m, p), tau.low = tau.low, tau.up = tau.up, alpha = alpha, rho.star = rho.star, control = list(maxit = 10000))
+    else rej <- optim(c(qchisq(alpha / 10, p, lower.tail = T), qchisq(1 - alpha / 10, p, lower.tail = T)), chiRoot, df = p, n.of.y = m, tau.low = tau.low, tau.up = tau.up, alpha = alpha, control = list(maxit = 10000))
     if(rej$convergence != 0) stop("compute tau.low crit: max.it exceeded")
 	c(tau.low = tau.low, cl = rej$par[1], cu = rej$par[2], error = rej$value)
 }
 
 # Calibrate the upper tolerance interval of the equivalence region for \code{mahalvartest}
-mahalvartest.calibrate.tauup <- function(mx.pw, m, p, alpha = 0.01, rho.star = 1, pow.scale = 3, tol = 1e-5)
+mahalvartest.calibrate.tauup <- function(mx.pw, m, p, test.stat, alpha = 0.01, rho.star = 1, pow.scale = 3, tol = 1e-5)
 {
+#browser()
     tau.up.ub <- rho.star * pow.scale
     #calibrate within given range
-    rej <- optimise(mahalcali.tau.up, c(rho.star, tau.up.ub), m = m, p = p, alpha = alpha, rho.star = rho.star, mx.pw = mx.pw, maximum = F, tol = .Machine$double.eps)
+    rej <- optimise(mahalcali.tau.up, c(rho.star, tau.up.ub), m = m, p = p, test.stat = test.stat, alpha = alpha, rho.star = rho.star, mx.pw = mx.pw, maximum = F, tol = .Machine$double.eps)
     #calculate error
     preverror <- rej$objective
     error <- preverror - .Machine$double.eps
@@ -478,14 +494,14 @@ mahalvartest.calibrate.tauup <- function(mx.pw, m, p, alpha = 0.01, rho.star = 1
         tau.up.lb <- max(tau.up - pow.scale, rho.star)
         tau.up.ub <- tau.up.ub + pow.scale
         #calibrate within given range
-        rej <- optimise(mahalcali.tau.up, c(tau.up.lb, tau.up.ub), m = m, p = p, alpha = alpha, rho.star = rho.star, mx.pw = mx.pw, maximum = F, tol = .Machine$double.eps)
+        rej <- optimise(mahalcali.tau.up, c(tau.up.lb, tau.up.ub), m = m, p = p, test.stat = test.stat, alpha = alpha, rho.star = rho.star, mx.pw = mx.pw, maximum = F, tol = .Machine$double.eps)
         preverror <- error
         error <- rej$objective
         print(error)
 	}
 	if(max.it == 0) stop("cali tauup: max.it exceeded")
-    g(tau.low, cl, cu, error) %<-% mahalvartest.calibrate.taulow(tau.up, m, p, alpha, rho.star)
+    g(tau.low, cl, cu, error) %<-% mahalvartest.calibrate.taulow(tau.up, m, p, test.stat, alpha, rho.star)
     rho <- c(tau.low, tau.up)
-    pw <- optimise(mahalvartest.pow, rho, m = m, p = p, c.l = cl, c.u = cu, maximum = T)
+    pw <- optimise(mahalvartest.pow, rho, m = m, p = p, c.l = cl, c.u = cu, test.stat = test.stat, maximum = T)
 	c(tau.low = tau.low, tau.up = tau.up, curr.mx.pw = pw$objective, error = abs(pw$objective - mx.pw), cl = cl, cu = cu)
 }
