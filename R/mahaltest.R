@@ -1,16 +1,16 @@
-mahaltest.plot <- function(p, df, c.l, c.u, tau.l, tau.u, pow_scale = 1.5)
+mahaltest.plot <- function(m, p, c.l, c.u, tau.l, tau.u, test.stat, pow_scale = 1.5)
 {
 	pow_support <- c(tau.l / pow_scale, tau.u * pow_scale) 	
-	pow_norm 	<- mahalvartest.pow.norm(df, c.l, c.u, support = pow_support)	
-	tmp			<- data.frame(rho=seq(pow_support[1], pow_support[2], length.out = 1024))	
-	tmp$power	<- mahalvartest.pow(tmp$rho, df, c.l, c.u, norm = pow_norm) * pow_norm	
+	pow_norm 	<- mahalvartest.pow.norm(m, p, c.l, c.u, test.stat, support = pow_support)	
+	tmp			<- data.frame(rho = seq(pow_support[1], pow_support[2], length.out = 1024))	
+	tmp$power	<- mahalvartest.pow(tmp$rho, m, p, c.l, c.u, test.stat, norm = pow_norm) * pow_norm	
 	
 	p	<- ggplot(tmp, aes(x = rho, y = power)) + geom_line() + labs(x = expression(rho), y = 'Power\n(ABC acceptance probability)') +
-			scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +
+#			scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +
 			scale_x_continuous(limits = c(0, pow_support[2])) +
 			geom_vline(xintercept = c(tau.l, tau.u), linetype = "dotted") +
 			geom_vline(xintercept = c(c.l, c.u), linetype = "dashed") +
-			ggtitle(paste0("p=", p, ", n.of.y=", df + p, "\ntau.l=", round(tau.l, d = 5), " tau.u=", round(tau.u, d = 5), "\nc.l=", round(c.l, d = 5), " c.u=", round(c.u, d = 5)))
+			ggtitle(paste0("p=", p, ", n.of.y=", m, "\ntau.l=", round(tau.l, d = 5), " tau.u=", round(tau.u, d = 5), "\nc.l=", round(c.l, d = 5), " c.u=", round(c.u, d = 5)))
 	print(p)
 }
 #------------------------------------------------------------------------------------------------------------------------
