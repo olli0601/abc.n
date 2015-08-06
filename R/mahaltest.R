@@ -453,6 +453,7 @@ mahalcali.tau.up <- function(tau.up, m, p, test.stat, alpha, rho.star, mx.pw)
 	g(tau.low, cl, cu, error) %<-% mahalvartest.calibrate.taulow(tau.up, m, p, test.stat, alpha, rho.star = rho.star)
 	rho <- c(tau.low, tau.up)
 	pw <- optimise(mahalvartest.pow, rho, m = m, p = p, c.l = cl, c.u = cu, test.stat = test.stat, maximum = T)
+	#mahaltest.plot(m, p, cl, cu, tau.low, tau.up, test.stat)
 	curr.mx.pw <- pw$objective
 #	print(paste("tauup = ", tau.up))
 #	print(abs(curr.mx.pw - mx.pw))
