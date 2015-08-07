@@ -419,7 +419,7 @@ mahalvartest.pow <- function(rho, m, p, c.l, c.u, test.stat, norm = 1, support =
 	in_support			<- (rho >= support[1] & rho <= support[2])	
 	if(any(in_support))			
 		if(test.stat == "F") ans[in_support] <- (pf((m - p) * c.u / (p * (m - 1)), p, m - p, m * rho[in_support]) - pf((m - p) * c.l / (p * (m - 1)), p, m - p, m * rho[in_support])) / norm
-		else ans[in_support] <- (pchisq(c.u, p, m * rho[in_support]) - pchisq(c.l, p, m * rho[in_support])) / norm
+		else ans[in_support] <- (pchisq(c.u, m - p, m * rho[in_support]) - pchisq(c.l, m - p, m * rho[in_support])) / norm
 	if(log)
 		ans <- log(ans)
 	ans
@@ -434,10 +434,10 @@ mahalvartest.pow.norm <- function(m, p, c.l, c.u, test.stat, support = c(0, Inf)
 #function to calibrate tau.low
 mahalcali.tau.low <- function(tau.low, tau.up, m, p, test.stat, alpha, rho.star, tol = 1e-3)
 {
-    if(tau.low < 0 | tau.low > tau.up | tau.low > rho.star) return(NA)
+    if(tau.low < 0 | tau.low > tau.up | (m * tau.low) > rho.star) return(NA)
     #return optimal calibration region
     if(test.stat == "F") rej <- optim(c(qf(alpha / 10, p, m - p, lower.tail = T), qf(1 - alpha / 10, p, m - p, lower.tail = T)), nonCentFRoot, df = c(m, p), tau.low = tau.low, tau.up = tau.up, alpha = alpha, rho.star = rho.star, control = list(maxit = 50000))
-    else rej <- optim(c(qchisq(alpha / 10, p, lower.tail = T), qchisq(1 - alpha / 10, p,lower.tail = T)), chiRoot, df = p, n.of.y = m, tau.low = tau.low, tau.up = tau.up, alpha = alpha, control = list(maxit = 50000))
+    else rej <- optim(c(qchisq(alpha / 10, p, lower.tail = T), qchisq(1 - alpha / 10, p,lower.tail = T)), chiRoot, df = m - p, n.of.y = m, tau.low = tau.low, tau.up = tau.up, alpha = alpha, control = list(maxit = 50000))
 #    print(rej)
     if(rej$convergence != 0) stop("compute mahalcali.tau.low: max.it exceeded")
 #    if(rej$value > tol) stop("compute mahalcali.tau.low: tol exceeded")
@@ -449,7 +449,7 @@ mahalcali.tau.low <- function(tau.low, tau.up, m, p, test.stat, alpha, rho.star,
 #function to calibrate tau.up
 mahalcali.tau.up <- function(tau.up, m, p, test.stat, alpha, rho.star, mx.pw)
 {
-    if(tau.up < rho.star) return(NA)
+    if(tau.up < (rho.star / m)) return(NA)
 	g(tau.low, cl, cu, error) %<-% mahalvartest.calibrate.taulow(tau.up, m, p, test.stat, alpha, rho.star = rho.star)
 	rho <- c(tau.low, tau.up)
 	pw <- optimise(mahalvartest.pow, rho, m = m, p = p, c.l = cl, c.u = cu, test.stat = test.stat, maximum = T)
@@ -465,13 +465,13 @@ mahalvartest.calibrate.taulow <- function(tau.up, m, p, test.stat, alpha = 0.01,
 {
 #    browser()
     #calibrate lower tolerance interval such that maximum power is as close to rho.star as possible
-	rej	<- optimise(mahalcali.tau.low, c(0, rho.star), tau.up = tau.up, m = m, p = p, test.stat = test.stat, alpha = alpha, rho.star = rho.star, maximum = F)
+	rej	<- optimise(mahalcali.tau.low, c(0, rho.star / m), tau.up = tau.up, m = m, p = p, test.stat = test.stat, alpha = alpha, rho.star = rho.star, maximum = F)
     tau.low <- rej$minimum
 #    print(rej)
 #    if(rej$objective > tol) stop("Couldn't calibrate lower bound to within required tolerance")
     #extract optimal calibration region for the given equivalence region
     if(test.stat == "F") rej <- optim(c(qf(alpha / 10, p, m - p, lower.tail = T), qf(1 - alpha / 10, p, m - p, lower.tail = T)), nonCentFRoot, df = c(m, p), tau.low = tau.low, tau.up = tau.up, alpha = alpha, rho.star = rho.star, control = list(maxit = 10000))
-    else rej <- optim(c(qchisq(alpha / 10, p, lower.tail = T), qchisq(1 - alpha / 10, p, lower.tail = T)), chiRoot, df = p, n.of.y = m, tau.low = tau.low, tau.up = tau.up, alpha = alpha, control = list(maxit = 10000))
+    else rej <- optim(c(qchisq(alpha / 10, p, lower.tail = T), qchisq(1 - alpha / 10, p, lower.tail = T)), chiRoot, df = m - p, n.of.y = m, tau.low = tau.low, tau.up = tau.up, alpha = alpha, control = list(maxit = 10000))
     if(rej$convergence != 0) stop("compute tau.low crit: max.it exceeded")
 	c(tau.low = tau.low, cl = rej$par[1], cu = rej$par[2], error = rej$value)
 }
@@ -479,10 +479,9 @@ mahalvartest.calibrate.taulow <- function(tau.up, m, p, test.stat, alpha = 0.01,
 # Calibrate the upper tolerance interval of the equivalence region for \code{mahalvartest}
 mahalvartest.calibrate.tauup <- function(mx.pw, m, p, test.stat, alpha = 0.01, rho.star = 1, pow.scale = 3, tol = 1e-5)
 {
-#browser()
-    tau.up.ub <- rho.star * pow.scale
+    tau.up.ub <- (rho.star / m) * pow.scale
     #calibrate within given range
-    rej <- optimise(mahalcali.tau.up, c(rho.star, tau.up.ub), m = m, p = p, test.stat = test.stat, alpha = alpha, rho.star = rho.star, mx.pw = mx.pw, maximum = F, tol = .Machine$double.eps)
+    rej <- optimise(mahalcali.tau.up, c(rho.star / m, tau.up.ub), m = m, p = p, test.stat = test.stat, alpha = alpha, rho.star = rho.star, mx.pw = mx.pw, maximum = F, tol = .Machine$double.eps)
     #calculate error
     preverror <- rej$objective
     error <- preverror - .Machine$double.eps
@@ -492,14 +491,15 @@ mahalvartest.calibrate.tauup <- function(mx.pw, m, p, test.stat, alpha = 0.01, r
     {
         tau.up <- rej$minimum
         max.it <- max.it - 1
-        tau.up.lb <- max(tau.up - pow.scale, rho.star)
-        tau.up.ub <- tau.up.ub + pow.scale
+        tau.up.lb <- max(tau.up / pow.scale, rho.star / m)
+        tau.up.ub <- tau.up.ub * pow.scale
         #calibrate within given range
         rej <- optimise(mahalcali.tau.up, c(tau.up.lb, tau.up.ub), m = m, p = p, test.stat = test.stat, alpha = alpha, rho.star = rho.star, mx.pw = mx.pw, maximum = F, tol = .Machine$double.eps)
         preverror <- error
         error <- rej$objective
         print(error)
 	}
+#	browser()
 	if(max.it == 0) stop("cali tauup: max.it exceeded")
     g(tau.low, cl, cu, error) %<-% mahalvartest.calibrate.taulow(tau.up, m, p, test.stat, alpha, rho.star)
     rho <- c(tau.low, tau.up)
