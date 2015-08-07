@@ -156,6 +156,16 @@ mahaltest.calibrate.kl <- function(n.of.x, p, n.of.y = p + 2, sum.like = "chisq"
 	} else rho.star <- 0
 	#KL for initial n.of.y
 	tau.u <- rho.star * 1.5
+	browser()
+#	tmp <- (p+1):(p+5)
+	tmp <- c(round(seq(p + 1, n.of.x, length = 5)), n.of.x +5, n.of.x + 10)
+	tmp1 <- list(NULL)
+	for(i in 1:length(tmp))
+	{
+	print(i)
+#	X11()
+	    tmp1[[i]]		<- mahaltest.getkl(n.of.x, p, tmp[i], rho.star, sum.like, test.stat, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = T, max.it = max.it, tol = tol)	    
+	}
 	KL.of.yn		<- mahaltest.getkl(n.of.x, p, n.of.y, rho.star, sum.like, test.stat, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
 	KL.of.yn_ub		<- mahaltest.getkl(n.of.x, p, n.of.y + 1, rho.star, sum.like, test.stat, tau.u, mx.pw = mx.pw, alpha = alpha, pow_scale = pow_scale, calibrate.tau.u = T, plot = F, max.it = max.it, tol = tol)["KL_div"]
 	print("Do we need this additional check for decreasing KL?")	
