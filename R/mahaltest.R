@@ -419,7 +419,7 @@ mahalvartest.pow <- function(rho, m, p, c.l, c.u, test.stat, norm = 1, support =
 	in_support			<- (rho >= support[1] & rho <= support[2])	
 	if(any(in_support))			
 		if(test.stat == "F") ans[in_support] <- (pf((m - p) * c.u / (p * (m - 1)), p, m - p, m * rho[in_support]) - pf((m - p) * c.l / (p * (m - 1)), p, m - p, m * rho[in_support])) / norm
-		else ans[in_support] <- (pchisq(c.u, m - p, m * rho[in_support]) - pchisq(c.l, m - p, m * rho[in_support])) / norm
+		else ans[in_support] <- (pchisq(c.u, p, m * rho[in_support]) - pchisq(c.l, p, m * rho[in_support])) / norm
 	if(log)
 		ans <- log(ans)
 	ans
@@ -437,7 +437,7 @@ mahalcali.tau.low <- function(tau.low, tau.up, m, p, test.stat, alpha, rho.star,
     if(tau.low < 0 | tau.low > tau.up | (m * tau.low) > rho.star) return(NA)
     #return optimal calibration region
     if(test.stat == "F") rej <- optim(c(qf(alpha / 10, p, m - p, lower.tail = T), qf(1 - alpha / 10, p, m - p, lower.tail = T)), nonCentFRoot, df = c(m, p), tau.low = tau.low, tau.up = tau.up, alpha = alpha, rho.star = rho.star, control = list(maxit = 50000))
-    else rej <- optim(c(qchisq(alpha / 10, p, lower.tail = T), qchisq(1 - alpha / 10, p,lower.tail = T)), chiRoot, df = m - p, n.of.y = m, tau.low = tau.low, tau.up = tau.up, alpha = alpha, control = list(maxit = 50000))
+    else rej <- optim(c(qchisq(alpha / 10, p, lower.tail = T), qchisq(1 - alpha / 10, p,lower.tail = T)), chiRoot, df = p, n.of.y = m, tau.low = tau.low, tau.up = tau.up, alpha = alpha, control = list(maxit = 50000))
 #    print(rej)
     if(rej$convergence != 0) stop("compute mahalcali.tau.low: max.it exceeded")
 #    if(rej$value > tol) stop("compute mahalcali.tau.low: tol exceeded")
@@ -471,7 +471,7 @@ mahalvartest.calibrate.taulow <- function(tau.up, m, p, test.stat, alpha = 0.01,
 #    if(rej$objective > tol) stop("Couldn't calibrate lower bound to within required tolerance")
     #extract optimal calibration region for the given equivalence region
     if(test.stat == "F") rej <- optim(c(qf(alpha / 10, p, m - p, lower.tail = T), qf(1 - alpha / 10, p, m - p, lower.tail = T)), nonCentFRoot, df = c(m, p), tau.low = tau.low, tau.up = tau.up, alpha = alpha, rho.star = rho.star, control = list(maxit = 10000))
-    else rej <- optim(c(qchisq(alpha / 10, p, lower.tail = T), qchisq(1 - alpha / 10, p, lower.tail = T)), chiRoot, df = m - p, n.of.y = m, tau.low = tau.low, tau.up = tau.up, alpha = alpha, control = list(maxit = 10000))
+    else rej <- optim(c(qchisq(alpha / 10, p, lower.tail = T), qchisq(1 - alpha / 10, p, lower.tail = T)), chiRoot, df = p, n.of.y = m, tau.low = tau.low, tau.up = tau.up, alpha = alpha, control = list(maxit = 10000))
     if(rej$convergence != 0) stop("compute tau.low crit: max.it exceeded")
 	c(tau.low = tau.low, cl = rej$par[1], cu = rej$par[2], error = rej$value)
 }
