@@ -86,7 +86,7 @@ gof.pipeline<- function()
 		outdir		<- getwd()
 		cmd			<- cmd.various()
 		#cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q='pqeelab', hpc.walltime=71, hpc.mem="5000mb")
-		cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q=NA, hpc.walltime=200, hpc.mem="5000mb")
+		cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q='pqeelab', hpc.walltime=200, hpc.mem="5000mb")
 		cat(cmd)			
 		outfile		<- paste("gof",paste(strsplit(date(),split=' ')[[1]],collapse='_',sep=''),sep='.')
 		cmd.hpccaller(outdir, outfile, cmd)
@@ -116,6 +116,60 @@ abc.presim.uprior.mu<- function(abc.nit, xn, xmean, xsigma, prior.l, prior.u, ys
 				ymu		<- runif(1, prior.l, prior.u)
 				y		<- rnorm(yn, ymu, sd=ysigma)
 				tmp		<- c(yn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y) )									
+				tmp					
+			})					
+	rownames(ans[["sim"]])	<- toupper(c('ym','ymu','ysigma','ysmean','yssd','ysq25','ysq75','ysmx'))
+	ans[["sim"]]		<- as.data.table(t(ans$sim))
+	ans[["sim"]][, IT:=seq_len(nrow(ans[["sim"]]))]
+	ans
+}
+##--------------------------------------------------------------------------------------------------------
+abc.presim.uprior.musig<- function(abc.nit, xn, xmean, xsigma, mu.prior.l, mu.prior.u, sig.prior.l, sig.prior.u )		
+{		
+	ans					<- vector("list",5)
+	names(ans)			<- c("x","xn","xmean","xsigma","sim")
+	obs 				<- rnorm(xn, xmean, xsigma)
+	obs 				<- (obs - mean(obs))/sd(obs) * xsigma + xmean
+	ans[["x"]]			<- obs
+	ans[["xn"]]			<- xn
+	ans[["xmean"]]		<- xmean
+	ans[["xsigma"]]		<- xsigma
+	
+	ans[["sim"]]		<- sapply(1:abc.nit, function(i)
+			{					
+				ymu		<- runif(1, mu.prior.l, mu.prior.u)
+				ysigma	<- runif(1, sig.prior.l, sig.prior.u)
+				y		<- rnorm(xn, ymu, sd=ysigma)
+				tmp		<- c(xn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y) )									
+				tmp					
+			})					
+	rownames(ans[["sim"]])	<- toupper(c('ym','ymu','ysigma','ysmean','yssd','ysq25','ysq75','ysmx'))
+	ans[["sim"]]		<- as.data.table(t(ans$sim))
+	ans[["sim"]][, IT:=seq_len(nrow(ans[["sim"]]))]
+	ans
+}
+##--------------------------------------------------------------------------------------------------------
+abcstar.presim.uprior.musig<- function(abc.nit, xn, xmean, xsigma, mu.prior.l, mu.prior.u, sig.prior.l, sig.prior.u )		
+{		
+	ans					<- vector("list",5)
+	names(ans)			<- c("x","xn","xmean","xsigma","sim")
+	obs 				<- rnorm(xn, xmean, xsigma)
+	obs 				<- (obs - mean(obs))/sd(obs) * xsigma + xmean
+	ans[["x"]]			<- obs
+	ans[["xn"]]			<- xn
+	ans[["xmean"]]		<- xmean
+	ans[["xsigma"]]		<- xsigma
+	#	upper limit for simulations
+	yn					<- 4*xn				
+	#	always the same
+	sig.cali			<- vartest.calibrate(n.of.x=xn, s.of.x=sd(obs), what='KL', mx.pw=0.9, alpha=0.01, plot=TRUE, verbose=FALSE)		
+	
+	ans[["sim"]]		<- sapply(1:abc.nit, function(i)
+			{					
+				ymu		<- runif(1, mu.prior.l, mu.prior.u)
+				ysigma	<- runif(1, sig.prior.l, sig.prior.u)
+				y		<- rnorm(xn, ymu, sd=ysigma)
+				tmp		<- c(xn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y) )									
 				tmp					
 			})					
 	rownames(ans[["sim"]])	<- toupper(c('ym','ymu','ysigma','ysmean','yssd','ysq25','ysq75','ysmx'))
@@ -154,15 +208,27 @@ abcstar.presim.uprior.mu<- function(abc.nit, xn, xmean, xsigma, prior.l, prior.u
 	ans[["sim"]][, IT:=seq_len(nrow(ans[["sim"]]))]
 	ans
 }
-
-
 ##--------------------------------------------------------------------------------------------------------
-gof.mutostabc.presim.mu<- function(outdir, outfile, rep=10)
+gof.mutostabc.presim.mu<- function(outdir, outfile, n.rep=10)
 {
-	for(i in seq_len(rep))
+	for(i in seq_len(n.rep))
 	{
 		dt	<- abc.presim.uprior.mu( 	abc.nit=1e6, xn=60, xmean=1.34, xsigma=1.4, 
 										prior.l=1.34-5, prior.u=1.34+5, ysigma=1.4, yn=60 )
+		file<- paste(outdir, '/', gsub('\\.rda',paste('_R',i,'.rda',sep=''), outfile), sep='')
+		cat('save to', file)
+		save(dt, file=file)		
+		dt	<- NULL
+		gc()
+	}	
+}
+##--------------------------------------------------------------------------------------------------------
+gof.mutostabc.presim.musig<- function(outdir, outfile, n.rep=10)
+{
+	for(i in seq_len(n.rep))
+	{
+		
+		dt	<- abc.presim.uprior.musig(abc.nit=1e6, xn=60, xmean=1.34, xsigma=1.4, mu.prior.l=1.34-2, mu.prior.u=1.34+2, sig.prior.l=0.2, sig.prior.u=4)
 		file<- paste(outdir, '/', gsub('\\.rda',paste('_R',i,'.rda',sep=''), outfile), sep='')
 		cat('save to', file)
 		save(dt, file=file)		
@@ -190,7 +256,10 @@ gof.mutostabc.MX.mu<- function()
 					tmp
 			}))
 	abca[, TOLM:= factor(TOL/1.645)]
-	abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)),by='TOLM']
+	#	acceptance prob
+	#abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)),by='TOLM']
+	#	CPP
+	abca[, list( CPP= mean(YSMX>=max(dt$x)) ),by='TOLM']
 	#	plot abc posterior density
 	ggplot(abca, aes(x=YMU)) + 
 			geom_density(aes(colour=TOLM, group=TOLM)) + 
@@ -198,11 +267,79 @@ gof.mutostabc.MX.mu<- function()
 			theme_bw() + theme(legend.position='bottom') + labs(title='ABC posterior density\n', x='mu', y='', colour='tolerance multiplier\nrelative to\nABC* calibrated tolerance')
 	ggsave(file=gsub('\\.rda','_ABCposterior.pdf',file), w=6, h=5)
 	#	get p-val
-	ggplot(abca, aes(sample=y)) + stat_qq(dist = qt, dparam = params)
-	
+	ggplot(abca, aes(sample=y)) + stat_qq(dist = qt, dparam = params)	
 }
 ##--------------------------------------------------------------------------------------------------------
-gof.mutostabc.presim.mu2<- function(outdir, outfile, n.rep=10)
+gof.mutostabc.MX.musig<- function()
+{
+	file	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper/Normal-MESIG-OR151111_R0.rda'
+	load(file)
+	#	exact posterior density
+	#de		<- data.table(YMU= seq(min(dt$sim[, YMU]), max(dt$sim[, YMU]), len=2048) )
+	#de[, DENS:= de[, dnorm(YMU, dt$xmean, dt$xsigma/sqrt(dt$xn))]]
+	#	get Hyp test stat H so thresholds will be comparable to ABCSTAR version
+	set(dt$sim, NULL, 'HSTAT_MU', dt$sim[, (dt$xmean-YSMEAN)/YSSD*sqrt(YM)])
+	set(dt$sim, NULL, 'HSTAT_SIG', dt$sim[, YSSD/dt$xsigma])
+	#	upper lower tolerance will be +-1.645, set ABC tolerances around that
+	#	vartest.calibrate(n.of.x=dt$xn, s.of.x=sd(dt$x), what='KL', mx.pw=0.9, alpha=0.01, plot=TRUE, verbose=FALSE)
+	mu.tols		<- 1.645*c(0.25, 0.5, 1, 2, 4)
+	s.tols		<- c(1.3, 1.5, 1.7, 2.3, 2.9)
+	#tols		<- as.data.table(expand.grid(T_MU=mu.tols, T_SIG=s.tols))
+	tols		<- data.table(T_MU=mu.tols, T_SIG=s.tols)
+	abca		<- tols[,	{
+								subset(dt$sim, abs(HSTAT_MU)<T_MU & HSTAT_SIG<T_SIG & HSTAT_SIG>1/T_SIG)				
+							}, by=c('T_MU','T_SIG')]
+	#	acceptance prob
+	abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)),by=c('T_MU','T_SIG')]
+	#	CPP
+	abca[, list( CPP= mean(YSMX>=max(dt$x)) ),by=c('T_MU','T_SIG')]
+	abca[, TOL:= abca[, factor(paste('mu:',round(T_MU,d=2),'; sig:',round(T_SIG,d=2),sep=''))]]
+	#	plot abc posterior density
+	ggplot(abca, aes(x=YMU, y=YSIGMA)) + 			 
+			geom_vline(xintercept= dt$xmean, colour='grey80', size=1) +
+			geom_hline(yintercept= dt$xsigma, colour='grey80', size=1) +
+			geom_density2d(aes(colour=TOL, group=TOL)) +
+			#geom_line(data=de, aes(y=DENS), colour='black') +
+			facet_wrap(~TOL, ncol=3) +
+			theme_bw() + theme(legend.position='bottom') + labs(title='ABC posterior density\n', x='mu', y='sigma', colour='tolerances')			
+	ggsave(file=gsub('\\.rda','_ABCposterior.pdf',file), w=10, h=8)
+	#	get p-val
+	ggplot(abca, aes(sample=y)) + stat_qq(dist = qt, dparam = params)	
+}
+##--------------------------------------------------------------------------------------------------------
+gof.mutostabc.MX.mu.ABCstar<- function()
+{
+	file	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper/Normal-ME-MforZTEST-OR151111_R0.rda'
+	load(file)
+	#	exact posterior density
+	de		<- data.table(YMU= seq(min(dt$sim[, YMU]), max(dt$sim[, YMU]), len=2048) )
+	de[, DENS:= de[, dnorm(YMU, dt$xmean, dt$xsigma/sqrt(dt$xn))]]
+	#	get Hyp test stat H so thresholds will be comparable to ABCSTAR version
+	set(dt$sim, NULL, 'HSTAT', dt$sim[, (dt$xmean-YSMEAN)/YSIGMA*sqrt(YM)])
+	#	calibrated tolerance
+	SIG		<<- dt$xsigma							#sig assumed known
+	n2s		<- function(n){ SIG/sqrt(floor(n)) }	#need formula to convert n.of.y into s.of.T, depends on application
+	s2n		<- function(s){ (SIG/s)^2 }				#need formula to convert s.of.T into n.of.y, depends on application
+	tmp		<- ztest.calibrate(dt$xn, n2s=n2s, s2n=s2n, mx.pw=0.9, alpha=0.01, what='KL', plot=FALSE)
+	#	get accepted iterations for each tolerance
+	abca	<- subset(dt$sim, abs(HSTAT)<tmp['c.u'])
+	abca[, TOL:=tmp['c.u']]
+	abca[, TOLM:= 1L]
+	#	acceptance prob
+	#abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)),by='TOLM']
+	#	CPP
+	abca[, list( CPP= mean(YSMX>=max(dt$x)) ),by='TOLM']
+	#	plot abc posterior density
+	ggplot(abca, aes(x=YMU)) + 
+			geom_density(aes(fill=TOLM, colour=TOLM, group=TOLM), alpha=0.6) + 
+			geom_line(data=de, aes(y=DENS), colour='black') +
+			scale_fill_continuous(guide = FALSE) + scale_colour_continuous(guide = FALSE) +
+			theme_bw() + theme(legend.position='bottom') + labs(title='calibrated ABC posterior density\n', x='mu', y='')
+	ggsave(file=gsub('\\.rda','_ABCStarposterior.pdf',file), w=6, h=5)
+	#	get p-val	
+}
+##--------------------------------------------------------------------------------------------------------
+gof.mutostabc.presim.mu.ABCstar<- function(outdir, outfile, n.rep=10)
 {
 	for(i in seq_len(n.rep))
 	{
@@ -225,11 +362,10 @@ gof.mutostabc.main<- function()
 	{
 		outfile	<- 'Normal-ME-OR151111.rda'
 		gof.mutostabc.presim.mu(outdir, outfile, n.rep=200)
-	}
-	if(0)
-	{
 		outfile	<- 'Normal-ME-MforZTEST-OR151111.rda'
-		gof.mutostabc.presim.mu2(outdir, outfile, n.rep=200)
+		gof.mutostabc.presim.mu.ABCstar(outdir, outfile, n.rep=200)
+		outfile	<- 'Normal-MESIG-OR151111.rda'
+		gof.mutostabc.presim.musig(outdir, outfile, n.rep=200)
 	}
 	if(0)
 	{
