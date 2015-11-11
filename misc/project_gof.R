@@ -357,7 +357,7 @@ gof.mutostabc.main<- function()
 	require(data.table)
 	require(abc.star)
 	#outdir	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper'
-	outdir	<- paste(HOME, '/gof', sep='')
+	outdir	<- paste(HOME, '/data/gof', sep='')
 	if(1)
 	{
 		outfile	<- 'Normal-ME-OR151111.rda'
