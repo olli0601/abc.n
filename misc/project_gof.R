@@ -44,6 +44,29 @@ cmd.hpcwrapper<- function(cmd, hpcsys= cmd.hpcsys(), hpc.walltime=24, hpc.mem="1
 	cmd	
 }
 ##--------------------------------------------------------------------------------------------------------
+cmd.hpccaller<- function(outdir, outfile, cmd)
+{
+	if( nchar( Sys.which("qsub") ) )
+	{
+		file	<- paste(outdir,'/',gsub(':','',outfile),'.qsub',sep='')
+		cat(paste("\nwrite HPC script to",file,"\n"))
+		cat(cmd,file=file)
+		cmd		<- paste("qsub",file)
+		cat( cmd )
+		cat( system(cmd, intern=TRUE) )
+		Sys.sleep(1)
+	}
+	else
+	{
+		file	<- paste(outdir,'/',gsub(':','',outfile),'.sh',sep='')
+		cat(paste("\nwrite Shell script to\n",file,"\nStart this shell file manually\n"))
+		cat(cmd,file=file)
+		Sys.chmod(file, mode = "777")	
+		Sys.sleep(1)
+	}
+	file
+}
+##--------------------------------------------------------------------------------------------------------
 cmd.various<- function(prog= PR.VARIOUS)
 {
 	cmd		<- "#######################################################
