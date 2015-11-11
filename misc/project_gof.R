@@ -125,7 +125,7 @@ abcstar.presim.uprior.mu<- function(abc.nit, xn, xmean, xsigma, prior.l, prior.u
 {		
 	SIG		<<- xsigma								#sig assumed known
 	n2s		<- function(n){ SIG/sqrt(floor(n)) }	#need formula to convert n.of.y into s.of.T, depends on application
-	s2n		<- function(s){ (s/SIG)^2 }				#need formula to convert s.of.T into n.of.y, depends on application
+	s2n		<- function(s){ (SIG/s)^2 }				#need formula to convert s.of.T into n.of.y, depends on application
 	ztest.calibrate(n.of.x=xn, n2s=n2s, s2n=s2n, mx.pw=0.9, alpha=0.01, what='KL', plot=TRUE)
 	
 	ans					<- vector("list",5)
@@ -193,6 +193,13 @@ gof.mutostabc.main<- function()
 	}
 	if(0)
 	{
+		library(devtools)
+		code.dir	<- "/Users/Oliver/git/abc.star"
+		devtools::install(code.dir)
+		
+		require(abc.star)
+		
+		
 		tmp			<- abc.df14[,  as.list( mutost.calibrate(	n.of.y=m, s.of.y=yssd, tau.u.ub=1, what='MXPW', mx.pw=0.9, alpha=0.01)[1:4] ), by='it']
 		abc.df14		<- merge(abc.df14, tmp, by='it')								
 		

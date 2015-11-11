@@ -146,7 +146,6 @@ ztest.calibrate.tolerances<- function(mx.pw, tau.up.ub, sigma, alpha=0.01, rho.s
 # @seealso \code{\link{ztest.calibrate}}
 ztest.getkl <- function(s.of.x, s.of.T, tau.u, mx.pw=0.9, alpha=0.01, pow_scale=2, calibrate.tau.u=T, plot = F, verbose=0) 
 {
-	print(tau.u)
 	tau.l<- pw.cmx<- error<- cl<- cu<- NA	
 	if(calibrate.tau.u) 
 	{			
@@ -197,8 +196,6 @@ ztest.calibrate.kl<- function(n.of.x, n.of.y=n.of.x, n2s= function(n){ 1/sqrt(n-
 	KL.of.yn_ub	<- KL.of.yn		<- error <- curr.mx.pw <- tau.low <- cl <- cu	<- NA
 	s.of.x		<- n2s(n.of.x)
 	s.of.T		<- n2s(n.of.y)
-	print(n.of.y)
-	print(s.of.T)
 	#KL for initial n.of.y	
 	KL.of.yn		<- ztest.getkl(s.of.x, s.of.T, 3*s.of.T, mx.pw=mx.pw, alpha=alpha, pow_scale=pow_scale)["KL_div"]	
 	#KL always decreases from n.of.x. Find upper bound yn.ub such that KL first increases again.	
