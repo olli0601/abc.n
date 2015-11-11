@@ -126,7 +126,9 @@ abcstar.presim.uprior.mu<- function(abc.nit, xn, xmean, xsigma, prior.l, prior.u
 	SIG		<<- xsigma								#sig assumed known
 	n2s		<- function(n){ SIG/sqrt(floor(n)) }	#need formula to convert n.of.y into s.of.T, depends on application
 	s2n		<- function(s){ (SIG/s)^2 }				#need formula to convert s.of.T into n.of.y, depends on application
-	ztest.calibrate(n.of.x=xn, n2s=n2s, s2n=s2n, mx.pw=0.9, alpha=0.01, what='KL', plot=TRUE)
+	tmp		<- ztest.calibrate(n.of.x=xn, n2s=n2s, s2n=s2n, mx.pw=0.9, alpha=0.01, what='KL', plot=FALSE)
+	yn		<- tmp['n.of.y']
+	ysigma	<- xsigma
 	
 	ans					<- vector("list",5)
 	names(ans)			<- c("x","xn","xmean","xsigma","sim")
@@ -140,7 +142,6 @@ abcstar.presim.uprior.mu<- function(abc.nit, xn, xmean, xsigma, prior.l, prior.u
 	ans[["sim"]]		<- sapply(1:abc.nit, function(i)
 			{					
 				ymu		<- runif(1, prior.l, prior.u)
-				
 				y		<- rnorm(yn, ymu, sd=ysigma)
 				tmp		<- c(yn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y) )									
 				tmp					
@@ -186,10 +187,15 @@ gof.mutostabc.main<- function()
 	require(abc.star)
 	#outdir	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper'
 	outdir	<- paste(HOME, '/gof', sep='')
-	if(1)
+	if(0)
 	{
 		outfile	<- 'Normal-ME-OR151111.rda'
 		gof.mutostabc.presim.mu(outdir, outfile, rep=10)
+	}
+	if(1)
+	{
+		outfile	<- 'Normal-ME-MforZTEST-OR151111.rda'
+		gof.mutostabc.presim.mu2(outdir, outfile, rep=10)
 	}
 	if(0)
 	{
