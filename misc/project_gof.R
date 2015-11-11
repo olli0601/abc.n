@@ -5,8 +5,8 @@
 ##
 ##
 ##--------------------------------------------------------------------------------------------------------
-PR.STARTME					<- '/Users/Oliver/git/HPTN071sim/source/rPANGEAHIVsim/misc/rPANGEAHIV.startme.R'
-#PR.STARTME					<- '/work/or105/libs/HPTN071sim/source/rPANGEAHIVsim/misc/rPANGEAHIV.startme.R'
+#PR.STARTME					<- '/Users/Oliver/git/HPTN071sim/source/rPANGEAHIVsim/misc/rPANGEAHIV.startme.R'
+PR.STARTME					<- '/work/or105/libs/abc.star/misc/nabc.startme.R'
 PR.VARIOUS					<- paste(PR.STARTME," -exe=VARIOUS",sep='')
 HPC.CX1.IMPERIAL			<- "cx1.hpc.ic.ac.uk"		#this is set to system('domainname',intern=T) for the hpc cluster of choice
 HPC.CX1.IMPERIAL.LOAD		<- "module load intel-suite R/3.2.0"
