@@ -83,7 +83,8 @@ gof.pipeline<- function()
 {
 	outdir		<- getwd()
 	cmd			<- cmd.various()
-	cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q='pqeelab', hpc.walltime=71, hpc.mem="5000mb")
+	#cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q='pqeelab', hpc.walltime=71, hpc.mem="5000mb")
+	cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q=NA, hpc.walltime=3, hpc.mem="1890mb")
 	cat(cmd)			
 	outfile		<- paste("gof",paste(strsplit(date(),split=' ')[[1]],collapse='_',sep=''),sep='.')
 	cmd.hpccaller(outdir, outfile, cmd)
@@ -129,6 +130,8 @@ gof.mutostabc.presim.mu<- function(outdir, outfile, rep=10)
 		file<- paste(outdir, '/', gsub('\\.rda',paste('_R',i,'.rda',sep=''), outfile), sep='')
 		cat('save to', file)
 		save(dt, file=file)		
+		dt	<- NULL
+		gc()
 	}	
 }
 ##--------------------------------------------------------------------------------------------------------
