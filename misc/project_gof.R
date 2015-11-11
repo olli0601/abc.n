@@ -81,14 +81,17 @@ cmd.various<- function(prog= PR.VARIOUS)
 ##--------------------------------------------------------------------------------------------------------
 gof.pipeline<- function()
 {
-	outdir		<- getwd()
-	cmd			<- cmd.various()
-	#cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q='pqeelab', hpc.walltime=71, hpc.mem="5000mb")
-	cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q=NA, hpc.walltime=3, hpc.mem="1890mb")
-	cat(cmd)			
-	outfile		<- paste("gof",paste(strsplit(date(),split=' ')[[1]],collapse='_',sep=''),sep='.')
-	cmd.hpccaller(outdir, outfile, cmd)
-	quit("no")	
+	if(1)
+	{
+		outdir		<- getwd()
+		cmd			<- cmd.various()
+		#cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q='pqeelab', hpc.walltime=71, hpc.mem="5000mb")
+		cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q=NA, hpc.walltime=200, hpc.mem="5000mb")
+		cat(cmd)			
+		outfile		<- paste("gof",paste(strsplit(date(),split=' ')[[1]],collapse='_',sep=''),sep='.')
+		cmd.hpccaller(outdir, outfile, cmd)
+		quit("no")	
+	}		
 }
 ##--------------------------------------------------------------------------------------------------------
 ##
@@ -158,7 +161,7 @@ gof.mutostabc.presim.mu<- function(outdir, outfile, rep=10)
 {
 	for(i in seq_len(rep))
 	{
-		dt	<- abc.presim.uprior.mu( 	abc.nit=1e7, xn=60, xmean=1.34, xsigma=1.4, 
+		dt	<- abc.presim.uprior.mu( 	abc.nit=1e6, xn=60, xmean=1.34, xsigma=1.4, 
 										prior.l=1.34-5, prior.u=1.34+5, ysigma=1.4, yn=60 )
 		file<- paste(outdir, '/', gsub('\\.rda',paste('_R',i,'.rda',sep=''), outfile), sep='')
 		cat('save to', file)
@@ -168,11 +171,42 @@ gof.mutostabc.presim.mu<- function(outdir, outfile, rep=10)
 	}	
 }
 ##--------------------------------------------------------------------------------------------------------
-gof.mutostabc.presim.mu2<- function(outdir, outfile, rep=10)
+gof.mutostabc.MX.mu<- function()
 {
-	for(i in seq_len(rep))
+	file	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper/Normal-ME-OR151111_R0.rda'
+	load(file)
+	#	exact posterior density
+	de		<- data.table(YMU= seq(min(dt$sim[, YMU]), max(dt$sim[, YMU]), len=2048) )
+	de[, DENS:= de[, dnorm(YMU, dt$xmean, dt$xsigma/sqrt(dt$xn))]]
+	#	get Hyp test stat H so thresholds will be comparable to ABCSTAR version
+	set(dt$sim, NULL, 'HSTAT', dt$sim[, (dt$xmean-YSMEAN)/YSIGMA*sqrt(YM)])
+	#	upper lower tolerance will be +-1.645, set ABC tolerances around that
+	tols	<- 1.645*c(0.1, 0.5, 1, 2, 4, 6)
+	#	get accepted iterations for each tolerance
+	abca	<- do.call('rbind',lapply(tols, function(tol)
+			{
+					tmp	<- subset(dt$sim, abs(HSTAT)<tol)
+					tmp[, TOL:=tol]
+					tmp
+			}))
+	abca[, TOLM:= factor(TOL/1.645)]
+	abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)),by='TOLM']
+	#	plot abc posterior density
+	ggplot(abca, aes(x=YMU)) + 
+			geom_density(aes(colour=TOLM, group=TOLM)) + 
+			geom_line(data=de, aes(y=DENS), colour='black') +
+			theme_bw() + theme(legend.position='bottom') + labs(title='ABC posterior density\n', x='mu', y='', colour='tolerance multiplier\nrelative to\nABC* calibrated tolerance')
+	ggsave(file=gsub('\\.rda','_ABCposterior.pdf',file), w=6, h=5)
+	#	get p-val
+	ggplot(abca, aes(sample=y)) + stat_qq(dist = qt, dparam = params)
+	
+}
+##--------------------------------------------------------------------------------------------------------
+gof.mutostabc.presim.mu2<- function(outdir, outfile, n.rep=10)
+{
+	for(i in seq_len(n.rep))
 	{
-		dt	<- abcstar.presim.uprior.mu(abc.nit=1e7, xn=60, xmean=1.34, xsigma=1.4, prior.l=1.34-5, prior.u=1.34+5 )		
+		dt	<- abcstar.presim.uprior.mu(abc.nit=1e6, xn=60, xmean=1.34, xsigma=1.4, prior.l=1.34-5, prior.u=1.34+5 )		
 		file<- paste(outdir, '/', gsub('\\.rda',paste('_R',i,'.rda',sep=''), outfile), sep='')
 		cat('save to', file)
 		save(dt, file=file)		
@@ -187,15 +221,15 @@ gof.mutostabc.main<- function()
 	require(abc.star)
 	#outdir	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper'
 	outdir	<- paste(HOME, '/gof', sep='')
-	if(0)
-	{
-		outfile	<- 'Normal-ME-OR151111.rda'
-		gof.mutostabc.presim.mu(outdir, outfile, rep=10)
-	}
 	if(1)
 	{
+		outfile	<- 'Normal-ME-OR151111.rda'
+		gof.mutostabc.presim.mu(outdir, outfile, n.rep=200)
+	}
+	if(0)
+	{
 		outfile	<- 'Normal-ME-MforZTEST-OR151111.rda'
-		gof.mutostabc.presim.mu2(outdir, outfile, rep=10)
+		gof.mutostabc.presim.mu2(outdir, outfile, n.rep=200)
 	}
 	if(0)
 	{
