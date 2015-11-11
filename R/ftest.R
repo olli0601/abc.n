@@ -53,6 +53,43 @@ ftest.sulkl	<- function(rho, t2.x, n.of.x, p, norm = 1, support= c(0,Inf), log=F
 		ans				<- log(ans)
 	return(ans)
 }
+
+ftestz.sulkl	<- function(rho, n.of.x, p, norm = 1, support= c(0,Inf), log=FALSE) 
+{
+	stopifnot(p>1, n.of.x>1)
+	ans 				<- rho
+	in_support 			<- (rho >= support[1] & rho <= support[2])
+	ans[!in_support]	<- 0
+	if(any(in_support)) 			
+		ans[in_support]	<- df( 0, df1=p, df2=n.of.x-p, ncp= n.of.x*rho[in_support]) / norm
+	if(log)
+		ans				<- log(ans)
+	return(ans)
+}
+
+ftests.sulkl	<- function(rho, n.of.x, p, norm = 1, support= c(0,Inf), log=FALSE) 
+{
+	library(help=distr)
+	p		<- 3
+	n.of.x	<- 60
+	rho		<- seq(-1,1,0.01)
+	y		<- sapply(rho, function(r)
+			{
+				T		<- sqrt( Fd(df1=p, df2=n.of.x-p, ncp=n.of.x*abs(r)) )
+				d(T)(0)				
+			})
+	#df( 0, df1=p, df2=n.of.x-p, ncp= n.of.x*rho[in_support])	
+	stopifnot(p>1, n.of.x>1)
+	ans 				<- rho
+	in_support 			<- (rho >= support[1] & rho <= support[2])
+	ans[!in_support]	<- 0
+	if(any(in_support)) 			
+		ans[in_support]	<- df( 0, df1=p, df2=n.of.x-p, ncp= n.of.x*rho[in_support]) / norm
+	if(log)
+		ans				<- log(ans)
+	return(ans)
+}
+
 #------------------------------------------------------------------------------------------------------------------------
 # normalising constant of density of Hotelling T2 (partial likelihood) on observed data
 ftest.sulkl.norm	<- function(t2.x, n.of.x, p, support=c(0,Inf))

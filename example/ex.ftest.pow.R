@@ -37,3 +37,7 @@ t2.x	<- 0.25
 tmp		<- rbind(tmp, data.table(n=n, rho=rho, y=ftest.sulkl(rho, t2.x, n, p, norm = 1, support= c(0,Inf), log=FALSE), d='prtl.lkl'))
 pp 		<- ggplot(tmp, aes(x = rho, y = y, colour = n, linetype=d, group = interaction(n,d))) + geom_line() + labs(y = 'Power\n(ABC acceptance probability)')
 print(pp)
+
+tmp		<- rbind(tmp, data.table(n=n, rho=rho, y=ftestz.sulkl(rho, n, p, norm = 1, support= c(0,Inf), log=FALSE), d='prtl.lkl'))
+pp 		<- ggplot(tmp, aes(x = rho, y = y, colour = n, linetype=d, group = interaction(n,d))) + geom_line() + labs(y = 'Power\n(ABC acceptance probability)')
+print(pp)

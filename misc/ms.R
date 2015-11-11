@@ -500,8 +500,8 @@ ms.vartest.montecarlo.precompute<- function()		#check MLE, yn>xn
 #------------------------------------------------------------------------------------------------------------------------
 nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m<- function()		#check MLE, yn>xn
 {
-	package.mkdir(DATA,"nABC.chi2stretch")
-	dir.name	<- paste(DATA,"nABC.chi2stretch",sep='/')
+	package.mkdir(DATA,"nABC.vt")
+	dir.name	<- paste(DATA,"nABC.vt",sep='/')
 	pdf.width	<- 4
 	pdf.height	<- 5	
 	resume		<- 1
@@ -560,11 +560,12 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m<- function()		#check MLE, 
 			x		<- rnorm(xn,xmu,sd=sqrt(xsigma2))
 			x 		<- (x - mean(x))/sd(x) * sqrt(xsigma2) + xmu			
 			
-			ans		<- simu.chi2stretch.fix.x.uprior.ysig2(N, prior.l, prior.u, x, yn, ymu)
-			g(yn, tau.l, tau.u, c.l, c.u, pw.cmx, KL_div)	%<-% chisqstretch.calibrate(length(x), sd(x), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
-			cat(paste("\nn.of.y=",yn,"tau.l=", tau.l,"tau.u=", tau.u,"c.l=", c.l,"c.u=", c.u,"pw.cmx=", pw.cmx,"KL_div=", KL_div))
-			f.name	<- paste(dir.name,"/nABC.Chisq_mle_yncalibrated_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')
+			ans		<- simu.chi2stretch.fix.x.uprior.ysig2(N, prior.l, prior.u, x, yn, ymu)			
+			g(c.l, c.u, tau.l, tau.u, yn, pw.cmx, KL_div)	%<-% vartest.calibrate(n.of.x=length(x), s.of.x=sd(x), what = "KL", plot=0)			
+			#g(yn, tau.l, tau.u, c.l, c.u, pw.cmx, KL_div)	%<-% chisqstretch.calibrate(length(x), sd(x), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
+			cat(paste("\nn.of.y=",yn,"tau.l=", tau.l,"tau.u=", tau.u,"c.l=", c.l,"c.u=", c.u,"pw.cmx=", pw.cmx,"KL_div=", KL_div))			
 			ans.ok	<- simu.chi2stretch.fix.x.uprior.ysig2(N, prior.l, prior.u, x, yn, ymu)
+			f.name	<- paste(dir.name,"/nABC.Chisq_mle_yncalibrated_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')
 			cat(paste("\nnABC.Chisq: save ",f.name))
 			save(ans.ok,file=f.name)				
 			ans.ok	<- NULL				
@@ -577,7 +578,8 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m<- function()		#check MLE, 
 			ans.too	<- NULL
 			
 			yn		<- length(x)
-			g(tau.l, tau.u, curr.mx.pw,	error, cl, cu)		%<-% chisqstretch.calibrate.tauup(0.9, 3*sd(x), length(x), yn-1, alpha=alpha)
+			#vartest.calibrate(n.of.y=yn, scale=length(x), what="MXPW", tau.u.ub=3*sd(x), plot=1)
+			#g(tau.l, tau.u, curr.mx.pw,	error, cl, cu)		%<-% chisqstretch.calibrate.tauup(0.9, 3*sd(x), length(x), yn-1, alpha=alpha)
 			f.name	<- paste(dir.name,"/nABC.Chisq_mle_yneqxn_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')				
 			ans.eq	<- simu.chi2stretch.fix.x.uprior.ysig2(N, prior.l, prior.u, x, yn, ymu)
 			cat(paste("\nnABC.Chisq: save ",f.name))
@@ -603,33 +605,33 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m<- function()		#check MLE, 
 			if(1)	#produce Fig for paper
 			{
 				x												<- ans.ok[["x"]]
-				abc.param.ok									<- chisqstretch.calibrate(length(x), sd(x), mx.pw=0.9, alpha=alpha, max.it=100, debug=F, plot=F)
+				abc.param.ok									<- vartest.calibrate(n.of.x=length(x), s.of.x=sd(x), what = "KL", plot=0)			
 				tmp												<- abc.param.ok
 				tstat											<- ans.ok[["data"]]["T",] / length(x)
-				acc.ok											<- which( tstat>=tmp["cl"]  &  tstat<=tmp["cu"] )
-				acc.h.ok										<- project.nABC.movingavg.gethist(ans.ok[["data"]]["ysigma2",acc.ok], ans.ok[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,2.25))
+				acc.ok											<- which( tstat>=tmp["c.l"]  &  tstat<=tmp["c.u"] )
+				acc.h.ok										<- histo2(ans.ok[["data"]]["ysigma2",acc.ok], ans.ok[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,2.25))
 				
 				#read also 
 				f.name<- paste(dir.name,"/nABC.Chisq_mle_yntoolarge_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')
 				cat(paste("\nnABC.Chisq: resume ",f.name))						
 				readAttempt<-try(suppressWarnings(load(f.name)))
 				yn												<- 300
-				x												<- ans.too[["x"]]
-				abc.param.toolarge								<- chisqstretch.calibrate.tauup(0.9, 3*sd(x), length(x), yn-1, alpha=alpha)
+				x												<- ans.too[["x"]]				
+				abc.param.toolarge								<- vartest.calibrate(n.of.y=yn, scale=length(x), what="MXPW", tau.u.ub=3*sd(x), plot=1)				
 				tmp												<- abc.param.toolarge
 				tstat											<- ans.too[["data"]]["T",] / length(x)
-				acc.too											<- which( tstat>=tmp["cl"]  &  tstat<=tmp["cu"] )
-				acc.h.too										<- project.nABC.movingavg.gethist(ans.too[["data"]]["ysigma2",acc.too], ans.too[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,3.3))
+				acc.too											<- which( tstat>=tmp["c.l"]  &  tstat<=tmp["c.u"] )
+				acc.h.too										<- histo2(ans.too[["data"]]["ysigma2",acc.too], ans.too[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,3.3))
 				
 				#read also 
 				f.name<- paste(dir.name,"/nABC.Chisq_mle_yneqxn_",N,"_",xn,"_",prior.u,"_",prior.l,"_m",m,".R",sep='')												
 				cat(paste("\nnABC.Chisq: resume ",f.name))						
 				readAttempt<-try(suppressWarnings(load(f.name)))	
-				abc.param.yneqxn								<- chisqstretch.calibrate.tauup(0.9, 3*sd(x), xn, xn-1, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=0)
-				tmp												<- abc.param.yneqxn
-				tstat											<- ans.eq[["data"]]["T",] / length(x)
-				acc.yneqxn										<- which( tstat>=tmp["cl"]  &  tstat<=tmp["cu"] )
-				acc.h.yneqxn									<- project.nABC.movingavg.gethist(ans.eq[["data"]]["ysigma2",acc.yneqxn], ans.eq[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,3.3))
+				#abc.param.yneqxn								<- chisqstretch.calibrate.tauup(0.9, 3*sd(x), xn, xn-1, alpha, rho.star=1, tol= 1e-5, max.it=100, verbose=0)
+				#tmp											<- abc.param.yneqxn
+				#tstat											<- ans.eq[["data"]]["T",] / length(x)
+				#acc.yneqxn										<- which( tstat>=tmp["cl"]  &  tstat<=tmp["cu"] )
+				#acc.h.yneqxn									<- project.nABC.movingavg.gethist(ans.eq[["data"]]["ysigma2",acc.yneqxn], ans.eq[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,3.3))
 				
 				#get KL of standard ABC
 				tstat		<- ans.eq[["data"]]["sy2-sx2",]
@@ -656,7 +658,21 @@ nabc.test.chi2stretch.montecarlo.calibrated.tau.and.m<- function()		#check MLE, 
 				tstat											<- ans.eq[["data"]]["sy2-sx2",]
 				acc.naive										<- which( abs(tstat) <= quantile(abs(tstat), prob= length(acc.yneqxn) / ncol(ans.eq[["data"]])) )
 				acc.naive										<- which( abs(tstat) <= 0.4 )
-				acc.h.naive										<- project.nABC.movingavg.gethist(ans.eq[["data"]]["ysigma2",acc.naive], ans.eq[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,3.3))
+				acc.h.naive										<- histo2(ans.eq[["data"]]["ysigma2",acc.naive], ans.eq[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,3.3))
+				acc.naive2										<- which( abs(tstat) <= 0.2 )
+				acc.h.naive2									<- histo2(ans.eq[["data"]]["ysigma2",acc.naive2], ans.eq[["xsigma2"]], nbreaks= 50, width= 0.5, plot=0, ylim=c(0,3.3))
+				
+				df		<- do.call('rbind',list( 	data.table(x= acc.h.naive$mids, y= acc.h.naive$density, TYPE='standard ABC\nc-=-0.4\nc+=0.4\nm=60'),
+													#data.table(x= acc.h.naive2$mids, y= acc.h.naive2$density, TYPE='standard ABC\nc-=-0.2\nc+=0.2\nm=60'),
+													data.table(x= acc.h.ok$mids, y= acc.h.ok$density, TYPE='calibrated ABC\nc-=1.44\nc+=2.25\nm=108')))
+				ggplot(df, aes(x=x, y=y)) +
+						geom_polygon(aes(x=rho, y=lkl), data=data.table(rho= seq(0.2, 4, 0.01), lkl=vartest.sulkl(seq(0.2, 4, 0.01), length(x))), fill='grey70') +
+						geom_step(aes(group=TYPE, linetype=TYPE)) + theme_bw() +
+						scale_x_continuous(limits=c(0.3,2.7), breaks=seq(0.5,2.5,0.5)) +						
+						theme(legend.justification=c(1,1), legend.position=c(1,1), legend.key.size=unit(20,'mm')) +
+						labs(y='', x=expression(sigma^2), linetype='')
+				file	<- paste(dir.name,"/var_calibrations.pdf",sep='')
+				ggsave(w=3, h=4, file=file)
 				#
 				#plot sigma2
 				#

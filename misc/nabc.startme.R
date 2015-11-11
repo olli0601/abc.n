@@ -40,7 +40,8 @@ EPS			<<- 1e-12
 #default.fun	<- "nabc.test.chi2stretch.montecarlo.calibrated.tau.and.increasing.m"
 #default.fun	<- "nabc.test.acf.montecarlo.calibrated.tau.and.m"
 #default.fun	<- "nabc.test.acf.montecarlo.vary.a"
-default.fun	<- 'ms.pipeline'
+default.fun		<- 'ms.pipeline'
+default.fun		<- 'gof.pipeline'
 #default.fun	<- "ms.vartest.montecarlo.precompute"
 
 ###############################################################################
@@ -63,7 +64,8 @@ if(length(args))
 					CHISQU					 = "project.nABC.StretchedChi2",
 					ACFTOST					 = "project.nABC.movingavg",
 					VARTESTPREC				 = "ms.vartest.montecarlo.precompute",
-					VARTESTEVAL				 = "ms.vartest.montecarlo.ABCii.plugin.MLE"
+					VARTESTEVAL				 = "ms.vartest.montecarlo.ABCii.plugin.MLE",
+					VARIOUS					 = "gof.mutostabc.main"
 			)
 	}
 	tmp<- na.omit(sapply(args,function(arg)
@@ -86,7 +88,7 @@ if(length(args))
 #	re-load all R files
 require(data.table)
 function.list<-c(list.files(path= paste(CODE.HOME,"R",sep='/'), pattern = ".R$", all.files = FALSE,
-		full.names = TRUE, recursive = FALSE),paste(CODE.HOME,"misc","ms.R",sep='/'))
+		full.names = TRUE, recursive = FALSE),paste(CODE.HOME,"misc","ms.R",sep='/'),paste(CODE.HOME,"misc","project_gof.R",sep='/'))
 sapply(function.list,function(x) source(x,echo=FALSE,print.eval=FALSE, verbose=FALSE))
 ###############################################################################
 #	run script

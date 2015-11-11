@@ -323,7 +323,7 @@ vartest.plot<- function(scale, df, c.l, c.u, tau.l, tau.u, pow_scale=1.5)
 			scale_x_continuous(limits=c(0,pow_support[2])) +
 			geom_vline(xintercept = c(tau.l, tau.u), linetype = "dotted") +
 			geom_vline(xintercept = c(c.l, c.u), linetype = "dashed") +
-			ggtitle(paste("n.of.y=", n.of.y, "\ntau.l=", round(tau.l,d=5), " tau.u=", round(tau.u,d=5), "\nc.l=", round(c.l,d=5), " c.u=", round(c.u,d=5)))
+			ggtitle(paste("n.of.y=", df-1, "\ntau.l=", round(tau.l,d=5), " tau.u=", round(tau.u,d=5), "\nc.l=", round(c.l,d=5), " c.u=", round(c.u,d=5)))
 	print(p)
 }
 #------------------------------------------------------------------------------------------------------------------------
