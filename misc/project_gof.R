@@ -121,6 +121,38 @@ abc.presim.uprior.mu<- function(abc.nit, xn, xmean, xsigma, prior.l, prior.u, ys
 	ans
 }
 ##--------------------------------------------------------------------------------------------------------
+abcstar.presim.uprior.mu<- function(abc.nit, xn, xmean, xsigma, prior.l, prior.u )		
+{		
+	SIG		<<- xsigma								#sig assumed known
+	n2s		<- function(n){ SIG/sqrt(floor(n)) }	#need formula to convert n.of.y into s.of.T, depends on application
+	s2n		<- function(s){ (s/SIG)^2 }				#need formula to convert s.of.T into n.of.y, depends on application
+	ztest.calibrate(n.of.x=xn, n2s=n2s, s2n=s2n, mx.pw=0.9, alpha=0.01, what='KL', plot=TRUE)
+	
+	ans					<- vector("list",5)
+	names(ans)			<- c("x","xn","xmean","xsigma","sim")
+	obs 				<- rnorm(xn, xmean, xsigma)
+	obs 				<- (obs - mean(obs))/sd(obs) * xsigma + xmean
+	ans[["x"]]			<- obs
+	ans[["xn"]]			<- xn
+	ans[["xmean"]]		<- xmean
+	ans[["xsigma"]]		<- xsigma
+	
+	ans[["sim"]]		<- sapply(1:abc.nit, function(i)
+			{					
+				ymu		<- runif(1, prior.l, prior.u)
+				
+				y		<- rnorm(yn, ymu, sd=ysigma)
+				tmp		<- c(yn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y) )									
+				tmp					
+			})					
+	rownames(ans[["sim"]])	<- toupper(c('ym','ymu','ysigma','ysmean','yssd','ysq25','ysq75','ysmx'))
+	ans[["sim"]]		<- as.data.table(t(ans$sim))
+	ans[["sim"]][, IT:=seq_len(nrow(ans[["sim"]]))]
+	ans
+}
+
+
+##--------------------------------------------------------------------------------------------------------
 gof.mutostabc.presim.mu<- function(outdir, outfile, rep=10)
 {
 	for(i in seq_len(rep))
@@ -135,9 +167,23 @@ gof.mutostabc.presim.mu<- function(outdir, outfile, rep=10)
 	}	
 }
 ##--------------------------------------------------------------------------------------------------------
+gof.mutostabc.presim.mu2<- function(outdir, outfile, rep=10)
+{
+	for(i in seq_len(rep))
+	{
+		dt	<- abcstar.presim.uprior.mu(abc.nit=1e7, xn=60, xmean=1.34, xsigma=1.4, prior.l=1.34-5, prior.u=1.34+5 )		
+		file<- paste(outdir, '/', gsub('\\.rda',paste('_R',i,'.rda',sep=''), outfile), sep='')
+		cat('save to', file)
+		save(dt, file=file)		
+		dt	<- NULL
+		gc()
+	}	
+}
+##--------------------------------------------------------------------------------------------------------
 gof.mutostabc.main<- function()
 {
 	require(data.table)
+	require(abc.star)
 	#outdir	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper'
 	outdir	<- paste(HOME, '/gof', sep='')
 	if(1)
