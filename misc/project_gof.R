@@ -138,7 +138,7 @@ abc.presim.uprior.musig<- function(abc.nit, xn, xmean, xsigma, mu.prior.l, mu.pr
 	ans[["sim"]]		<- sapply(1:abc.nit, function(i)
 			{					
 				ymu		<- runif(1, mu.prior.l, mu.prior.u)
-				ysigma	<- runif(1, sig.prior.l, sig.prior.u)
+				ysigma	<- exp(runif(1, log(sig.prior.l), log(sig.prior.u)))
 				y		<- rnorm(xn, ymu, sd=ysigma)
 				tmp		<- c(xn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y) )									
 				tmp					
@@ -228,7 +228,7 @@ gof.mutostabc.presim.musig<- function(outdir, outfile, n.rep=10)
 	for(i in seq_len(n.rep))
 	{
 		
-		dt	<- abc.presim.uprior.musig(abc.nit=1e6, xn=60, xmean=1.34, xsigma=1.4, mu.prior.l=1.34-2, mu.prior.u=1.34+2, sig.prior.l=0.2, sig.prior.u=4)
+		dt	<- abc.presim.uprior.musig(abc.nit=1e6, xn=60, xmean=1.34, xsigma=1.4, mu.prior.l=1.34-2, mu.prior.u=1.34+2, sig.prior.l=1/3, sig.prior.u=3)
 		file<- paste(outdir, '/', gsub('\\.rda',paste('_R',i,'.rda',sep=''), outfile), sep='')
 		cat('save to', file)
 		save(dt, file=file)		
@@ -275,6 +275,8 @@ gof.mutostabc.MX.musig<- function()
 	file	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper/Normal-MESIG-OR151111_R0.rda'
 	load(file)
 	#	exact posterior density
+	scale	<- dt$xsigma*dt$xsigma*(dt$xn-1)
+	de		<- data.table(YMU= (rt(1e5, dt$xn-1)+dt$xmean)*(dt$xsigma/sqrt(dt$xn)), YSIG2=((dt$xn-1)*scale)/rchisq(1e5, df=dt$xn-1) )
 	#de		<- data.table(YMU= seq(min(dt$sim[, YMU]), max(dt$sim[, YMU]), len=2048) )
 	#de[, DENS:= de[, dnorm(YMU, dt$xmean, dt$xsigma/sqrt(dt$xn))]]
 	#	get Hyp test stat H so thresholds will be comparable to ABCSTAR version
@@ -361,9 +363,9 @@ gof.mutostabc.main<- function()
 	if(1)
 	{
 		outfile	<- 'Normal-ME-OR151111.rda'
-		gof.mutostabc.presim.mu(outdir, outfile, n.rep=200)
+		#gof.mutostabc.presim.mu(outdir, outfile, n.rep=200)
 		outfile	<- 'Normal-ME-MforZTEST-OR151111.rda'
-		gof.mutostabc.presim.mu.ABCstar(outdir, outfile, n.rep=200)
+		#gof.mutostabc.presim.mu.ABCstar(outdir, outfile, n.rep=200)
 		outfile	<- 'Normal-MESIG-OR151111.rda'
 		gof.mutostabc.presim.musig(outdir, outfile, n.rep=200)
 	}
