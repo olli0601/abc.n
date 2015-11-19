@@ -160,15 +160,18 @@ abcstar.presim.uprior.musig<- function(abc.nit, xn, xmean, xsigma, mu.prior.l, m
 	ans[["xmean"]]		<- xmean
 	ans[["xsigma"]]		<- xsigma
 	#	upper limit for simulations
-	yn					<- 4*xn				
+	yn					<- 6*xn				
 	#	always the same
-	sig.cali			<- vartest.calibrate(n.of.x=xn, s.of.x=sd(obs), what='KL', mx.pw=0.9, alpha=0.01, plot=TRUE, verbose=FALSE)		
+	sig.cali			<- vartest.calibrate(n.of.x=xn, s.of.x=sd(obs), what='KL', mx.pw=0.9, alpha=0.01, plot=FALSE, verbose=FALSE)		
 	
 	ans[["sim"]]		<- sapply(1:abc.nit, function(i)
 			{					
 				ymu		<- runif(1, mu.prior.l, mu.prior.u)
-				ysigma	<- runif(1, sig.prior.l, sig.prior.u)
-				y		<- rnorm(xn, ymu, sd=ysigma)
+				ysigma	<- exp(runif(1, log(sig.prior.l), log(sig.prior.u)))
+				sim		<- rnorm(yn, ymu, sd=ysigma)
+#TODO: error with n.of.y??				
+				mu.cali <- mutost.calibrate(n.of.x=length(obs), s.of.x= sd(obs), s.of.y=sd(sim), what='KL', mx.pw=0.9, alpha=0.01, plot=FALSE)
+				
 				tmp		<- c(xn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y) )									
 				tmp					
 			})					
@@ -226,8 +229,7 @@ gof.mutostabc.presim.mu<- function(outdir, outfile, n.rep=10)
 gof.mutostabc.presim.musig<- function(outdir, outfile, n.rep=10)
 {
 	for(i in seq_len(n.rep))
-	{
-		
+	{		
 		dt	<- abc.presim.uprior.musig(abc.nit=1e6, xn=60, xmean=1.34, xsigma=1.4, mu.prior.l=1.34-2, mu.prior.u=1.34+2, sig.prior.l=1/3, sig.prior.u=3)
 		file<- paste(outdir, '/', gsub('\\.rda',paste('_R',i,'.rda',sep=''), outfile), sep='')
 		cat('save to', file)
@@ -237,108 +239,206 @@ gof.mutostabc.presim.musig<- function(outdir, outfile, n.rep=10)
 	}	
 }
 ##--------------------------------------------------------------------------------------------------------
-gof.mutostabc.MX.mu<- function()
+gof.mutostabc.presim.musig.ABCstar<- function(outdir, outfile, n.rep=10)
 {
-	file	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper/Normal-ME-OR151111_R0.rda'
-	load(file)
-	#	exact posterior density
-	de		<- data.table(YMU= seq(min(dt$sim[, YMU]), max(dt$sim[, YMU]), len=2048) )
-	de[, DENS:= de[, dnorm(YMU, dt$xmean, dt$xsigma/sqrt(dt$xn))]]
-	#	get Hyp test stat H so thresholds will be comparable to ABCSTAR version
-	set(dt$sim, NULL, 'HSTAT', dt$sim[, (dt$xmean-YSMEAN)/YSIGMA*sqrt(YM)])
-	#	upper lower tolerance will be +-1.645, set ABC tolerances around that
-	tols	<- 1.645*c(0.1, 0.5, 1, 2, 4, 6)
-	#	get accepted iterations for each tolerance
-	abca	<- do.call('rbind',lapply(tols, function(tol)
-			{
-					tmp	<- subset(dt$sim, abs(HSTAT)<tol)
-					tmp[, TOL:=tol]
-					tmp
-			}))
-	abca[, TOLM:= factor(TOL/1.645)]
-	#	acceptance prob
-	#abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)),by='TOLM']
-	#	CPP
-	abca[, list( CPP= mean(YSMX>=max(dt$x)) ),by='TOLM']
-	#	plot abc posterior density
-	ggplot(abca, aes(x=YMU)) + 
-			geom_density(aes(colour=TOLM, group=TOLM)) + 
-			geom_line(data=de, aes(y=DENS), colour='black') +
-			theme_bw() + theme(legend.position='bottom') + labs(title='ABC posterior density\n', x='mu', y='', colour='tolerance multiplier\nrelative to\nABC* calibrated tolerance')
-	ggsave(file=gsub('\\.rda','_ABCposterior.pdf',file), w=6, h=5)
-	#	get p-val
-	ggplot(abca, aes(sample=y)) + stat_qq(dist = qt, dparam = params)	
+	for(i in seq_len(n.rep))
+	{		
+		dt	<- abcstar.presim.uprior.musig(abc.nit=1e6, xn=60, xmean=1.34, xsigma=1.4, mu.prior.l=1.34-2, mu.prior.u=1.34+2, sig.prior.l=1/3, sig.prior.u=3)
+		file<- paste(outdir, '/', gsub('\\.rda',paste('_R',i,'.rda',sep=''), outfile), sep='')
+		cat('save to', file)
+		save(dt, file=file)		
+		dt	<- NULL
+		gc()
+	}	
 }
 ##--------------------------------------------------------------------------------------------------------
-gof.mutostabc.MX.musig<- function()
+gof.mutostabc.MX.mu<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper')
 {
-	file	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper/Normal-MESIG-OR151111_R0.rda'
-	load(file)
-	#	exact posterior density
-	scale	<- dt$xsigma*dt$xsigma*(dt$xn-1)
-	de		<- data.table(YMU= (rt(1e5, dt$xn-1)+dt$xmean)*(dt$xsigma/sqrt(dt$xn)), YSIG2=((dt$xn-1)*scale)/rchisq(1e5, df=dt$xn-1) )
-	#de		<- data.table(YMU= seq(min(dt$sim[, YMU]), max(dt$sim[, YMU]), len=2048) )
-	#de[, DENS:= de[, dnorm(YMU, dt$xmean, dt$xsigma/sqrt(dt$xn))]]
-	#	get Hyp test stat H so thresholds will be comparable to ABCSTAR version
-	set(dt$sim, NULL, 'HSTAT_MU', dt$sim[, (dt$xmean-YSMEAN)/YSSD*sqrt(YM)])
-	set(dt$sim, NULL, 'HSTAT_SIG', dt$sim[, YSSD/dt$xsigma])
-	#	upper lower tolerance will be +-1.645, set ABC tolerances around that
-	#	vartest.calibrate(n.of.x=dt$xn, s.of.x=sd(dt$x), what='KL', mx.pw=0.9, alpha=0.01, plot=TRUE, verbose=FALSE)
-	mu.tols		<- 1.645*c(0.25, 0.5, 1, 2, 4)
-	s.tols		<- c(1.3, 1.5, 1.7, 2.3, 2.9)
-	#tols		<- as.data.table(expand.grid(T_MU=mu.tols, T_SIG=s.tols))
-	tols		<- data.table(T_MU=mu.tols, T_SIG=s.tols)
-	abca		<- tols[,	{
-								subset(dt$sim, abs(HSTAT_MU)<T_MU & HSTAT_SIG<T_SIG & HSTAT_SIG>1/T_SIG)				
-							}, by=c('T_MU','T_SIG')]
-	#	acceptance prob
-	abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)),by=c('T_MU','T_SIG')]
-	#	CPP
-	abca[, list( CPP= mean(YSMX>=max(dt$x)) ),by=c('T_MU','T_SIG')]
-	abca[, TOL:= abca[, factor(paste('mu:',round(T_MU,d=2),'; sig:',round(T_SIG,d=2),sep=''))]]
-	#	plot abc posterior density
-	ggplot(abca, aes(x=YMU, y=YSIGMA)) + 			 
-			geom_vline(xintercept= dt$xmean, colour='grey80', size=1) +
-			geom_hline(yintercept= dt$xsigma, colour='grey80', size=1) +
-			geom_density2d(aes(colour=TOL, group=TOL)) +
-			#geom_line(data=de, aes(y=DENS), colour='black') +
-			facet_wrap(~TOL, ncol=3) +
-			theme_bw() + theme(legend.position='bottom') + labs(title='ABC posterior density\n', x='mu', y='sigma', colour='tolerances')			
-	ggsave(file=gsub('\\.rda','_ABCposterior.pdf',file), w=10, h=8)
+	infiles	<- data.table(FILE=list.files(indir, pattern='rda$'))
+	set(infiles, NULL, 'TYPE', infiles[, gsub('-OR.*','',FILE)])
+	set(infiles, NULL, 'REP', infiles[, as.integer(substring(regmatches(FILE, regexpr('_R[0-9]+',FILE)),3))])
+	infiles	<- subset(infiles, REP>0L & TYPE=='Normal-ME')
+	cpps	<- infiles[, {
+				file	<- paste(indir, FILE,sep= '/')
+				cat('\n',file)
+				load(file)
+				dtc		<- copy(dt$sim)
+				#	exact posterior density
+				de		<- data.table(YMU= seq(min(dtc[, YMU]), max(dtc[, YMU]), len=2048) )
+				de[, DENS:= de[, dnorm(YMU, dt$xmean, dt$xsigma/sqrt(dt$xn))]]
+				#	get Hyp test stat H so thresholds will be comparable to ABCSTAR version
+				dtc[, HSTAT:= dtc[, (dt$xmean-YSMEAN)/YSIGMA*sqrt(YM)]]
+				#	upper lower tolerance will be +-1.645, set ABC tolerances around that
+				tols	<- 1.645*c(0.1, 0.5, 1, 2, 4, 6)
+				#	get accepted iterations for each tolerance
+				abca	<- do.call('rbind',lapply(tols, function(tol)
+								{
+									tmp	<- subset(dtc, abs(HSTAT)<tol)
+									tmp[, TOL:=tol]
+									tmp
+								}))
+				abca[, TOLM:= factor(TOL/1.645)]
+				#	plot abc posterior density
+				ggplot(abca, aes(x=YMU)) + 
+						geom_density(aes(colour=TOLM, group=TOLM)) + 
+						geom_line(data=de, aes(y=DENS), colour='black') +
+						theme_bw() + theme(legend.position='bottom') + labs(title='ABC posterior density\n', x='mu', y='', colour='tolerance multiplier\nrelative to\nABC* calibrated tolerance')
+				ggsave(file=gsub('\\.rda','_ABCposterior.pdf',file), w=6, h=5)
+				#	acceptance prob
+				acc.prob	<- abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)), by='TOLM']
+				#	CPP
+				cpp			<- abca[, list( CPP= mean(YSMX>=max(dt$x)) ),by='TOLM']
+				ans			<- merge(cpp, acc.prob, by='TOLM')
+				ans
+			},by='FILE']
+	cpps	<- merge(cpps, infiles, by='FILE')
+	file	<- paste(indir, infiles[1, gsub('_R[0-9]+\\.rda','_CPP.rda',FILE)], sep='/')
+	save(cpps, file=file)
 	#	get p-val
-	ggplot(abca, aes(sample=y)) + stat_qq(dist = qt, dparam = params)	
+	#ggplot(abca, aes(sample=y)) + stat_qq(dist = qt, dparam = params)
 }
 ##--------------------------------------------------------------------------------------------------------
-gof.mutostabc.MX.mu.ABCstar<- function()
+gof.mutostabc.MX.musig.insuff<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper')
 {
-	file	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper/Normal-ME-MforZTEST-OR151111_R0.rda'
-	load(file)
-	#	exact posterior density
-	de		<- data.table(YMU= seq(min(dt$sim[, YMU]), max(dt$sim[, YMU]), len=2048) )
-	de[, DENS:= de[, dnorm(YMU, dt$xmean, dt$xsigma/sqrt(dt$xn))]]
-	#	get Hyp test stat H so thresholds will be comparable to ABCSTAR version
-	set(dt$sim, NULL, 'HSTAT', dt$sim[, (dt$xmean-YSMEAN)/YSIGMA*sqrt(YM)])
-	#	calibrated tolerance
-	SIG		<<- dt$xsigma							#sig assumed known
-	n2s		<- function(n){ SIG/sqrt(floor(n)) }	#need formula to convert n.of.y into s.of.T, depends on application
-	s2n		<- function(s){ (SIG/s)^2 }				#need formula to convert s.of.T into n.of.y, depends on application
-	tmp		<- ztest.calibrate(dt$xn, n2s=n2s, s2n=s2n, mx.pw=0.9, alpha=0.01, what='KL', plot=FALSE)
-	#	get accepted iterations for each tolerance
-	abca	<- subset(dt$sim, abs(HSTAT)<tmp['c.u'])
-	abca[, TOL:=tmp['c.u']]
-	abca[, TOLM:= 1L]
-	#	acceptance prob
-	#abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)),by='TOLM']
-	#	CPP
-	abca[, list( CPP= mean(YSMX>=max(dt$x)) ),by='TOLM']
-	#	plot abc posterior density
-	ggplot(abca, aes(x=YMU)) + 
-			geom_density(aes(fill=TOLM, colour=TOLM, group=TOLM), alpha=0.6) + 
-			geom_line(data=de, aes(y=DENS), colour='black') +
-			scale_fill_continuous(guide = FALSE) + scale_colour_continuous(guide = FALSE) +
-			theme_bw() + theme(legend.position='bottom') + labs(title='calibrated ABC posterior density\n', x='mu', y='')
-	ggsave(file=gsub('\\.rda','_ABCStarposterior.pdf',file), w=6, h=5)
-	#	get p-val	
+	infiles	<- data.table(FILE=list.files(indir, pattern='rda$'))
+	set(infiles, NULL, 'TYPE', infiles[, gsub('-OR.*','',FILE)])
+	set(infiles, NULL, 'REP', infiles[, as.integer(substring(regmatches(FILE, regexpr('_R[0-9]+',FILE)),3))])
+	infiles	<- subset(infiles, REP>0L & TYPE=='Normal-MESIG')
+	cpps	<- infiles[, {
+				file	<- paste(indir, FILE,sep= '/')
+				cat('\n',file)
+				load(file)
+				dt$sim	<- copy(dt$sim)
+				#	exact posterior density
+				scale	<- dt$xsigma*dt$xsigma*(dt$xn-1)
+				de		<- data.table(	YMU= rt(1e6, dt$xn-1)*(dt$xsigma/sqrt(dt$xn))+dt$xmean, 
+						YSIG2=rigamma(1e6, (dt$xn-2)/2, dt$xsigma*dt$xsigma*(dt$xn-1)/2)	
+				)					
+				#	get Hyp test stat H so thresholds will be comparable to ABCSTAR version
+				set(dt$sim, NULL, 'HSTAT_MU', dt$sim[, (dt$xmean-YSMEAN)/YSSD*sqrt(YM)])
+				set(dt$sim, NULL, 'HSTAT_SIG', dt$sim[, (YSSD*YSSD)*(YM-1)/(dt$xsigma*dt$xsigma*(dt$xn-1))])
+				#	upper lower tolerance will be +-1.645, set ABC tolerances around that
+				#	vartest.calibrate(n.of.x=dt$xn, s.of.x=sd(dt$x), what='KL', mx.pw=0.9, alpha=0.01, plot=TRUE, verbose=FALSE)
+				mu.tols		<- 1.645*c(0.25, 0.5, 1, 2, 4)
+				#s.tols		<- c(1.3, 1.5, 1.7, 2.3, 2.9)				
+				tols		<- data.table(T_MU=mu.tols)
+				abca		<- tols[,	{
+											subset(dt$sim, abs(HSTAT_MU)<T_MU)				
+										}, by=c('T_MU')]
+				abca[, TOL:= abca[, factor(paste('mu:',round(T_MU,d=2),sep=''))]]
+				#	plot abc posterior density
+				ggplot(abca, aes(x=YMU)) + 			 
+						geom_vline(xintercept= dt$xmean, colour='grey80', size=1) +
+						geom_hline(yintercept= dt$xsigma*dt$xsigma, colour='grey80', size=1) +
+						#geom_density2d(data=de, aes(y=YSIG2), colour='black') +
+						geom_density2d(aes(y=YSIGMA*YSIGMA, colour=TOL, group=TOL)) +
+						facet_wrap(~TOL, ncol=3) +
+						theme_bw() + theme(legend.position='bottom') + labs(title='ABC posterior density\n', x='mu', y='sigma2', colour='tolerances')			
+				ggsave(file=gsub('\\.rda','_ABCposterior.pdf',file), w=10, h=8)
+				#	acceptance prob
+				acc.prob	<- abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)), by='TOL']
+				#	CPP
+				cpp			<- abca[, list( CPP= mean(YSMX>=max(dt$x)) ),by='TOL']
+				ans			<- merge(cpp, acc.prob, by='TOL')
+				ans				
+			},by='FILE']
+	cpps	<- merge(cpps, infiles, by='FILE')
+	file	<- paste(indir, infiles[1, gsub('_R[0-9]+\\.rda','_CPP.rda',FILE)], sep='/')
+	save(cpps, file=file)		
+}
+##--------------------------------------------------------------------------------------------------------
+gof.mutostabc.MX.musig<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper')
+{
+	infiles	<- data.table(FILE=list.files(indir, pattern='rda$'))
+	set(infiles, NULL, 'TYPE', infiles[, gsub('-OR.*','',FILE)])
+	set(infiles, NULL, 'REP', infiles[, as.integer(substring(regmatches(FILE, regexpr('_R[0-9]+',FILE)),3))])
+	infiles	<- subset(infiles, REP>0L & TYPE=='Normal-MESIG')
+	cpps	<- infiles[, {
+				file	<- paste(indir, FILE,sep= '/')
+				cat('\n',file)
+				load(file)
+				dt$sim	<- copy(dt$sim)
+				#	exact posterior density
+				scale	<- dt$xsigma*dt$xsigma*(dt$xn-1)
+				de		<- data.table(	YMU= rt(1e6, dt$xn-1)*(dt$xsigma/sqrt(dt$xn))+dt$xmean, 
+										YSIG2=rigamma(1e6, (dt$xn-2)/2, dt$xsigma*dt$xsigma*(dt$xn-1)/2)	
+										)					
+				#	get Hyp test stat H so thresholds will be comparable to ABCSTAR version
+				set(dt$sim, NULL, 'HSTAT_MU', dt$sim[, (dt$xmean-YSMEAN)/YSSD*sqrt(YM)])
+				set(dt$sim, NULL, 'HSTAT_SIG', dt$sim[, (YSSD*YSSD)*(YM-1)/(dt$xsigma*dt$xsigma*(dt$xn-1))])
+				#	upper lower tolerance will be +-1.645, set ABC tolerances around that
+				#	vartest.calibrate(n.of.x=dt$xn, s.of.x=sd(dt$x), what='KL', mx.pw=0.9, alpha=0.01, plot=TRUE, verbose=FALSE)
+				mu.tols		<- 1.645*c(0.25, 0.5, 1, 2, 4)
+				s.tols		<- c(1.3, 1.5, 1.7, 2.3, 2.9)
+				#tols		<- as.data.table(expand.grid(T_MU=mu.tols, T_SIG=s.tols))
+				tols		<- data.table(T_MU=mu.tols, T_SIG=s.tols)
+				abca		<- tols[,	{
+							subset(dt$sim, abs(HSTAT_MU)<T_MU & HSTAT_SIG<T_SIG & HSTAT_SIG>1/T_SIG)				
+						}, by=c('T_MU','T_SIG')]
+				abca[, TOL:= abca[, factor(paste('mu:',round(T_MU,d=2),'; sig:',round(T_SIG,d=2),sep=''))]]
+				#	plot abc posterior density
+				ggplot(abca, aes(x=YMU)) + 			 
+						geom_vline(xintercept= dt$xmean, colour='grey80', size=1) +
+						geom_hline(yintercept= dt$xsigma*dt$xsigma, colour='grey80', size=1) +
+						geom_density2d(data=de, aes(y=YSIG2), colour='black') +
+						geom_density2d(aes(y=YSIGMA*YSIGMA, colour=TOL, group=TOL)) +
+						facet_wrap(~TOL, ncol=3) +
+						theme_bw() + theme(legend.position='bottom') + labs(title='ABC posterior density\n', x='mu', y='sigma2', colour='tolerances')			
+				ggsave(file=gsub('\\.rda','_ABCposterior.pdf',file), w=10, h=8)
+				#	acceptance prob
+				acc.prob	<- abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)), by='TOL']
+				#	CPP
+				cpp			<- abca[, list( CPP= mean(YSMX>=max(dt$x)) ),by='TOL']
+				ans			<- merge(cpp, acc.prob, by='TOL')
+				ans				
+			},by='FILE']
+	cpps	<- merge(cpps, infiles, by='FILE')
+	file	<- paste(indir, infiles[1, gsub('_R[0-9]+\\.rda','_CPP.rda',FILE)], sep='/')
+	save(cpps, file=file)		
+}
+##--------------------------------------------------------------------------------------------------------
+gof.mutostabc.MX.mu.ABCstar<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper')
+{
+	infiles	<- data.table(FILE=list.files(indir, pattern='rda$'))
+	set(infiles, NULL, 'TYPE', infiles[, gsub('-OR.*','',FILE)])
+	set(infiles, NULL, 'REP', infiles[, as.integer(substring(regmatches(FILE, regexpr('_R[0-9]+',FILE)),3))])
+	infiles	<- subset(infiles, REP>0L & TYPE=='Normal-ME-MforZTEST')
+	cpps	<- infiles[, {
+				file	<- paste(indir, FILE,sep= '/')
+				cat('\n',file)
+				load(file)
+				dtc		<- copy(dt$sim)
+				#	exact posterior density
+				de		<- data.table(YMU= seq(min(dtc[, YMU]), max(dtc[, YMU]), len=2048) )
+				de[, DENS:= de[, dnorm(YMU, dt$xmean, dt$xsigma/sqrt(dt$xn))]]				
+				#	get Hyp test stat H so thresholds will be comparable to ABCSTAR version
+				set(dtc, NULL, 'HSTAT', dtc[, (dt$xmean-YSMEAN)/YSIGMA*sqrt(YM)])
+				#	calibrated tolerance
+				SIG		<<- dt$xsigma							#sig assumed known
+				n2s		<- function(n){ SIG/sqrt(floor(n)) }	#need formula to convert n.of.y into s.of.T, depends on application
+				s2n		<- function(s){ (SIG/s)^2 }				#need formula to convert s.of.T into n.of.y, depends on application
+				tmp		<- ztest.calibrate(dt$xn, n2s=n2s, s2n=s2n, mx.pw=0.9, alpha=0.01, what='KL', plot=FALSE)
+				#	get accepted iterations for each tolerance
+				abca	<- subset(dtc, abs(HSTAT)<tmp['c.u'])
+				abca[, TOL:=tmp['c.u']]
+				abca[, TOLM:= 1L]
+				#	plot abc posterior density
+				ggplot(abca, aes(x=YMU)) + 
+						geom_density(aes(fill=TOLM, colour=TOLM, group=TOLM), alpha=0.6) + 
+						geom_line(data=de, aes(y=DENS), colour='black') +
+						scale_fill_continuous(guide = FALSE) + scale_colour_continuous(guide = FALSE) +
+						theme_bw() + theme(legend.position='bottom') + labs(title='calibrated ABC posterior density\n', x='mu', y='')
+				ggsave(file=gsub('\\.rda','_ABCStarposterior.pdf',file), w=6, h=5)
+				#	acceptance prob
+				acc.prob	<- abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)), by='TOLM']
+				#	CPP
+				cpp			<- abca[, list( CPP= mean(YSMX>=max(dt$x)) ),by='TOLM']
+				ans			<- merge(cpp, acc.prob, by='TOLM')
+				ans
+			},by='FILE']
+	cpps	<- merge(cpps, infiles, by='FILE')
+	file	<- paste(indir, infiles[1, gsub('_R[0-9]+\\.rda','_CPP.rda',FILE)], sep='/')
+	save(cpps, file=file)	
 }
 ##--------------------------------------------------------------------------------------------------------
 gof.mutostabc.presim.mu.ABCstar<- function(outdir, outfile, n.rep=10)
@@ -358,16 +458,27 @@ gof.mutostabc.main<- function()
 {
 	require(data.table)
 	require(abc.star)
-	#outdir	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper'
-	outdir	<- paste(HOME, '/data/gof', sep='')
-	if(1)
+	if(0)
 	{
+		#outdir	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper'
+		outdir	<- paste(HOME, '/data/gof', sep='')		
 		outfile	<- 'Normal-ME-OR151111.rda'
-		#gof.mutostabc.presim.mu(outdir, outfile, n.rep=200)
+		gof.mutostabc.presim.mu(outdir, outfile, n.rep=200)
 		outfile	<- 'Normal-ME-MforZTEST-OR151111.rda'
-		#gof.mutostabc.presim.mu.ABCstar(outdir, outfile, n.rep=200)
+		gof.mutostabc.presim.mu.ABCstar(outdir, outfile, n.rep=200)
 		outfile	<- 'Normal-MESIG-OR151111.rda'
 		gof.mutostabc.presim.musig(outdir, outfile, n.rep=200)
+	}
+	if(1)
+	{
+		indir	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper'
+		indir	<- paste(HOME, '/data/gof', sep='')
+		gof.mutostabc.MX.mu(indir=indir)
+		gof.mutostabc.MX.mu.ABCstar(indir=indir)
+		gof.mutostabc.MX.musig(indir=indir)
+		# insufficient stat, then compare test --> aim to show that test not distr uniformly
+		# idea: power can still drive vary small MAX
+		gof.mutostabc.MX.musig.insuff(indir=indir)
 	}
 	if(0)
 	{
