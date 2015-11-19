@@ -160,7 +160,7 @@ abcstar.presim.uprior.musig<- function(abc.nit, xn, xmean, xsigma, mu.prior.l, m
 	ans[["xmean"]]		<- xmean
 	ans[["xsigma"]]		<- xsigma
 	#	upper limit for simulations
-	yn					<- 6*xn				
+	yn					<- ceiling( 1.5*mutost.calibrate(n.of.x=length(obs), s.of.x= sd(obs), s.of.y=sig.prior.u, what='KL', mx.pw=0.9, alpha=0.01, plot=FALSE)['n.of.y'] )				
 	#	always the same
 	sig.cali			<- vartest.calibrate(n.of.x=xn, s.of.x=sd(obs), what='KL', mx.pw=0.9, alpha=0.01, plot=FALSE, verbose=FALSE)		
 	
@@ -168,14 +168,13 @@ abcstar.presim.uprior.musig<- function(abc.nit, xn, xmean, xsigma, mu.prior.l, m
 			{					
 				ymu		<- runif(1, mu.prior.l, mu.prior.u)
 				ysigma	<- exp(runif(1, log(sig.prior.l), log(sig.prior.u)))
-				sim		<- rnorm(yn, ymu, sd=ysigma)
-#TODO: error with n.of.y??				
+				sim		<- rnorm(yn, ymu, sd=ysigma)			
 				mu.cali <- mutost.calibrate(n.of.x=length(obs), s.of.x= sd(obs), s.of.y=sd(sim), what='KL', mx.pw=0.9, alpha=0.01, plot=FALSE)
-				
-				tmp		<- c(xn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y) )									
+				stopifnot(mu.cali['n.of.y']<=yn)
+				tmp		<- unname(c(mu.cali['n.of.y'], sig.cali['n.of.y'], ymu, ysigma, mean(sim[seq_len(mu.cali['n.of.y'])]), sd(sim[seq_len(mu.cali['n.of.y'])]), sd(sim[seq_len(sig.cali['n.of.y'])]), quantile(sim, prob=0.25), quantile(sim, prob=0.75), max(sim) ))									
 				tmp					
 			})					
-	rownames(ans[["sim"]])	<- toupper(c('ym','ymu','ysigma','ysmean','yssd','ysq25','ysq75','ysmx'))
+	rownames(ans[["sim"]])	<- toupper(c('ym.mu','ym.sigma','ymu','ysigma','ysmean','yssd.mu','yssd.sig','ysq25','ysq75','ysmx'))
 	ans[["sim"]]		<- as.data.table(t(ans$sim))
 	ans[["sim"]][, IT:=seq_len(nrow(ans[["sim"]]))]
 	ans
@@ -470,6 +469,12 @@ gof.mutostabc.main<- function()
 		gof.mutostabc.presim.musig(outdir, outfile, n.rep=200)
 	}
 	if(1)
+	{
+		outdir	<- paste(HOME, '/data/gof', sep='')
+		outfile	<- 'Normal-MESIG-MforMUTOST-OR151111.rda'
+		gof.mutostabc.presim.musig.ABCstar(outdir, outfile, n.rep=200)
+	}
+	if(0)
 	{
 		indir	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper'
 		indir	<- paste(HOME, '/data/gof', sep='')

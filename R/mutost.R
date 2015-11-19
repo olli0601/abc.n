@@ -142,10 +142,7 @@ mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), lo
 #
 mutost.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, plot = F, legend.title='') 
 {
-	
-	
-	stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0)
-	
+	stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0)	
 	if (!debug)		#ALL IN C 
 	{						
 		suppressWarnings({ #suppress numerical inaccuracy warnings
