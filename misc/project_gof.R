@@ -456,6 +456,8 @@ gof.mutostabc.presim.mu.ABCstar<- function(outdir, outfile, n.rep=10)
 gof.mutostabc.main<- function()
 {
 	require(data.table)
+	require(pscl)
+	require(ggplot2)
 	require(abc.star)
 	if(0)
 	{
@@ -468,13 +470,13 @@ gof.mutostabc.main<- function()
 		outfile	<- 'Normal-MESIG-OR151111.rda'
 		gof.mutostabc.presim.musig(outdir, outfile, n.rep=200)
 	}
-	if(1)
+	if(0)
 	{
 		outdir	<- paste(HOME, '/data/gof', sep='')
 		outfile	<- 'Normal-MESIG-MforMUTOST-OR151111.rda'
 		gof.mutostabc.presim.musig.ABCstar(outdir, outfile, n.rep=200)
 	}
-	if(0)
+	if(1)
 	{
 		indir	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper'
 		indir	<- paste(HOME, '/data/gof', sep='')
