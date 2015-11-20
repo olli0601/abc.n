@@ -86,8 +86,8 @@ gof.pipeline<- function()
 		outdir		<- getwd()
 		cmd			<- cmd.various()
 		#cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q='pqeelab', hpc.walltime=71, hpc.mem="5000mb")
-		#cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q='pqeelab', hpc.walltime=200, hpc.mem="5000mb")
-		cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q='pqeelab', hpc.walltime=200, hpc.mem="17000mb")
+		cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q='pqeelab', hpc.walltime=200, hpc.mem="5000mb")
+		#cmd			<- cmd.hpcwrapper(cmd, hpc.nproc= 1, hpc.q='pqeelab', hpc.walltime=200, hpc.mem="17000mb")
 		cat(cmd)			
 		outfile		<- paste("gof",paste(strsplit(date(),split=' ')[[1]],collapse='_',sep=''),sep='.')
 		cmd.hpccaller(outdir, outfile, cmd)
@@ -141,7 +141,7 @@ abc.presim.uprior.musig<- function(abc.nit, xn, xmean, xsigma, mu.prior.l, mu.pr
 				ymu		<- runif(1, mu.prior.l, mu.prior.u)
 				ysigma	<- exp(runif(1, log(sig.prior.l), log(sig.prior.u)))
 				y		<- rnorm(xn, ymu, sd=ysigma)
-				tmp		<- c(xn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y) )									
+				tmp		<- c(xn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y[seq_len(xn)]) )									
 				tmp					
 			})					
 	rownames(ans[["sim"]])	<- toupper(c('ym','ymu','ysigma','ysmean','yssd','ysq25','ysq75','ysmx'))
@@ -172,7 +172,7 @@ abcstar.presim.uprior.musig<- function(abc.nit, xn, xmean, xsigma, mu.prior.l, m
 				sim		<- rnorm(yn, ymu, sd=ysigma)			
 				mu.cali <- mutost.calibrate(n.of.x=length(obs), s.of.x= sd(obs), s.of.y=sd(sim), what='KL', mx.pw=0.9, alpha=0.01, plot=FALSE)
 				stopifnot(mu.cali['n.of.y']<=yn)
-				tmp		<- unname(c(mu.cali['n.of.y'], sig.cali['n.of.y'], ymu, ysigma, mean(sim[seq_len(mu.cali['n.of.y'])]), sd(sim[seq_len(mu.cali['n.of.y'])]), sd(sim[seq_len(sig.cali['n.of.y'])]), quantile(sim, prob=0.25), quantile(sim, prob=0.75), max(sim) ))									
+				tmp		<- unname(c(mu.cali['n.of.y'], sig.cali['n.of.y'], ymu, ysigma, mean(sim[seq_len(mu.cali['n.of.y'])]), sd(sim[seq_len(mu.cali['n.of.y'])]), sd(sim[seq_len(sig.cali['n.of.y'])]), quantile(sim, prob=0.25), quantile(sim, prob=0.75), max(sim[seq_len(xn)]) ))									
 				tmp					
 			})					
 	rownames(ans[["sim"]])	<- toupper(c('ym.mu','ym.sigma','ymu','ysigma','ysmean','yssd.mu','yssd.sig','ysq25','ysq75','ysmx'))
@@ -252,6 +252,37 @@ gof.mutostabc.presim.musig.ABCstar<- function(outdir, outfile, n.rep=10)
 	}	
 }
 ##--------------------------------------------------------------------------------------------------------
+gof.mutostabc.MX.mu.evalcpp<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper')
+{
+	#	get p-val
+	infiles	<- data.table(FILE=list.files(indir, pattern='CPP\\.rda$'))
+	set(infiles, NULL, 'TYPE', infiles[, gsub('-OR.*','',FILE)])
+	load( paste(indir, subset(infiles, TYPE=='Normal-ME')[, FILE], sep='/') )
+	cpps.std	<- copy(cpps)
+	cpps.std[, TYPE:='standard ABC']
+	load( paste(indir, subset(infiles, TYPE=='Normal-ME-MforZTEST')[, FILE], sep='/') )
+	cpps[, TYPE:='calibrated ABC']
+	cpps		<- rbind(cpps, cpps.std)
+	set(cpps, NULL, 'TOLM', cpps[, factor(as.character(TOLM), levels=sort(as.numeric(as.character(unique(TOLM)))), labels=sort(as.numeric(as.character(unique(TOLM)))))])
+	
+	ggplot(cpps, aes(x=CPP)) + 
+			geom_histogram(aes(fill=TOLM), colour='black', position="identity", binwidth=0.05) +
+			coord_cartesian(xlim=c(0,1)) +
+			facet_grid(TOLM~TYPE) + theme_bw()
+	
+	ggplot(cpps, aes(x=CPP)) + stat_ecdf(aes(colour=TOLM)) +
+			geom_abline(intercept=0, slope=1, colour='black') +
+			coord_cartesian(xlim=c(0,1), ylim=c(0,1)) +
+			facet_grid(~TYPE) +
+			labs(x='\nCPP', y='empirical c. d. f.\n', title='ABC model correct\n', colour='tolerance multiplier\nrelative to\ncalibrated value') +
+			theme_bw()
+			
+	z <- subset(cpps, TYPE=='calibrated ABC')[, CPP]
+	qqplot(qunif(ppoints(500)), z)
+	qqline(z, distribution = function(p) qunif(p),prob = c(0.1, 0.6), col = 2)
+	
+}
+##--------------------------------------------------------------------------------------------------------
 gof.mutostabc.MX.mu<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper')
 {
 	infiles	<- data.table(FILE=list.files(indir, pattern='rda$'))
@@ -293,9 +324,7 @@ gof.mutostabc.MX.mu<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/cal
 			},by='FILE']
 	cpps	<- merge(cpps, infiles, by='FILE')
 	file	<- paste(indir, infiles[1, gsub('_R[0-9]+\\.rda','_CPP.rda',FILE)], sep='/')
-	save(cpps, file=file)
-	#	get p-val
-	#ggplot(abca, aes(sample=y)) + stat_qq(dist = qt, dparam = params)
+	save(cpps, file=file)	
 }
 ##--------------------------------------------------------------------------------------------------------
 gof.mutostabc.MX.musig.insuff<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper')
@@ -403,6 +432,7 @@ gof.mutostabc.MX.mu.ABCstar<- function(indir='~/Dropbox (Infectious Disease)/gof
 {
 	infiles	<- data.table(FILE=list.files(indir, pattern='rda$'))
 	set(infiles, NULL, 'TYPE', infiles[, gsub('-OR.*','',FILE)])
+	infiles	<- subset(infiles, !grepl('CPP', FILE))
 	set(infiles, NULL, 'REP', infiles[, as.integer(substring(regmatches(FILE, regexpr('_R[0-9]+',FILE)),3))])
 	infiles	<- subset(infiles, REP>0L & TYPE=='Normal-ME-MforZTEST')
 	cpps	<- infiles[, {
@@ -462,24 +492,20 @@ gof.mutostabc.main<- function()
 	require(pscl)
 	require(ggplot2)
 	require(abc.star)
-	if(0)
+	if(1)
 	{
 		#outdir	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper'
 		outdir	<- paste(HOME, '/data/gof', sep='')		
-		outfile	<- 'Normal-ME-OR151111.rda'
-		gof.mutostabc.presim.mu(outdir, outfile, n.rep=200)
+		#outfile	<- 'Normal-ME-OR151111.rda'
+		#gof.mutostabc.presim.mu(outdir, outfile, n.rep=200)
 		outfile	<- 'Normal-ME-MforZTEST-OR151111.rda'
 		gof.mutostabc.presim.mu.ABCstar(outdir, outfile, n.rep=200)
-		outfile	<- 'Normal-MESIG-OR151111.rda'
-		gof.mutostabc.presim.musig(outdir, outfile, n.rep=200)
-	}
-	if(0)
-	{
-		outdir	<- paste(HOME, '/data/gof', sep='')
+		#outfile	<- 'Normal-MESIG-OR151111.rda'
+		#gof.mutostabc.presim.musig(outdir, outfile, n.rep=200)
 		outfile	<- 'Normal-MESIG-MforMUTOST-OR151111.rda'
 		gof.mutostabc.presim.musig.ABCstar(outdir, outfile, n.rep=200)
 	}
-	if(1)
+	if(0)
 	{
 		indir	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper'
 		indir	<- paste(HOME, '/data/gof', sep='')
