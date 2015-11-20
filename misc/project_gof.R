@@ -389,6 +389,8 @@ gof.mutostabc.MX.musig<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/
 				#	CPP
 				cpp			<- abca[, list( CPP= mean(YSMX>=max(dt$x)) ),by='TOL']
 				ans			<- merge(cpp, acc.prob, by='TOL')
+				abca	<- de	<- df<- NULL
+				gc()
 				ans				
 			},by='FILE']
 	cpps	<- merge(cpps, infiles, by='FILE')
@@ -480,8 +482,8 @@ gof.mutostabc.main<- function()
 	{
 		indir	<- '~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper'
 		indir	<- paste(HOME, '/data/gof', sep='')
-		gof.mutostabc.MX.mu(indir=indir)
-		gof.mutostabc.MX.mu.ABCstar(indir=indir)
+		#gof.mutostabc.MX.mu(indir=indir)
+		#gof.mutostabc.MX.mu.ABCstar(indir=indir)
 		gof.mutostabc.MX.musig(indir=indir)
 		# insufficient stat, then compare test --> aim to show that test not distr uniformly
 		# idea: power can still drive vary small MAX
