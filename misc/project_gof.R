@@ -141,7 +141,7 @@ abc.presim.uprior.musig<- function(abc.nit, xn, xmean, xsigma, mu.prior.l, mu.pr
 				ymu		<- runif(1, mu.prior.l, mu.prior.u)
 				ysigma	<- exp(runif(1, log(sig.prior.l), log(sig.prior.u)))
 				y		<- rnorm(xn, ymu, sd=ysigma)
-				tmp		<- c(xn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y[seq_len(xn)]) )									
+				tmp		<- c(xn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y) )									
 				tmp					
 			})					
 	rownames(ans[["sim"]])	<- toupper(c('ym','ymu','ysigma','ysmean','yssd','ysq25','ysq75','ysmx'))
@@ -203,7 +203,7 @@ abcstar.presim.uprior.mu<- function(abc.nit, xn, xmean, xsigma, prior.l, prior.u
 			{					
 				ymu		<- runif(1, prior.l, prior.u)
 				y		<- rnorm(yn, ymu, sd=ysigma)
-				tmp		<- c(yn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y) )									
+				tmp		<- c(yn, ymu, ysigma, mean(y), sd(y), quantile(y, prob=0.25), quantile(y, prob=0.75), max(y[seq_len(xn)]) )									
 				tmp					
 			})					
 	rownames(ans[["sim"]])	<- toupper(c('ym','ymu','ysigma','ysmean','yssd','ysq25','ysq75','ysmx'))
@@ -504,8 +504,8 @@ gof.mutostabc.main<- function()
 		gof.mutostabc.presim.mu.ABCstar(outdir, outfile, n.rep=200)
 		#outfile	<- 'Normal-MESIG-OR151111.rda'
 		#gof.mutostabc.presim.musig(outdir, outfile, n.rep=200)
-		outfile	<- 'Normal-MESIG-MforMUTOST-OR151111.rda'
-		gof.mutostabc.presim.musig.ABCstar(outdir, outfile, n.rep=200)
+		#outfile	<- 'Normal-MESIG-MforMUTOST-OR151111.rda'
+		#gof.mutostabc.presim.musig.ABCstar(outdir, outfile, n.rep=200)
 	}
 	if(0)
 	{
