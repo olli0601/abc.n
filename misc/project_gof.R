@@ -330,6 +330,7 @@ gof.mutostabc.MX.mu<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/cal
 gof.mutostabc.MX.musig.insuff<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper')
 {
 	infiles	<- data.table(FILE=list.files(indir, pattern='rda$'))
+	infiles	<- subset(infiles, !grepl('CPP', FILE))
 	set(infiles, NULL, 'TYPE', infiles[, gsub('-OR.*','',FILE)])
 	set(infiles, NULL, 'REP', infiles[, as.integer(substring(regmatches(FILE, regexpr('_R[0-9]+',FILE)),3))])
 	infiles	<- subset(infiles, REP>0L & TYPE=='Normal-MESIG')
@@ -372,13 +373,14 @@ gof.mutostabc.MX.musig.insuff<- function(indir='~/Dropbox (Infectious Disease)/g
 				ans				
 			},by='FILE']
 	cpps	<- merge(cpps, infiles, by='FILE')
-	file	<- paste(indir, infiles[1, gsub('_R[0-9]+\\.rda','_CPP.rda',FILE)], sep='/')
+	file	<- paste(indir, infiles[1, gsub('_R[0-9]+\\.rda','_insuff_CPP.rda',FILE)], sep='/')
 	save(cpps, file=file)		
 }
 ##--------------------------------------------------------------------------------------------------------
 gof.mutostabc.MX.musig<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper')
 {
 	infiles	<- data.table(FILE=list.files(indir, pattern='rda$'))
+	infiles	<- subset(infiles, !grepl('CPP', FILE))
 	set(infiles, NULL, 'TYPE', infiles[, gsub('-OR.*','',FILE)])
 	set(infiles, NULL, 'REP', infiles[, as.integer(substring(regmatches(FILE, regexpr('_R[0-9]+',FILE)),3))])
 	infiles	<- subset(infiles, REP>0L & TYPE=='Normal-MESIG')
@@ -511,7 +513,7 @@ gof.mutostabc.main<- function()
 		indir	<- paste(HOME, '/data/gof', sep='')
 		#gof.mutostabc.MX.mu(indir=indir)
 		#gof.mutostabc.MX.mu.ABCstar(indir=indir)
-		gof.mutostabc.MX.musig(indir=indir)
+		#gof.mutostabc.MX.musig(indir=indir)
 		# insufficient stat, then compare test --> aim to show that test not distr uniformly
 		# idea: power can still drive vary small MAX
 		gof.mutostabc.MX.musig.insuff(indir=indir)
