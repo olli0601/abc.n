@@ -4,29 +4,29 @@ ratetest.rejectint <- function(alpha=0.01, tau.l, tau.u, m, tol=1.0e-10, itmax=1
   error <- -alpha  # error term to record the difference
   c.l <- sqrt(tau.l * tau.u)   #start value
   while (error < 0)
-  {  c.l <- c.l - 0.05
-     h <- alpha + pgamma(m * c.l/tau.u, m, 1)
-     c.u <- qgamma(h,m,1)*tau.u/m
-     error <- pgamma(m*c.u/tau.l, m, 1) - pgamma(m * c.l/tau.l, m, 1) - alpha
-  }
-  c1L <- c.l
-  c1R <- c.l + 0.05
-  iter <- 0
-  while (abs(error) >= tol && iter <= itmax)
+    {  c.l <- c.l - 0.05
+  h <- alpha + pgamma(m * c.l/tau.u, m, 1)
+  c.u <- qgamma(h,m,1)*tau.u/m
+  error <- pgamma(m*c.u/tau.l, m, 1) - pgamma(m * c.l/tau.l, m, 1) - alpha
+}
+c1L <- c.l
+c1R <- c.l + 0.05
+iter <- 0
+while (abs(error) >= tol && iter <= itmax)
   {  iter <- iter + 1
-     c.l <- (c1L + c1R) / 2
-     h <- alpha + pgamma(m*c.l/tau.u, m, 1)
-     c.u <- qgamma(h, m, 1) * tau.u /m
-     error <- pgamma(m*c.u/tau.l, m, 1) - pgamma(m*c.l/tau.l, m, 1) - alpha
-     if (error <= 0) 
-       c1R <- c.l   else
-         c1L <- c.l
-  }
-  
-  ans <- c(c.l, c.u)
-  names(ans)  <- c("c.l","c.u")
-  
-  return(ans)
+c.l <- (c1L + c1R) / 2
+h <- alpha + pgamma(m*c.l/tau.u, m, 1)
+c.u <- qgamma(h, m, 1) * tau.u /m
+error <- pgamma(m*c.u/tau.l, m, 1) - pgamma(m*c.l/tau.l, m, 1) - alpha
+if (error <= 0) 
+ c1R <- c.l   else
+c1L <- c.l
+}
+
+ans <- c(c.l, c.u)
+names(ans)  <- c("c.l","c.u")
+
+return(ans)
 }
 
 #========================================================================================================================
@@ -69,7 +69,7 @@ ratetest.pow <- function(rho, c.l, c.u, m,  norm=1, trafo=1, support=c(0, Inf), 
 #' @inheritParams ratetest.pow 
 #' @seealso \code{\link{ratetest.pow}}, \code{\link{ratetest.calibrate}}
 ratetest.pow.norm<- function(c.l, c.u, m, trafo= 1, support=c(0,Inf)){
-  
+
   ans <- integrate(ratetest.pow, lower=support[1], upper=support[2], c.l=c.l, c.u=c.u, m=m, norm=1, trafo=trafo, support=support, log=FALSE)
   ans$value
   
@@ -77,27 +77,31 @@ ratetest.pow.norm<- function(c.l, c.u, m, trafo= 1, support=c(0,Inf)){
 
 #==========================================================================================================================
 
-ratetest.sulkl<- function(rho, n.of.y, mean.x, trafo=mean.x, norm = 1, support= c(0,Inf), log=FALSE) {
-  
+ratetest.sulkl<- function(rho, n.of.x, mean.x, trafo=mean.x, norm = 1, support= c(0,Inf), log=FALSE) {
+
   ans 				<- rho
   in_support 			<- (rho >= support[1] & rho <= support[2])
   ans[!in_support]	<- 0
   
-  if (any(in_support))
-    beta <- rho[in_support] * trafo
-    ans[in_support] <- dgamma(  beta, n.of.y, n.of.y/beta   )/norm
+  if (any(in_support)){
+    beta <- rho[in_support] * trafo    
+  }
+
+  ans[in_support] <- dgamma( x = beta, shape = n.of.x, scale = mean.x/n.of.x )/norm
   
-  if(log)
-    ans		  	<- log(ans)
+  if(log){
+    ans       <- log(ans)    
+  }
+
   return(ans)
 }
 
 
 #=========================================================================================================================
 
-ratetest.sulkl.norm  <- function(n.of.y, mean.x, trafo = 1, support=c(0,Inf)){
-  
-  ans	<- integrate(ratetest.sulkl, lower=support[1], upper=support[2], n.of.y=n.of.y, mean.x = mean.x, trafo=trafo, norm=1, support=support, log=FALSE)	
+ratetest.sulkl.norm  <- function(n.of.x, mean.x, trafo = 1, support=c(0,Inf)){
+
+  ans	<- integrate(ratetest.sulkl, lower=support[1], upper=support[2], n.of.x=n.of.x, mean.x = mean.x, trafo=trafo, norm=1, support=support, log=FALSE)	
   ans$value
   
 }
@@ -106,7 +110,7 @@ ratetest.sulkl.norm  <- function(n.of.y, mean.x, trafo = 1, support=c(0,Inf)){
 #===========================================================================================================================================
 
 ratetest.calibrate.taulow<- function(tau.up, n.of.y, alpha=0.01, rho.star=1, tol= 1e-5, max.it=100, pow_scale=1.5, verbose=FALSE){
-  
+
   rho			<- seq(1/(tau.up*pow_scale), tau.up*pow_scale, len=1024) 
   tau.low.lb	<- 2/tau.up  #randomly chosen a smaller lower boundary				
   tmp			<- max.it  # control max number of iterations
@@ -120,29 +124,29 @@ ratetest.calibrate.taulow<- function(tau.up, n.of.y, alpha=0.01, rho.star=1, tol
     pw   <- ratetest.pow(rho, rej[1], rej[2], m = n.of.y,  norm=1, trafo=1, support=c(0, Inf), log=FALSE)
     c.rho.max	<- rho[ which.max(pw) ]
     if(verbose) {cat(paste("\ntrial lower bound",tau.low.lb,"with current rho.max",c.rho.max,"critical region",rej[1],rej[2] )) } #,"error in level is",rej[4]))
-  }
-  
-  tau.low.ub	<- ifelse(tmp+1<max.it,  2*tau.low.lb,  tau.up)
-  if(verbose)	cat(paste("\nregion for tau.low is",tau.low.lb,tau.low.ub))	
+}
+
+tau.low.ub	<- ifelse(tmp+1<max.it,  2*tau.low.lb,  tau.up)
+if(verbose)	cat(paste("\nregion for tau.low is",tau.low.lb,tau.low.ub))	
   error		<- 1
-  
-  while(abs(error)>tol && round(tau.low.lb, digits=10)!=round(tau.low.ub, digits=10) &&  max.it>0){
-    max.it	<- max.it-1
-    tau.low	<- (tau.low.lb + tau.low.ub)/2
-    rej    <-   ratetest.rejectint(alpha=alpha, tau.l=tau.low,  tau.u = tau.up, m=n.of.y , tol=1.0e-10, itmax=100)
+
+while(abs(error)>tol && round(tau.low.lb, digits=10)!=round(tau.low.ub, digits=10) &&  max.it>0){
+  max.it	<- max.it-1
+  tau.low	<- (tau.low.lb + tau.low.ub)/2
+  rej    <-   ratetest.rejectint(alpha=alpha, tau.l=tau.low,  tau.u = tau.up, m=n.of.y , tol=1.0e-10, itmax=100)
     #if(rej[4]>tol)	stop("compute tau.low: rejection region does not have level alpha within tolerance")
-    pw  <-  ratetest.pow(rho, rej[1], rej[2], m=n.of.y,  norm=1, trafo=1, support=c(0, Inf), log=FALSE)
+  pw  <-  ratetest.pow(rho, rej[1], rej[2], m=n.of.y,  norm=1, trafo=1, support=c(0, Inf), log=FALSE)
     #print( c(rho[ which.max(pw) ],pw[ which.max(pw) ], tau.low.lb, tau.low.ub,round(tau.low.lb,digits=10)==round(tau.low.ub,digits=10) ))	
-    error	<- rho[ which.max(pw) ] - rho.star
-    if(verbose) {cat(paste("\ntrial tau.l=",tau.low,"pw.max is",max(pw),"at",rho[ which.max(pw) ], "it",max.it)) }	
-    if(error<0)
-      tau.low.lb<- tau.low
-    else
-      tau.low.ub<- tau.low			
-  }
-  
-  if(max.it==0)	warning("vartest.calibrate.taulow: reached maximum iteration")
-  
+  error	<- rho[ which.max(pw) ] - rho.star
+  if(verbose) {cat(paste("\ntrial tau.l=",tau.low,"pw.max is",max(pw),"at",rho[ which.max(pw) ], "it",max.it)) }	
+  if(error<0)
+    tau.low.lb<- tau.low
+  else
+    tau.low.ub<- tau.low			
+}
+
+if(max.it==0)	warning("vartest.calibrate.taulow: reached maximum iteration")
+
   c(tau.low=tau.low, cl=rej[1], cu=rej[2], error=error)
 }
 
@@ -152,7 +156,7 @@ ratetest.calibrate.taulow<- function(tau.up, n.of.y, alpha=0.01, rho.star=1, tol
 #==========================================================================================================================
 
 ratetest.calibrate.tauup <- function(mx.pw, tau.up.ub, n.of.y, alpha=0.01, rho.star=1, tol= 1e-5, max.it=100, pow_scale=1.5, verbose=FALSE){
-  
+
   tau.low		<- cl <- cu	<- NA
   error		<- curr.mx.pw	<- 0
   tau.up.ub	<- tau.up.ub/2
@@ -167,7 +171,7 @@ ratetest.calibrate.tauup <- function(mx.pw, tau.up.ub, n.of.y, alpha=0.01, rho.s
     cl <- calcu1[2]
     cu <- calcu1[3]
     error <- calcu1[4]
-    	
+
     rho		<- seq(tau.low/pow_scale, tau.up.ub*pow_scale, len=1024)   
     
     pw							<- ratetest.pow(rho, cl, cu, m=n.of.y)
@@ -203,57 +207,87 @@ ratetest.calibrate.tauup <- function(mx.pw, tau.up.ub, n.of.y, alpha=0.01, rho.s
     #print(c(abs(error), round(tau.up.lb,digits=10)!=round(tau.up.ub,digits=10)) )	
   }
   if(max.it==0)	warning("vartest.calibrate.tauup: reached max.it")
-  
-  c(tau.low=tau.low, tau.up=tau.up, curr.mx.pw=curr.mx.pw,	error=abs(error), cl=cl, cu=cu)
+
+    c(tau.low=tau.low, tau.up=tau.up, curr.mx.pw=curr.mx.pw,	error=abs(error), cl=cl, cu=cu)
 }
 
 
 
 #==========================================================================================================================
 
-ratetest.getkl <- function(mean.x, n.of.y, tau.u, mx.pw=0.9, alpha=0.01, pow_scale=1.5, calibrate.tau.u=TRUE, plot = FALSE){
-  
+ratetest.getkl <- function(mean.x, n.of.x, n.of.y, tau.u, mx.pw=0.9, alpha=0.01, pow_scale=1.5, calibrate.tau.u=TRUE, plot = FALSE, legend.title=''){
+
   tau.l<- pw.cmx<- error<- c.l<- c.u<- NA	
   
-  if(calibrate.tau.u){	#calibrate tau.u constrained on yn, alpha and mx.pw 	
-    res.taup <-	ratetest.calibrate.tauup(mx.pw = mx.pw, tau.u, n.of.y, alpha=alpha)						#tau.u is taken as upper bound on calibrated tau.u
+  if(calibrate.tau.u) {	
+    #calibrate tau.u constrained on yn, alpha and mx.pw 	
+    res.taup <-	ratetest.calibrate.tauup(mx.pw = mx.pw, tau.u, n.of.y, alpha=alpha)	#tau.u is taken as upper bound on calibrated tau.u
     tau.l <- res.taup[1]
     tau.u <- res.taup[2]
     pw.cmx <- res.taup[3]
     error <- res.taup[4]
     c.l <- res.taup[5]
     c.u <- res.taup[6]
-    
-    if (abs(pw.cmx - mx.pw) > 0.09) 	stop("tau.up not accurate")			
-  }
-  else{
+
+    if (abs(pw.cmx - mx.pw) > 0.09) {
+      stop("tau.up not accurate")         
+    }
+
+  } else {
     res.taulow <-	ratetest.calibrate.taulow(tau.u, n.of.y, alpha=alpha )	#tau.u is taken as final tau.u
     tau.l <- res.taulow[1]
     c.l <- res.taulow[2]
     c.u <- res.taulow[3]
     error <- res.taulow[4]  
   }
-  
+
   #truncate pow and compute pow_norm	
   pow_support <- c(tau.l/pow_scale, tau.u*pow_scale)  # this is to decide the truncated part of power function 	
   pow_norm 	<- ratetest.pow.norm(c.l, c.u, m = n.of.y, trafo=1, support=pow_support)
- 
+
   #compute the norm of lkl (likelihood), given its support 
   lkl_support	<- pow_support	
   #print(c(n.of.x, s.of.x, (n.of.x-1)/n.of.x*s.of.x*s.of.x)); print(lkl_support)
-  lkl_norm	<- ratetest.sulkl.norm(n.of.y, mean.x, trafo=mean.x, support=lkl_support)
+  lkl_norm	<- ratetest.sulkl.norm(n.of.x, mean.x, trafo=mean.x, support=lkl_support)
   integral_range	<- pow_support	
-  
-  lkl_arg			<- list(n.of.y=n.of.y, mean.x = mean.x, trafo=mean.x, norm = lkl_norm, support= lkl_support)
+
+  lkl_arg			<- list(n.of.x=n.of.x, mean.x = mean.x, trafo=mean.x, norm = lkl_norm, support= lkl_support)
   pow_arg			<- list(c.l=c.l, c.u=c.u, m=n.of.y, norm=pow_norm, trafo=1, support=pow_support)	
   tmp 			<- integrate( kl.integrand, lower = integral_range[1], upper = integral_range[2], dP=ratetest.sulkl, dQ=ratetest.pow, P_arg=lkl_arg, Q_arg=pow_arg)
   KL_div			<- tmp$value
+
   if (tmp$message != "OK"){
     warning(tmp$message)
   }
-  if (plot) {}
+
+  if (plot) {
+    # browser()
+    rho         <- seq(lkl_support[1], lkl_support[2], length.out = 1000)
+
+    lkl         <- ratetest.sulkl(rho =  rho, n.of.x = n.of.x, mean.x = mean.x, trafo=mean.x, norm = lkl_norm, support= lkl_support, log=FALSE)    
+    df_lkl        <- data.frame(x = rho, no = lkl * lkl_norm, yes = lkl, distribution = "summary likelihood")
+  
+    pow <- ratetest.pow(rho = rho, c.l = c.l, c.u = c.u, m = n.of.y,  norm = pow_norm, trafo=1, support=pow_support, log=FALSE)
+    df_pow        <- data.frame(x = rho, no = pow * pow_norm, yes = pow, distribution = "ABC power")
+    
+    df          <- rbind(df_pow, df_lkl)
+    gdf         <- melt(df, id.vars = c("x", "distribution"))
+
+    p           <- ggplot(data = gdf, aes(x = x, y = value, colour = distribution, linetype = variable))
+    p           <- p + geom_vline(xintercept = c(tau.l, tau.u), linetype = "dotted")
+    p           <- p + geom_hline(yintercept = mx.pw, linetype = "dotted")
+    p           <- p + geom_line()
+    p           <- p + scale_linetype("truncated and\nstandardized?")
+    p           <- p + xlab(expression(rho)) + ylab("")
+    p           <- p + ggtitle(paste(ifelse(!is.na(legend.title), legend.title, ''),"n.of.y=", n.of.y, "\ntau.u=", tau.u, "\nKL=", KL_div))
+    print(p)
+
+  }
+  
   pw.cmx 	<- ifelse(calibrate.tau.u, pw.cmx, ratetest.pow(rho=1, c.l, c.u, m=n.of.y))	
-  c(KL_div = KL_div, tau.l = tau.l, tau.u = tau.u, c.l = c.l, c.u = c.u, pw.cmx = pw.cmx)	
+  
+  return(c(KL_div = KL_div, tau.l = tau.l, tau.u = tau.u, c.l = c.l, c.u = c.u, pw.cmx = pw.cmx))
+
 }
 
 
@@ -261,25 +295,25 @@ ratetest.getkl <- function(mean.x, n.of.y, tau.u, mx.pw=0.9, alpha=0.01, pow_sca
 #=========================================================================================================================================
 
 ratetest.calibrate.kl <- function(n.of.x, mean.x, n.of.y, mx.pw=0.9, alpha=0.05, max.it=100, debug =FALSE, plot=FALSE ){
-  
+
   KL.of.yn_ub <- KL.of.yn <- error <- curr.mx.pw <- tau.low <- cl <- cu	<- NA		
   
   #KL for initial n.of.y
-  KL.of.yn <- ratetest.getkl(mean.x, n.of.y, tau.u = 3*mean.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=TRUE, plot = FALSE)["KL_div"] 
+  KL.of.yn <- ratetest.getkl(mean.x, n.of.x, n.of.y, tau.u = 3*mean.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=TRUE, plot = FALSE)["KL_div"] 
   
   #KL always decreases from n.of.x. Find upper bound yn.ub such that KL first increases again.	
   curr.it 		<- max.it
   yn.ub 			<- 2 * n.of.y	  # start value 	
-  KL.of.yn_ub <- ratetest.getkl(mean.x, n.of.y=yn.ub, tau.u = 3*mean.x, mx.pw = mx.pw, alpha = alpha, pow_scale=1.5, calibrate.tau.u=TRUE, plot=FALSE)["KL_div"]  	
+  KL.of.yn_ub <- ratetest.getkl(mean.x, n.of.x, n.of.y=yn.ub, tau.u = 3*mean.x, mx.pw = mx.pw, alpha = alpha, pow_scale=1.5, calibrate.tau.u=TRUE, plot=FALSE)["KL_div"]  	
   
-  	
+
   while (KL.of.yn_ub < KL.of.yn && curr.it > 0){
-    
+
     #print(c(yn.ub, KL.of.yn_ub, KL.of.yn, curr.it))
     curr.it 		<- curr.it - 1
     KL.of.yn 		<- KL.of.yn_ub
     yn.ub 			<- 2 * yn.ub
-    KL.of.yn_ub		<- ratetest.getkl(mean.x, n.of.y=yn.ub, tau.u = 3*mean.x, mx.pw = mx.pw, alpha = alpha, pow_scale=1.5, calibrate.tau.u=TRUE, plot=FALSE)["KL_div"]
+    KL.of.yn_ub		<- ratetest.getkl(mean.x, n.of.x, n.of.y=yn.ub, tau.u = 3*mean.x, mx.pw = mx.pw, alpha = alpha, pow_scale=1.5, calibrate.tau.u=TRUE, plot=FALSE)["KL_div"]
     
     if(debug){cat(paste("\ntrial upper bound m=",yn.ub,"with KL",KL.of.yn_ub))}
   }			
@@ -293,13 +327,13 @@ ratetest.calibrate.kl <- function(n.of.x, mean.x, n.of.y, mx.pw=0.9, alpha=0.05,
   if(debug){cat(paste("\nupper and lower bounds on m:",yn.lb, yn.ub))}
   
   
-  KL_args <- list(mean.x=mean.x, tau.u = 3*mean.x, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u=TRUE, plot=FALSE)
+  KL_args <- list(mean.x=mean.x, n.of.x=n.of.x, tau.u = 3*mean.x, mx.pw = mx.pw, alpha = alpha, calibrate.tau.u=TRUE, plot=FALSE)
   
-  tmp 		<- optimize(kl.optimize, interval = c(yn.lb, yn.ub), x_name = "n.of.y", is_integer = T, KL_divergence = "ratetest.getkl", KL_args = KL_args, verbose = debug, tol = 1)
+  tmp 		<- optimize(kl.optimize, interval = c(yn.lb, yn.ub), x_name = "n.of.y", is_integer = TRUE, KL_divergence = "ratetest.getkl", KL_args = KL_args, verbose = debug, tol = 1)
   
   n.of.y 	<- round(tmp$minimum)
   
-  klres  <-	ratetest.getkl(mean.x, n.of.y = n.of.y, tau.u=3*mean.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=F)
+  klres  <-	ratetest.getkl(mean.x, n.of.x=n.of.x, n.of.y = n.of.y, tau.u=3*mean.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=TRUE, plot=plot)
   KL_div <- klres[1]
   tau.l <- klres[2]
   tau.u <- klres[3]
@@ -314,7 +348,7 @@ ratetest.calibrate.kl <- function(n.of.x, mean.x, n.of.y, mx.pw=0.9, alpha=0.05,
 #=============================================================================================================
 
 ratetest.plot<- function(n.of.y, c.l, c.u, tau.l, tau.u, pow_scale=1.5){
-  
+
   pow_support <- c(tau.l/pow_scale, tau.u*pow_scale) 	
   pow_norm 	<- ratetest.pow.norm(c.l=c.l, c.u=c.u, m=n.of.y, trafo=1, support=pow_support)	
   
@@ -322,11 +356,11 @@ ratetest.plot<- function(n.of.y, c.l, c.u, tau.l, tau.u, pow_scale=1.5){
   tmp$power	<- ratetest.pow(tmp$rho, c.l=c.l, c.u=c.u, m=n.of.y, norm=pow_norm, trafo= 1)*pow_norm	
   
   p	<- ggplot(tmp, aes(x=rho, y=power)) + geom_line() + labs(x=expression(rho), y='Power\n(ABC acceptance probability)') +
-    scale_y_continuous(breaks=seq(0,1,0.2), limits=c(0,1)) +
-    scale_x_continuous(limits=c(0,pow_support[2])) +
-    geom_vline(xintercept = c(tau.l, tau.u), linetype = "dotted") +
-    geom_vline(xintercept = c(c.l, c.u), linetype = "dashed") +
-    ggtitle(paste("n.of.y=", n.of.y, "\ntau.l=", round(tau.l,d=5), " tau.u=", round(tau.u,d=5), "\nc.l=", round(c.l,d=5), " c.u=", round(c.u,d=5)))
+  scale_y_continuous(breaks=seq(0,1,0.2), limits=c(0,1)) +
+  scale_x_continuous(limits=c(0,pow_support[2])) +
+  geom_vline(xintercept = c(tau.l, tau.u), linetype = "dotted") +
+  geom_vline(xintercept = c(c.l, c.u), linetype = "dashed") +
+  ggtitle(paste("n.of.y=", n.of.y, "\ntau.l=", round(tau.l,d=5), " tau.u=", round(tau.u,d=5), "\nc.l=", round(c.l,d=5), " c.u=", round(c.u,d=5)))
   print(p)
 }
 
@@ -406,22 +440,22 @@ ratetest.plot<- function(n.of.y, c.l, c.u, tau.l, tau.u, pow_scale=1.5){
 #' @references  http://arxiv.org/abs/1305.4283
 ratetest.calibrate<- function(n.of.x=NA, mean.x=NA, n.of.y=NA, what='MXPW', mx.pw=0.9, alpha=0.01, tau.l=NA, tau.u=NA, tau.u.ub=NA, c.l=NA, c.u=NA, max.it=100, tol= 1e-5, pow_scale=1.5, debug=FALSE, plot=FALSE, verbose=FALSE)
 {
-  
+
   stopifnot(what%in%c('ALPHA','CR','MXPW_AT_EQU','MXPW','KL'))
   
   if(what=='ALPHA'){
-    
+
     stopifnot(c.u<=tau.u, tau.u>1, tau.l<1, c.l>=tau.l, n.of.y>2, alpha>0, alpha<1)
     
     ans	<- pgamma(n.of.y*c.u/tau.l, n.of.y, 1)-pgamma(n.of.y*c.l/tau.l, n.of.y, 1)
     names(ans)	<- 'alpha'
     if(plot)
       ratetest.plot(n.of.y, c.l, c.u, tau.l, tau.u, pow_scale=pow_scale)
-  
+
   }
   
   if(what=='CR'){
-    
+
     stopifnot(tau.u>1, tau.l<1, n.of.y>2, alpha>0, alpha<1, pow_scale>1)
     
     tmp <- ratetest.rejectint(alpha, tau.l, tau.u, n.of.y, tol=1e-10, itmax=max.it)
@@ -430,11 +464,11 @@ ratetest.calibrate<- function(n.of.x=NA, mean.x=NA, n.of.y=NA, what='MXPW', mx.p
     
     if(plot)
       ratetest.plot(n.of.y, ans['c.l'], ans['c.u'], tau.l, tau.u, pow_scale=pow_scale)		
-  
+
   }
   
   if(what=='MXPW_AT_EQU'){   
-    
+
     stopifnot(tau.u>1, n.of.y>2, alpha>0, alpha<1, pow_scale>1, max.it>10, tol<0.2)
     
     tmp	<- ratetest.calibrate.taulow(tau.u, n.of.y, alpha=alpha, rho.star=1, tol=tol, max.it=max.it, pow_scale=pow_scale, verbose=verbose)
@@ -447,7 +481,7 @@ ratetest.calibrate<- function(n.of.x=NA, mean.x=NA, n.of.y=NA, what='MXPW', mx.p
   }	
   
   if(what=='MXPW'){
-    
+
     stopifnot(tau.u.ub>1, n.of.y>2, alpha>0, alpha<1, pow_scale>1, max.it>10, tol<0.2)
     
     tmp <- ratetest.calibrate.tauup(mx.pw, tau.u.ub, n.of.y, alpha=alpha, rho.star=1, tol=tol, max.it=max.it, pow_scale=pow_scale, verbose=verbose)
@@ -459,14 +493,14 @@ ratetest.calibrate<- function(n.of.x=NA, mean.x=NA, n.of.y=NA, what='MXPW', mx.p
   }
   
   if(what=='KL'){
-    
+
     tmp	<- ratetest.calibrate.kl(n.of.x, mean.x, n.of.y=n.of.x, mx.pw=mx.pw, alpha=alpha, max.it=max.it, debug=debug, plot=plot)
     ans	<- c(tmp[4], tmp[5], tmp[2], tmp[3], tmp[1], tmp[6], tmp[7])
     names(ans)	<- c('c.l','c.u','tau.l','tau.u','n.of.y','pw.cmx','KL.div')
     
-    if(plot)
-      ratetest.plot(ans['n.of.y'], ans['c.l'], ans['c.u'], ans['tau.l'], ans['tau.u'], pow_scale=pow_scale)
-  
+    # if(plot)
+      # ratetest.plot(ans['n.of.y'], ans['c.l'], ans['c.u'], ans['tau.l'], ans['tau.u'], pow_scale=pow_scale)
+
   }
   
   ans
