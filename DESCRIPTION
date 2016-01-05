@@ -16,3 +16,4 @@ Imports:
 Description: Calibration procedures for accurate ABC
 License: GPL (>=2)
 LazyLoad: yes
+RoxygenNote: 5.0.1
