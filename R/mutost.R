@@ -366,8 +366,8 @@ mutost.calibrate.kl<- function(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub,
 	#In this case, 	the only way to minimize KL is to use yn<xn, which is not what we like.
 	#				instead, we give up on mx.pw=0.9	
 	KL_divergence			<-  "mutost.getkl"		
-	KL_args$calibrate.tau.u <- T
-	KL_args$plot 			<- F			
+	KL_args$calibrate.tau.u <- TRUE
+	KL_args$plot 			<- FALSE			
 	KL.of.yn 				<- do.call(KL_divergence, KL_args)["KL_div"]
 	
 	
@@ -425,7 +425,7 @@ mutost.calibrate.kl<- function(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub,
 				pdf("KL_optimization.pdf", onefile = T)		
 			KL_args$plot 			<- plot_debug
 			KL_args["n.of.y"] 		<- NULL
-			tmp 					<- optimize(kl.optimize, interval = c(yn.lb, yn.ub), x_name = "n.of.y", is_integer = T, KL_divergence = KL_divergence, KL_args=KL_args, verbose=verbose, tol = 1)
+			tmp 					<- optimize(kl.optimize, interval = c(yn.lb, yn.ub), x_name = "n.of.y", is_integer = TRUE, KL_divergence = KL_divergence, KL_args=KL_args, verbose=verbose, tol = 1)
 			if (plot_debug) 
 				dev.off()
 			KL_args$n.of.y 			<- round(tmp$minimum)
