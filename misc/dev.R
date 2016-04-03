@@ -32,7 +32,6 @@ fix_ratetest <- function() {
 
 	ans <- ratetest.calibrate(n.of.x=30, mean.x=2, n.of.y=30, what='KL', plot=TRUE, debug = TRUE, verbose = TRUE)
 	print(ans)
-	# ratetest.getkl(mean.x = 2, n.of.y=40, tau.u = 2*2, mx.pw = 0.9, alpha = 0.01, pow_scale=1.5, calibrate.tau.u=TRUE, plot=TRUE)
 
 }
 
