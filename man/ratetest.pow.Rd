@@ -4,8 +4,7 @@
 \alias{ratetest.pow}
 \title{\code{ratetest} power function}
 \usage{
-ratetest.pow(rho, c.l, c.u, m, norm = 1, trafo = 1, support = c(0, Inf),
-  log = FALSE)
+ratetest.pow(rho, c.l, c.u, m, norm = 1, support = c(0, Inf), log = FALSE)
 }
 \arguments{
 \item{rho}{Vector of error quantiles}
@@ -17,8 +16,6 @@ ratetest.pow(rho, c.l, c.u, m, norm = 1, trafo = 1, support = c(0, Inf),
 \item{m}{Number of simulated values}
 
 \item{norm}{Normalization constant for the truncated power function}
-
-\item{trafo}{Parameter transformation to translate the power}
 
 \item{support}{Support of the truncated power function}
 

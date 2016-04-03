@@ -39,7 +39,6 @@ return(ans)
 #' @param c.l		Lower boundary point of the critical region (equivalent to the lower ABC tolerance \code{epsilon^-})
 #' @param c.u 		Upper boundary point of the critical region (equivalent to the upper ABC tolerance \code{epsilon^+})
 #' @param m       	Number of simulated values
-#' @param trafo		Parameter transformation to translate the power
 #' @param norm 		Normalization constant for the truncated power function
 #' @param support 	Support of the truncated power function
 #' @param log 		If \code{TRUE}, the power function is returned on the log scale. 
@@ -49,11 +48,11 @@ return(ans)
 #' @example example/ex.ratetest.pow.R
 #' @export
 #' @import data.table pscl reshape2 ggplot2 ash nortest
-ratetest.pow <- function(rho, c.l, c.u, m,  norm=1, trafo=1, support=c(0, Inf), log=FALSE){
+ratetest.pow <- function(rho, c.l, c.u, m,  norm=1, support=c(0, Inf), log=FALSE){
   ans <- rep(0, length(rho))
   in_support <- (rho >= support[1] & rho <= support[2])  
   if(any(in_support)){
-    ans[in_support] <- ( pgamma(m*c.u/rho[in_support] *trafo, m, 1) - pgamma(m*c.l/rho[in_support] *trafo, m, 1) )/norm 
+    ans[in_support] <- ( pgamma(m*c.u/rho[in_support], m, 1) - pgamma(m*c.l/rho[in_support], m, 1) )/norm 
   }
   if(log){
     ans<-log(ans)
@@ -68,16 +67,16 @@ ratetest.pow <- function(rho, c.l, c.u, m,  norm=1, trafo=1, support=c(0, Inf), 
 #' @description This function computes the area under the power function \code{ratetest.pow}.
 #' @inheritParams ratetest.pow 
 #' @seealso \code{\link{ratetest.pow}}, \code{\link{ratetest.calibrate}}
-ratetest.pow.norm<- function(c.l, c.u, m, trafo= 1, support=c(0,Inf)){
+ratetest.pow.norm<- function(c.l, c.u, m, support=c(0,Inf)){
 
-  ans <- integrate(ratetest.pow, lower=support[1], upper=support[2], c.l=c.l, c.u=c.u, m=m, norm=1, trafo=trafo, support=support, log=FALSE)
+  ans <- integrate(ratetest.pow, lower=support[1], upper=support[2], c.l=c.l, c.u=c.u, m=m, norm=1, support=support, log=FALSE)
   ans$value
   
 }	
 
 #==========================================================================================================================
 
-ratetest.sulkl<- function(rho, n.of.x, mean.x, trafo = mean.x, norm = 1, support= c(0,Inf), log=FALSE) {
+ratetest.sulkl<- function(rho, n.of.x, mean.x, norm = 1, support= c(0,Inf), log=FALSE) {
 
   ans 				<- rho
   in_support 			<- (rho >= support[1] & rho <= support[2])
@@ -104,9 +103,9 @@ ratetest.sulkl<- function(rho, n.of.x, mean.x, trafo = mean.x, norm = 1, support
 
 #=========================================================================================================================
 
-ratetest.sulkl.norm  <- function(n.of.x, mean.x, trafo = 1, support=c(0,Inf)){
+ratetest.sulkl.norm  <- function(n.of.x, mean.x, support=c(0,Inf)){
 
-  ans	<- integrate(ratetest.sulkl, lower=support[1], upper=support[2], n.of.x=n.of.x, mean.x = mean.x, trafo=trafo, norm=1, support=support, log=FALSE)	
+  ans	<- integrate(ratetest.sulkl, lower=support[1], upper=support[2], n.of.x=n.of.x, mean.x = mean.x, norm=1, support=support, log=FALSE)	
   ans$value
   
 }
@@ -126,7 +125,7 @@ ratetest.calibrate.taulow<- function(tau.up, n.of.y, alpha=0.01, rho.star=1, tol
     tau.low.lb	<- tau.low.lb/2
     rej    <-   ratetest.rejectint(alpha=alpha, tau.l=tau.low.lb,  tau.u = tau.up, m=n.of.y , tol=1.0e-10, itmax=100)
     #if(rej[4]>tol)	stop("compute tau.low.lb: rejection region does not have level alpha within tolerance")
-    pw   <- ratetest.pow(rho, rej[1], rej[2], m = n.of.y,  norm=1, trafo=1, support=c(0, Inf), log=FALSE)
+    pw   <- ratetest.pow(rho, rej[1], rej[2], m = n.of.y,  norm=1, support=c(0, Inf), log=FALSE)
     c.rho.max	<- rho[ which.max(pw) ]
     if(verbose) {cat(paste("\ntrial lower bound",tau.low.lb,"with current rho.max",c.rho.max,"critical region",rej[1],rej[2] )) } #,"error in level is",rej[4]))
 }
@@ -140,7 +139,7 @@ while(abs(error)>tol && round(tau.low.lb, digits=10)!=round(tau.low.ub, digits=1
   tau.low	<- (tau.low.lb + tau.low.ub)/2
   rej    <-   ratetest.rejectint(alpha=alpha, tau.l=tau.low,  tau.u = tau.up, m=n.of.y , tol=1.0e-10, itmax=100)
     #if(rej[4]>tol)	stop("compute tau.low: rejection region does not have level alpha within tolerance")
-  pw  <-  ratetest.pow(rho, rej[1], rej[2], m=n.of.y,  norm=1, trafo=1, support=c(0, Inf), log=FALSE)
+  pw  <-  ratetest.pow(rho, rej[1], rej[2], m=n.of.y,  norm=1, support=c(0, Inf), log=FALSE)
     #print( c(rho[ which.max(pw) ],pw[ which.max(pw) ], tau.low.lb, tau.low.ub,round(tau.low.lb,digits=10)==round(tau.low.ub,digits=10) ))	
   error	<- rho[ which.max(pw) ] - rho.star
   if(verbose) {cat(paste("\ntrial tau.l=",tau.low,"pw.max is",max(pw),"at",rho[ which.max(pw) ], "it",max.it)) }	
@@ -248,16 +247,16 @@ ratetest.getkl <- function(mean.x, n.of.x, n.of.y, tau.u, mx.pw=0.9, alpha=0.01,
 
   #truncate pow and compute pow_norm	
   pow_support <- c(tau.l/pow_scale, tau.u*pow_scale)  # this is to decide the truncated part of power function 	
-  pow_norm 	<- ratetest.pow.norm(c.l, c.u, m = n.of.y, trafo=1, support=pow_support)
+  pow_norm 	<- ratetest.pow.norm(c.l, c.u, m = n.of.y, support=pow_support)
 
   #compute the norm of lkl (likelihood), given its support 
   lkl_support	<- pow_support	
   #print(c(n.of.x, s.of.x, (n.of.x-1)/n.of.x*s.of.x*s.of.x)); print(lkl_support)
-  lkl_norm	<- ratetest.sulkl.norm(n.of.x, mean.x, trafo=mean.x, support=lkl_support)
+  lkl_norm	<- ratetest.sulkl.norm(n.of.x, mean.x, support=lkl_support)
   integral_range	<- pow_support	
 
-  lkl_arg			<- list(n.of.x=n.of.x, mean.x = mean.x, trafo=mean.x, norm = lkl_norm, support= lkl_support)
-  pow_arg			<- list(c.l=c.l, c.u=c.u, m=n.of.y, norm=pow_norm, trafo=1, support=pow_support)	
+  lkl_arg			<- list(n.of.x=n.of.x, mean.x = mean.x, norm = lkl_norm, support= lkl_support)
+  pow_arg			<- list(c.l=c.l, c.u=c.u, m=n.of.y, norm=pow_norm, support=pow_support)	
   tmp 			<- integrate( kl.integrand, lower = integral_range[1], upper = integral_range[2], dP=ratetest.sulkl, dQ=ratetest.pow, P_arg=lkl_arg, Q_arg=pow_arg)
   KL_div			<- tmp$value
 
@@ -269,10 +268,10 @@ ratetest.getkl <- function(mean.x, n.of.x, n.of.y, tau.u, mx.pw=0.9, alpha=0.01,
 
     rho         <- seq(lkl_support[1], lkl_support[2], length.out = 1000)
 
-    lkl         <- ratetest.sulkl(rho =  rho, n.of.x = n.of.x, mean.x = mean.x, trafo=mean.x, norm = lkl_norm, support= lkl_support, log=FALSE)    
+    lkl         <- ratetest.sulkl(rho =  rho, n.of.x = n.of.x, mean.x = mean.x, norm = lkl_norm, support= lkl_support, log=FALSE)    
     df_lkl        <- data.frame(x = rho, no = lkl * lkl_norm, yes = lkl, distribution = "summary likelihood")
 
-    pow <- ratetest.pow(rho = rho, c.l = c.l, c.u = c.u, m = n.of.y,  norm = pow_norm, trafo=1, support=pow_support, log=FALSE)
+    pow <- ratetest.pow(rho = rho, c.l = c.l, c.u = c.u, m = n.of.y,  norm = pow_norm, support=pow_support, log=FALSE)
     df_pow        <- data.frame(x = rho, no = pow * pow_norm, yes = pow, distribution = "ABC power")
     
     df          <- rbind(df_pow, df_lkl)
@@ -355,10 +354,10 @@ ratetest.calibrate.kl <- function(n.of.x, mean.x, n.of.y, mx.pw=0.9, alpha=0.05,
 ratetest.plot<- function(n.of.y, c.l, c.u, tau.l, tau.u, pow_scale=1.5){
 
   pow_support <- c(tau.l/pow_scale, tau.u*pow_scale) 	
-  pow_norm 	<- ratetest.pow.norm(c.l=c.l, c.u=c.u, m=n.of.y, trafo=1, support=pow_support)	
+  pow_norm 	<- ratetest.pow.norm(c.l=c.l, c.u=c.u, m=n.of.y, support=pow_support)	
   
   tmp			<- data.frame(rho=seq(pow_support[1], pow_support[2], length.out = 1024))	
-  tmp$power	<- ratetest.pow(tmp$rho, c.l=c.l, c.u=c.u, m=n.of.y, norm=pow_norm, trafo= 1)*pow_norm	
+  tmp$power	<- ratetest.pow(tmp$rho, c.l=c.l, c.u=c.u, m=n.of.y, norm=pow_norm)*pow_norm	
   
   p	<- ggplot(tmp, aes(x=rho, y=power)) + geom_line() + labs(x=expression(rho), y='Power\n(ABC acceptance probability)') +
   scale_y_continuous(breaks=seq(0,1,0.2), limits=c(0,1)) +
