@@ -77,23 +77,28 @@ ratetest.pow.norm<- function(c.l, c.u, m, trafo= 1, support=c(0,Inf)){
 
 #==========================================================================================================================
 
-ratetest.sulkl<- function(rho, n.of.x, mean.x, trafo=mean.x, norm = 1, support= c(0,Inf), log=FALSE) {
+ratetest.sulkl<- function(rho, n.of.x, mean.x, trafo = mean.x, norm = 1, support= c(0,Inf), log=FALSE) {
 
   ans 				<- rho
   in_support 			<- (rho >= support[1] & rho <= support[2])
-  ans[!in_support]	<- 0
   
-  if (any(in_support)){
-    beta <- rho[in_support] * trafo    
-  }
+  # parameters of inv-gamma
+  x <- rho[in_support]
+  shape <- n.of.x - 1
+  scale <- n.of.x
 
-  ans[in_support] <- dgamma( x = beta, shape = n.of.x, scale = mean.x/n.of.x )/norm
-  
-  if(log){
-    ans       <- log(ans)    
+  log_dens <- shape * log(scale) - lgamma(shape) - (shape + 1) * log(x) - (scale/x)
+
+  if (!log) {
+    ans[!in_support] <- 0
+    ans[in_support] <-  exp(log_dens)
+  } else {
+    ans[!in_support] <- -Inf
+    ans[in_support] <- log_dens
   }
 
   return(ans)
+  
 }
 
 
@@ -261,12 +266,12 @@ ratetest.getkl <- function(mean.x, n.of.x, n.of.y, tau.u, mx.pw=0.9, alpha=0.01,
   }
 
   if (plot) {
-    # browser()
+
     rho         <- seq(lkl_support[1], lkl_support[2], length.out = 1000)
 
     lkl         <- ratetest.sulkl(rho =  rho, n.of.x = n.of.x, mean.x = mean.x, trafo=mean.x, norm = lkl_norm, support= lkl_support, log=FALSE)    
     df_lkl        <- data.frame(x = rho, no = lkl * lkl_norm, yes = lkl, distribution = "summary likelihood")
-  
+
     pow <- ratetest.pow(rho = rho, c.l = c.l, c.u = c.u, m = n.of.y,  norm = pow_norm, trafo=1, support=pow_support, log=FALSE)
     df_pow        <- data.frame(x = rho, no = pow * pow_norm, yes = pow, distribution = "ABC power")
     
