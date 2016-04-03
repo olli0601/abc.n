@@ -142,10 +142,7 @@ mutost.sulkl <- function(rho, n.of.x, s.of.x, norm = 1, support= c(-Inf,Inf), lo
 #
 mutost.getkl <- function(n.of.x, s.of.x, n.of.y, s.of.y, mx.pw, alpha, calibrate.tau.u = F, tau.u = 1, pow_scale = 1.5, debug = 0, plot = F, legend.title='') 
 {
-	
-	
-	stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0)
-	
+	stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0)	
 	if (!debug)		#ALL IN C 
 	{						
 		suppressWarnings({ #suppress numerical inaccuracy warnings
@@ -356,8 +353,7 @@ mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=n.of.x, s.of.y=NA, w
 mutost.calibrate.kl<- function(  n.of.x, s.of.x, n.of.y, s.of.y, tau.u.ub, 
 		mx.pw=0.9, alpha=0.01, max.it=100, pow_scale=1.5, debug=FALSE, plot=FALSE, plot_debug=FALSE, verbose=FALSE)
 {	
-	KL_args 	<- list(n.of.x=length(obs), s.of.x= sd(obs), n.of.y=length(sim), s.of.y=sd(sim), mx.pw=mx.pw, alpha=alpha, tau.u=tau.u.ub, pow_scale=1.5, debug=debug)
-	
+	KL_args 	<- list(n.of.x=n.of.x, s.of.x=s.of.x, n.of.y=n.of.y, s.of.y=s.of.y, mx.pw=mx.pw, alpha=alpha, tau.u=tau.u.ub, pow_scale=pow_scale, debug=debug)	
 	stopifnot(all(c("n.of.x", "s.of.x", "n.of.y", "s.of.y", "mx.pw", "alpha", "tau.u", "pow_scale") %in% names(KL_args)), max.it > 0)
 	with(KL_args, stopifnot(n.of.x > 1, s.of.x > 0, n.of.y > 1, s.of.y > 0, mx.pw > 0, mx.pw<=1, alpha > 0, alpha<=0.5, tau.u>0, pow_scale > 0))
 	#print(KL_args)
