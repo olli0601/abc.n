@@ -264,23 +264,78 @@ gof.mutostabc.MX.mu.evalcpp<- function(indir='~/Dropbox (Infectious Disease)/gof
 	cpps[, TYPE:='calibrated ABC']
 	cpps		<- rbind(cpps, cpps.std)
 	set(cpps, NULL, 'TOLM', cpps[, factor(as.character(TOLM), levels=sort(as.numeric(as.character(unique(TOLM)))), labels=sort(as.numeric(as.character(unique(TOLM)))))])
+	set(cpps, NULL, 'TYPE', cpps[, factor(TYPE, levels=c('standard ABC','calibrated ABC'), labels=c('standard ABC','calibrated ABC'))])
 	
 	ggplot(cpps, aes(x=CPP)) + 
 			geom_histogram(aes(fill=TOLM), colour='black', position="identity", binwidth=0.05) +
 			coord_cartesian(xlim=c(0,1)) +
-			facet_grid(TOLM~TYPE) + theme_bw()
+			labs(title='ABC model correct\n', x='\nconditional predictive p-value', fill='tolerance multiplier\nrelative to\ncalibrated value') +
+			facet_grid(TOLM~TYPE) + theme_bw() + theme(panel.margin=unit(2, "lines"))
+	ggsave(file=paste(indir,'/','Normal-ME_cpp_pdf.pdf',sep=''), w=7, h=6)
 	
 	ggplot(cpps, aes(x=CPP)) + stat_ecdf(aes(colour=TOLM)) +
 			geom_abline(intercept=0, slope=1, colour='black') +
 			coord_cartesian(xlim=c(0,1), ylim=c(0,1)) +
 			facet_grid(~TYPE) +
-			labs(x='\nCPP', y='empirical c. d. f.\n', title='ABC model correct\n', colour='tolerance multiplier\nrelative to\ncalibrated value') +
-			theme_bw()
-			
-	z <- subset(cpps, TYPE=='calibrated ABC')[, CPP]
-	qqplot(qunif(ppoints(500)), z)
-	qqline(z, distribution = function(p) qunif(p),prob = c(0.1, 0.6), col = 2)
+			labs(y='empirical c. d. f.\n', title='ABC model correct\n', x='\nconditional predictive p-value', colour='tolerance multiplier\nrelative to\ncalibrated value') +
+			theme_bw() + theme(panel.margin=unit(2, "lines"))
+	ggsave(file=paste(indir,'/','Normal-ME_cpp_cdf.pdf',sep=''), w=7, h=4)
 	
+}
+##--------------------------------------------------------------------------------------------------------
+gof.mutostabc.MX.musig.evalcpp<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper')
+{
+	#	get p-val
+	infiles	<- data.table(FILE=list.files(indir, pattern='CPP\\.rda$'))
+	set(infiles, NULL, 'TYPE', infiles[, gsub('-OR.*','',FILE)])
+	set(infiles, NULL, 'INSUFF', infiles[, grepl('insuff',FILE)])
+	
+	load( paste(indir, subset(infiles, TYPE=='Normal-MESIG' & !INSUFF)[, FILE], sep='/') )
+	cpps.std	<- copy(cpps)
+	cpps.std[, TYPE:='standard ABC']
+	cpps.std[, SUS:='summaries sufficient']
+	load( paste(indir, subset(infiles, TYPE=='Normal-MESIG' & INSUFF)[, FILE], sep='/') )
+	cpps[, TYPE:='standard ABC']
+	cpps[, SUS:='summaries not sufficient']
+	cpps		<- rbind(cpps, cpps.std)
+	set(cpps, NULL, 'TOLMU', cpps[, factor(substring(regmatches(TOL, regexpr('^[^;]*',TOL)), 4))])
+	cpps[, TOLSIG:='None']
+	tmp			<- cpps[, which(SUS=='summaries sufficient')]
+	set(cpps, tmp, 'TOLSIG', cpps[tmp, substring(regmatches(TOL, regexpr(';.*',TOL)), 7)])	
+	set(cpps, NULL, 'TOLSIG', cpps[, factor(TOLSIG, levels=cpps[, unique(TOLSIG)], labels=cpps[, unique(TOLSIG)])] )
+	set(cpps, NULL, 'TOLLEG', cpps[, paste('tolerances\n',gsub(':','= ',gsub('; ','\n',TOL)),sep='')])
+	#set(cpps, NULL, 'TOL', cpps[, factor(as.character(TOLM), levels=sort(as.numeric(as.character(unique(TOLM)))), labels=sort(as.numeric(as.character(unique(TOLM)))))])
+	#set(cpps, NULL, 'TYPE', cpps[, factor(TYPE, levels=c('standard ABC','calibrated ABC'), labels=c('standard ABC','calibrated ABC'))])
+	
+	ggplot(cpps, aes(x=CPP)) + 
+			geom_histogram(aes(fill=TOLMU), colour='black', position="identity", binwidth=0.05) +
+			coord_cartesian(xlim=c(0,1)) +
+			scale_fill_brewer(palette='Set1', guide=FALSE) +
+			labs(title='ABC model correct\n', x='\nconditional predictive p-value', fill='tolerances') +
+			facet_grid(TOLLEG~SUS) + theme_bw() + theme(panel.margin=unit(2, "lines"))
+	ggsave(file=paste(indir,'/','Normal-MESIG_cpp_pdf_insuff_vs_suff.pdf',sep=''), w=8, h=13)
+	
+	ggplot(cpps, aes(x=CPP)) + stat_ecdf(aes(colour=TOLMU, linetype=TOLSIG)) +
+			geom_abline(intercept=0, slope=1, colour='black') +
+			coord_cartesian(xlim=c(0,1), ylim=c(0,1)) +
+			scale_colour_brewer(palette='Set1') +
+			facet_grid(~SUS) +
+			labs(y='empirical c. d. f.\n', title='ABC model correct\n', x='\nconditional predictive p-value', colour='tolerances\nfor comparing means', linetype='tolerances\nfor comparing std devs') +
+			theme_bw() + theme(panel.margin=unit(2, "lines"))
+	ggsave(file=paste(indir,'/','Normal-MESIG_cpp_cdf_insuff_vs_suff.pdf',sep=''), w=7, h=4)
+	
+	load( paste(indir, subset(infiles, TYPE=='Normal-MESIG')[, FILE], sep='/') )
+	cpps[, TYPE:='standard ABC']
+	#cpps		<- rbind(cpps, cpps.std)
+	#set(cpps, NULL, 'TOL', cpps[, factor(as.character(TOL), levels=sort(as.numeric(as.character(unique(TOL)))), labels=sort(as.numeric(as.character(unique(TOL)))))])
+	#set(cpps, NULL, 'TYPE', cpps[, factor(TYPE, levels=c('standard ABC','calibrated ABC'), labels=c('standard ABC','calibrated ABC'))])
+	ggplot(cpps, aes(x=CPP)) + stat_ecdf(aes(colour=TOL)) +
+			geom_abline(intercept=0, slope=1, colour='black') +
+			coord_cartesian(xlim=c(0,1), ylim=c(0,1)) +
+			#facet_grid(~TYPE) +
+			labs(y='empirical c. d. f.\n', title='ABC model correct\n', x='\nconditional predictive p-value', colour='tolerances') +
+			theme_bw() + theme(panel.margin=unit(2, "lines"))
+	ggsave(file=paste(indir,'/','Normal-MESIG_cpp_cdf.pdf',sep=''), w=5, h=4)
 }
 ##--------------------------------------------------------------------------------------------------------
 gof.mutostabc.MX.mu<- function(indir='~/Dropbox (Infectious Disease)/gof-abc/calc/example-paper')
@@ -364,7 +419,7 @@ gof.mutostabc.MX.musig.insuff<- function(indir='~/Dropbox (Infectious Disease)/g
 						geom_density2d(aes(y=YSIGMA*YSIGMA, colour=TOL, group=TOL)) +
 						facet_wrap(~TOL, ncol=3) +
 						theme_bw() + theme(legend.position='bottom') + labs(title='ABC posterior density\n', x='mu', y='sigma2', colour='tolerances')			
-				ggsave(file=gsub('\\.rda','_ABCposterior.pdf',file), w=10, h=8)
+				ggsave(file=gsub('\\.rda','_insuff_ABCposterior.pdf',file), w=10, h=8)
 				#	acceptance prob
 				acc.prob	<- abca[, list(PERC_ACC= length(YMU)/nrow(dt$sim)), by='TOL']
 				#	CPP
@@ -492,7 +547,8 @@ gof.mutostabc.main<- function()
 {
 	require(data.table)
 	require(pscl)
-	require(ggplot2)
+	require(grid)
+	require(ggplot2)	
 	require(abc.star)
 	if(1)
 	{
@@ -505,7 +561,7 @@ gof.mutostabc.main<- function()
 		#outfile	<- 'Normal-MESIG-OR151111.rda'
 		#gof.mutostabc.presim.musig(outdir, outfile, n.rep=200)
 		#outfile	<- 'Normal-MESIG-MforMUTOST-OR151111.rda'
-		#gof.mutostabc.presim.musig.ABCstar(outdir, outfile, n.rep=200)
+		#gof.mutostabc.presim.musig.ABCstar(outdir, outfile, n.rep=200)		
 	}
 	if(0)
 	{

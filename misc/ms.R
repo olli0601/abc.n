@@ -1975,7 +1975,8 @@ ms.pipeline<- function()		#illustrate power of scaled ChiSquare
 ms.figure1<- function()		#illustrate power of scaled ChiSquare
 {
 	require(abc.star)
-	
+	require(ggplot2)
+	require(data.table)
 	n.of.x	<- 60 
 	n.of.y	<- 60
 	outdir	<- '~/duke/2015_ABC_resubmission_figs'
@@ -1991,7 +1992,9 @@ ms.figure1<- function()		#illustrate power of scaled ChiSquare
 	
 	#	tau.l decreasing
 	tau.u	<- 2
-	tmp	<- lapply(c(0.2,0.4,0.6,0.8),function(tau.l)
+	tmp		<- c(0.2,0.4,0.6,0.8)
+	tmp		<- c(0.001, 0.01, 0.05, 0.1, 0.2)
+	tmp	<- lapply(tmp,function(tau.l)
 			{
 				cali	<- vartest.calibrate(n.of.x=n.of.x, n.of.y=n.of.y, tau.l=tau.l, tau.u=tau.u, what='CR', alpha=0.01)
 				data.table(rho=rho, power=vartest.pow(rho, n.of.x, n.of.y-1, cali['c.l'], cali['c.u']), tau.l=tau.l)			

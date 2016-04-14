@@ -325,7 +325,7 @@ ztest.calibrate<- function(	n.of.x=NA, n.of.y=NA, n2s=NULL, s2n=NULL, what='MXPW
 	if(what=='MXPW')
 	{						
 		tau.u.ub	<- 3*n2s(2*n.of.y)
-		stopifnot(mx.pw>0, mx.pw<1, n.of.y>1, alpha>0, alpha<0.5, tau.up.ub>0, max.it>10, tol<0.01, pow_scale>1)
+		stopifnot(mx.pw>0, mx.pw<1, n.of.y>1, alpha>0, alpha<0.5, tau.u.ub>0, max.it>10, tol<0.01, pow_scale>1)
 		tmp			<- ztest.calibrate.tolerances(mx.pw, tau.u.ub, n2s(n.of.y), alpha=alpha, rho.star=0, tol=tol, max.it=max.it, pow_scale=pow_scale, verbose=verbose)
 		ans			<- c(tmp[5], tmp[6], tmp[1], tmp[2], tmp[3], tmp[4])
 		names(ans)	<- c('c.l','c.u','tau.l','tau.u','pw.cmx','pw.error')

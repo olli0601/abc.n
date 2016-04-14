@@ -325,7 +325,7 @@ mutost.calibrate<- function(  	n.of.x=NA, s.of.x=NA, n.of.y=n.of.x, s.of.y=NA, w
 	{		
 		if(is.na(tau.u.ub))
 			tau.u.ub<- 3*s.of.y		
-		ans			<- mutost.calibrate.mxpw(mx.pw, n.of.y-1, s.of.y/sqrt(n.of.y), tau.u.ub, alpha, rho.star=0, tol=tol, max.it=max.it, debug=debug)
+		ans			<- mutost.calibrate.mxpw(mx.pw, n.of.y-1, s.of.y/sqrt(n.of.y), tau.u.ub, alpha, rho.star=0, tol=tol, max.it=max.it, debug=debug)[1:4]
 		names(ans)	<- c('tau.l','tau.u','pw.cmx','pw.err')
 		tmp			<- max(0, ans['tau.u'] + s.of.y/sqrt(n.of.y)*qt(alpha, n.of.y-1))
 		tmp			<- c(-tmp, tmp)
