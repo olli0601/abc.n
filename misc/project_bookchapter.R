@@ -255,22 +255,25 @@ ch11.vartest<- function()
 	n.of.x	<- 60
 	n.of.y	<- 60
 	outdir	<- '/Users/Oliver/Dropbox (Infectious Disease)/OR_Work/2015/2015_ABCBookChapter/v160317'
-
+	
 	ans		<- vartest.calibrate(n.of.x=n.of.x, n.of.y=n.of.y, tau.u.ub=3, what='MXPW', mx.pw=0.9, alpha=0.01, plot=TRUE, verbose=FALSE)
 	file	<- paste(outdir, '/vartest_abc_cali_for_power.pdf',sep='')
 	ggsave(file, w=5, h=5)
 	#
 	#	POWER
 	#
+	
 	rho		<- seq(0.1, 3, len=1024)
 	tmp		<- lapply(c(1.4,1.7,2.0,2.4,3.0),function(tau.u)
 			{
 				cali	<- vartest.calibrate(n.of.x=n.of.x, n.of.y=n.of.y, tau.l=1/tau.u, tau.u=tau.u, what='CR', alpha=0.01)
 				data.table(rho=rho, power=vartest.pow(rho, n.of.x, n.of.y-1, cali['c.l'], cali['c.u']), tau.u=tau.u)			
 			})
-	tmp	<- do.call('rbind', tmp)
+	tmp		<- do.call('rbind', tmp)
 	set(tmp, NULL, 'tau.u', tmp[, factor(tau.u)])
+	tmp2	<- tmp[, list(rho= rho[which.max(power)], power=max(power)), by='tau.u']
 	ggplot(tmp,aes(x=rho,y=power,colour=tau.u, group=tau.u)) + geom_line() + labs(x=expression(rho), y='') +
+			geom_point(data=tmp2, colour='black') +
 			scale_colour_brewer(name=expression(tau^'+'), palette='Set1') +
 			scale_y_continuous(breaks=seq(0,1,0.2)) +
 			theme(legend.position=c(1,1), legend.justification=c(1,1))

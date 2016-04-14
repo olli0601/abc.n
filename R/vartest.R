@@ -117,12 +117,22 @@ vartest.getkl <- function(n.of.x, scale, df, tau.u, mx.pw=0.9, alpha=0.01, pow_s
 	tau.l<- pw.cmx<- error<- c.l<- c.u<- NA	
 	if(calibrate.tau.u)	#calibrate tau.u constrained on yn, alpha and mx.pw 
 	{			
-		g(tau.l, tau.u, pw.cmx,	error, c.l, c.u)	%<-%	vartest.calibrate.tauup( mx.pw, tau.u, scale, df, alpha )						#tau.u is taken as upper bound on calibrated tau.u
+		tmp		<- vartest.calibrate.tauup( mx.pw, tau.u, scale, df, alpha )						#tau.u is taken as upper bound on calibrated tau.u
+		tau.l	<- tmp[1]
+		tau.u	<- tmp[2]
+		pw.cmx	<- tmp[3]
+		error	<- tmp[4]
+		c.l		<- tmp[5]
+		c.u		<- tmp[6]
 		if (abs(pw.cmx - mx.pw) > 0.09) 	stop("tau.up not accurate")			
 	}
 	else
 	{
-		g(tau.l, c.l, c.u, error)	%<-%	vartest.calibrate.taulow(tau.u, scale, df, alpha )	#tau.u is taken as final tau.u
+		tmp		<- vartest.calibrate.taulow(tau.u, scale, df, alpha )	#tau.u is taken as final tau.u
+		tau.l	<- tmp[1]
+		c.l		<- tmp[2]
+		c.u		<- tmp[3]
+		error	<- tmp[4]
 	}
 	
 	#truncate pow and compute pow_norm	
@@ -241,8 +251,12 @@ vartest.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01, rho.
 	while(curr.mx.pw<mx.pw && tmp>0)
 	{
 		tmp							<- tmp-1
-		tau.up.ub					<- 2*tau.up.ub
-		g(tau.low, cl, cu, error)	%<-%	vartest.calibrate.taulow(tau.up.ub, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
+		tau.up.ub					<- 2*tau.up.ub			
+		cali						<- vartest.calibrate.taulow(tau.up.ub, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
+		tau.low						<- cali[1]	
+		cl							<- cali[2]
+		cu							<- cali[3]
+		error						<- cali[4]
 		rho							<- seq(tau.low/pow.scale, tau.up.ub*pow.scale, len=1024)
 		pw							<- vartest.pow(rho, scale, df, cl, cu)
 		curr.mx.pw					<- max(pw)		
@@ -257,7 +271,11 @@ vartest.calibrate.tauup<- function(mx.pw, tau.up.ub, scale, df, alpha=0.01, rho.
 	{
 		max.it						<- max.it-1
 		tau.up						<- (tau.up.lb + tau.up.ub)/2
-		g(tau.low, cl, cu, error)	%<-%	vartest.calibrate.taulow(tau.up, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
+		cali						<- vartest.calibrate.taulow(tau.up, scale, df, alpha, rho.star=rho.star, tol=tol, max.it=max.it)
+		tau.low						<- cali[1]	
+		cl							<- cali[2]
+		cu							<- cali[3]
+		error						<- cali[4]		
 		rho							<- seq(tau.low/pow.scale, tau.up*pow.scale, len=1024)		
 		pw							<- vartest.pow(rho, scale, df, cl, cu)
 		curr.mx.pw					<- max(pw)		
@@ -306,8 +324,14 @@ vartest.calibrate.kl<- function(n.of.x, s.of.x, scale=n.of.x, n.of.y=n.of.x, df=
 	KL_args					<- list(n.of.x=n.of.x, scale=scale, tau.u=3*s.of.x, mx.pw=mx.pw, alpha=alpha, calibrate.tau.u=T, plot=F)	
 	tmp 					<- optimize(kl.optimize, interval = c(yn.lb-1, yn.ub-1), x_name = "df", is_integer = T, KL_divergence = "vartest.getkl", KL_args = KL_args, verbose = debug, tol = 1)
 	
-	n.of.y 										<- round(tmp$minimum)+1
-	g(KL_div, tau.l, tau.u, c.l, c.u, pw.cmx)	%<-%	vartest.getkl(n.of.x, scale, n.of.y-df, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=plot)
+	n.of.y 										<- round(tmp$minimum)+1		
+	cali					<- vartest.getkl(n.of.x, scale, n.of.y-df, 3*s.of.x, mx.pw=mx.pw, alpha=alpha, pow_scale=1.5, calibrate.tau.u=T, plot=plot)
+	KL_div					<- cali[1]
+	tau.l					<- cali[2]
+	tau.u					<- cali[3]
+	c.l						<- cali[4]
+	c.u						<- cali[5]
+	pw.cmx					<- cali[6] 	
 	c(n.of.y=n.of.y, tau.l=tau.l, tau.u=tau.u, cl=c.l, cu=c.u, pw.cmx=pw.cmx, KL_div=KL_div)		
 }
 #------------------------------------------------------------------------------------------------------------------------
